@@ -24,3 +24,17 @@ object      | {} {x:'xxx',x:##.##,x:xxx}
 - [operants](https://www.w3schools.com/python/python_operators.asp)
 - [unit test](https://docs.python.org/3/library/unittest.html)
 - [example](https://stackoverflow.com/questions/13055884/parsing-math-expression-in-python-and-solving-to-find-an-answer)
+
+
+
+git add .
+git commit -m "."
+git push
+git tag 0.0.2 -m "v0.0.2"
+git push --tags origin main
+
+python setup.py sdist upload -r pypi
+
+pip install mgr
+
+pip install mgr --upgrade
