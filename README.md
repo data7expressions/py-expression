@@ -30,7 +30,7 @@ object      | {} {x:'xxx',x:##.##,x:xxx}
 git add .
 git commit -m "."
 git push
-git tag 0.0.2 -m "v0.0.2"
+git tag 0.0.3 -m "v0.0.3"
 git push --tags origin main
 
 python setup.py sdist upload -r pypi

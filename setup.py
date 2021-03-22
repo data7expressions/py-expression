@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 from distutils.core import setup
 setup(
-  name = 'expression',
+  name = 'parser-expression',
   packages = ['expression'],
-  version = '0.0.3',
+  version = '0.0.4',
   description = 'parser and solve expressions',
   author = 'Flavio Lionel Rita',
   author_email = 'flaviolrita@hotmail.com',
