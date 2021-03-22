@@ -241,42 +241,42 @@ class RightShift(Operator):
     def solve(self,a,b):
         return a >> b   
 
-expManager = ExpManager()
-expManager.add('constant',Constant)
-expManager.add('variable',Variable)
-expManager.add('function',Function)
+exp = ExpManager()
+exp.add('constant',Constant)
+exp.add('variable',Variable)
+exp.add('function',Function)
 
-expManager.add('+',Addition)
-expManager.add('-',Subtraction)
-expManager.add('*',Multiplication)
-expManager.add('/',Division)
-expManager.add('**',Exponentiation)
-expManager.add('//',FloorDivision)
-expManager.add('%',Mod)
+exp.add('+',Addition)
+exp.add('-',Subtraction)
+exp.add('*',Multiplication)
+exp.add('/',Division)
+exp.add('**',Exponentiation)
+exp.add('//',FloorDivision)
+exp.add('%',Mod)
 
-expManager.add('==',Equal)
-expManager.add('!=',NotEqual)
-expManager.add('>',GreaterThan)
-expManager.add('<',LessThan)
-expManager.add('>=',GreaterThanOrEqual)
-expManager.add('<=',LessThanOrEqual)
+exp.add('==',Equal)
+exp.add('!=',NotEqual)
+exp.add('>',GreaterThan)
+exp.add('<',LessThan)
+exp.add('>=',GreaterThanOrEqual)
+exp.add('<=',LessThanOrEqual)
 
-expManager.add('&&',And)
-expManager.add('||',Or)
-expManager.add('!',Not)
+exp.add('&&',And)
+exp.add('||',Or)
+exp.add('!',Not)
 
-expManager.add('&',BitAnd)
-expManager.add('|',BitOr)
-expManager.add('^!',BitXor)
-expManager.add('~',BitNot)
-expManager.add('<<',LeftShift)
-expManager.add('>>',RightShift)
+exp.add('&',BitAnd)
+exp.add('|',BitOr)
+exp.add('^!',BitXor)
+exp.add('~',BitNot)
+exp.add('<<',LeftShift)
+exp.add('>>',RightShift)
 
 def nvl(a,b): return a if a else b
 
-expManager.addFunction('nvl',nvl)
+exp.addFunction('nvl',nvl)
 
-# result=expManager.solve('(1+4)*2')
+# result=exp.solve('(1+4)*2')
 # print(result)
 
 

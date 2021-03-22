@@ -5,10 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Test",
+            "name": "Python: Test Expression",
             "type": "python",
             "request": "launch",
-            "module": "test"
+            "console": "integratedTerminal",
+            "module": "expression"
         },
         {
             "name": "Python: Current File",
