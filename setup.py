@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
   name = 'expression',
   packages = ['expression'],
-  version = '0.0.2',
+  version = '0.0.3',
   description = 'parser and solve expressions',
   author = 'Flavio Lionel Rita',
   author_email = 'flaviolrita@hotmail.com',
