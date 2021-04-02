@@ -1,4 +1,5 @@
 import re
+import math
 
 class Singleton(type):
     _instances = {}
@@ -359,13 +360,15 @@ class AssigmentRightShift(Operator):
         self._operands[0].value >>= self._operands[1].value
         return self._operands[0].value
 
-class Manager(metaclass=Singleton):
+class Parser(metaclass=Singleton):
     def __init__(self):
        self.operators={}
        self.enums={} 
        self.functions={}
        self.initOperators()
-       self.initFunctions()
+       self.generalFunctions()
+       self.mathFunctions()
+       self.stringFunctions()
        self.initEnums()
     def initOperators(self):        
         self.add('+',Addition)
@@ -407,8 +410,54 @@ class Manager(metaclass=Singleton):
         self.add('^=',AssigmentBitXor)
         self.add('<<=',AssigmentLeftShift)
         self.add('>>=',AssigmentRightShift)
-    def initFunctions(self): 
+
+    def generalFunctions(self): 
         self.addFunction('nvl',lambda a,b: a if a!=None else b )
+    def mathFunctions(self):
+        self.addFunction('ceil',math.ceil)
+        self.addFunction('copysign',math.copysign) 
+        self.addFunction('factorial',math.factorial) 
+        self.addFunction('floor',math.floor) 
+        self.addFunction('fmod',math.fmod) 
+        self.addFunction('frexp',math.frexp) 
+        self.addFunction('fsum',math.fsum) 
+        self.addFunction('isfinite',math.isfinite) 
+        self.addFunction('isnan',math.isnan) 
+        self.addFunction('ldexp',math.ldexp) 
+        self.addFunction('modf',math.modf) 
+        self.addFunction('trunc',math.trunc) 
+        self.addFunction('exp',math.exp) 
+        self.addFunction('expm1',math.expm1) 
+        self.addFunction('log',math.log) 
+        self.addFunction('log1p',math.log1p) 
+        self.addFunction('log2',math.log2) 
+        self.addFunction('log10',math.log10) 
+        self.addFunction('pow',math.pow) 
+        self.addFunction('sqrt',math.sqrt) 
+        self.addFunction('acos',math.acos) 
+        self.addFunction('asin',math.asin) 
+        self.addFunction('atan',math.atan) 
+        self.addFunction('atan2',math.atan2) 
+        self.addFunction('cos',math.cos) 
+        self.addFunction('hypot',math.hypot) 
+        self.addFunction('sin',math.sin) 
+        self.addFunction('tan',math.tan) 
+        self.addFunction('degrees',math.degrees)
+        self.addFunction('radians',math.radians)
+        self.addFunction('acosh',math.acosh)
+        self.addFunction('asinh',math.asinh)
+        self.addFunction('atanh',math.atanh)
+        self.addFunction('cosh',math.cosh)
+        self.addFunction('sinh',math.sinh)
+        self.addFunction('tanh',math.tanh)
+        self.addFunction('erf',math.erf)
+        self.addFunction('erfc',math.erfc)
+        self.addFunction('gamma',math.gamma)
+        self.addFunction('lgamma',math.lgamma)
+        self.addFunction('pi',math.pi)
+        self.addFunction('e',math.e)
+
+    def stringFunctions(self):
         # https://docs.python.org/2.5/lib/string-methods.html
         self.addFunction('capitalize',lambda str: str.capitalize(),['str'])
         self.addFunction('count',lambda str,sub,start=None,end=None: str.count(sub,start,end),['str'])
@@ -479,14 +528,14 @@ class Manager(metaclass=Singleton):
 
     def parse(self,string)->Operand:
         try:
-            parser = Parser(self,string)
+            parser = _Parser(self,string)
             expression= parser.parse() 
             del parser
             return expression  
         except:
             raise ExpressionError('error in expression: '+string)  
 
-class Parser():
+class _Parser():
     def __init__(self,mgr,string):
        self.mgr = mgr 
        self.chars = self.clear(string)
