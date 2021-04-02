@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: py-expression
-Version: 0.0.7
+Version: 0.0.8
 Summary: parser and solve expressions
 Home-page: https://github.com/FlavioLionelRita/py-expression
 Author: Flavio Lionel Rita
@@ -14,7 +14,7 @@ Description:
         Parser is the main class of the library that contains the methods to parse, evaluate and simplify mathematical expressions. In order to use the library you need to create an instance of this class:
         
         ```python
-        from parser_expression import Parser
+        from py_expression.core import Parser
         
         parser = Parser()
         
@@ -22,7 +22,7 @@ Description:
         ## Parse
         
         ```python
-        from parser_expression import Parser
+        from py_expression.core import Parser
         
         parser = Parser()
         operand =parser.parse('a+4')
@@ -31,7 +31,7 @@ Description:
         ## Eval
         
         ```python
-        from parser_expression import Parser
+        from py_expression.core import Parser
         
         parser = Parser()
         operand =parser.parse('a+4')
@@ -39,7 +39,7 @@ Description:
         ```
         
         ```python
-        from parser_expression import Parser
+        from py_expression.core import Parser
         
         parser = Parser()
         result =parser.parse('a+4').eval({"a":2})
@@ -49,7 +49,7 @@ Description:
         
         reuse the parsed expression:
         ```python
-        from parser_expression import Parser
+        from py_expression.core import Parser
         
         parser = Parser()
         op = parser.parse('sin(x)') 
@@ -63,7 +63,7 @@ Description:
         
         create a new expression based on two or more parsed expressions:
         ```python
-        from parser_expression import Parser
+        from py_expression.core import Parser
         
         parser = Parser()
         parser = Parser()
