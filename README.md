@@ -5,7 +5,7 @@
 Parser is the main class of the library that contains the methods to parse, evaluate and simplify mathematical expressions. In order to use the library you need to create an instance of this class:
 
 ```python
-from parser_expression import Parser
+from py_expression.core import Parser
 
 parser = Parser()
 
@@ -13,7 +13,7 @@ parser = Parser()
 ## Parse
 
 ```python
-from parser_expression import Parser
+from py_expression.core import Parser
 
 parser = Parser()
 operand =parser.parse('a+4')
@@ -22,7 +22,7 @@ operand =parser.parse('a+4')
 ## Eval
 
 ```python
-from parser_expression import Parser
+from py_expression.core import Parser
 
 parser = Parser()
 operand =parser.parse('a+4')
@@ -30,7 +30,7 @@ result = operand.eval({"a":2})
 ```
 
 ```python
-from parser_expression import Parser
+from py_expression.core import Parser
 
 parser = Parser()
 result =parser.parse('a+4').eval({"a":2})
@@ -40,7 +40,7 @@ result =parser.parse('a+4').eval({"a":2})
 
 reuse the parsed expression:
 ```python
-from parser_expression import Parser
+from py_expression.core import Parser
 
 parser = Parser()
 op = parser.parse('sin(x)') 
@@ -54,7 +54,7 @@ for x in range(-100,100):
 
 create a new expression based on two or more parsed expressions:
 ```python
-from parser_expression import Parser
+from py_expression.core import Parser
 
 parser = Parser()
 parser = Parser()

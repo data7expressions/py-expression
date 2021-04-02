@@ -1,10 +1,13 @@
+#!/usr/bin/env python3
 from setuptools import setup
+# from distutils.core import setup
 with open('README.md') as f:
     long_description = f.read()
+
 setup(
   name = 'py-expression',
   packages = ['py_expression'],
-  version = '0.0.7',
+  version = '0.0.8',
   description = 'parser and solve expressions',
   long_description=long_description,
   long_description_content_type='text/markdown',  # This is important!

@@ -1,5 +1,5 @@
 import unittest
-from py_expression import Parser
+from py_expression.core import Parser
 
 parser = Parser()
 
