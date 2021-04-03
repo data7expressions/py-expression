@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: py-expression
-Version: 0.0.8
+Version: 0.0.9
 Summary: parser and solve expressions
 Home-page: https://github.com/FlavioLionelRita/py-expression
 Author: Flavio Lionel Rita
@@ -75,8 +75,8 @@ Description:
         resutl2= op3.eval({"a":5,"b":9})
         ```
         
-        
-        
+        # Project Examples
+        - [py-expression-test-graph](https://github.com/FlavioLionelRita/py-expression-test-graph)
         
         
         # Operators

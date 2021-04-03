@@ -1,5 +1,6 @@
 import re
 import math
+from enum import Enum
 
 class Singleton(type):
     _instances = {}
@@ -18,9 +19,9 @@ class Operand():
     def __add__(self, other):return Addition([other,self]) 
     def __sub__(self, other):return Subtraction([other,self])    
     def __mul__(self, other):return Multiplication([other,self])
-    def __pow__(self, other):return Exponentiation([other,self]) 
+    # def __pow__(self, other):return Exponentiation([other,self]) 
     def __truediv__(self, other):return Division([other,self]) 
-    def __floordiv__(self, other):return FloorDivision([other,self]) 
+    # def __floordiv__(self, other):return FloorDivision([other,self]) 
     def __mod__(self, other):return Mod([other,self])
 
     def __lshift__(self, other):return LeftShift([other,self])
@@ -49,21 +50,22 @@ class Operand():
     def __imod__(self, other):return AssigmentMod([other,self])
     def __ipow__(self, other):return AssigmentExponentiation([other,self])
 
-
-    def setContext(self,expression,context):
-        if type(expression).__name__ ==  'Variable':
-            expression.context = context
-        if hasattr(expression, 'operands'):
-            for p in expression.operands:
-                if type(p).__name__ ==  'Variable':
-                    p.context = context
-                elif hasattr(p, 'operands'):
-                    self.setContext(p,context) 
-
     def eval(self,context:dict=None):
+        parser = Parser()
         if context != None:
-            self.setContext(self,context)
-        return self.value 
+            parser.setContext(self,context)
+        return self.value
+
+    def vars(self):
+        parser = Parser()
+        return parser.getVars(self)
+    def constants(self):
+        parser = Parser()
+        return parser.getConstants(self) 
+    def operators(self):
+        parser = Parser()
+        return parser.getOperators(self) 
+        
 
 class Constant(Operand):
     def __init__(self,value,type ):
@@ -72,12 +74,15 @@ class Constant(Operand):
 
     @property
     def value(self): 
-        return self._value 
+        return self._value
+    @property
+    def type(self): 
+        return self._type     
 
     def __str__(self):
         return str(self._value)
     def __repr__(self):
-        return str(self._value)    
+        return str(self._value)  
 class Variable(Operand):
     def __init__(self,name ):
       self._name  = name
@@ -118,9 +123,21 @@ class Variable(Operand):
         return self._name
     def __repr__(self):
         return self._name      
-class Operator(Operand):
+class KeyValue(Operand):
+    def __init__(self,name,value:Operand):
+      super(KeyValue,self).__init__([value])
+      self._name  = name
+
+    @property
+    def name(self):
+        return self._name  
+    @property
+    def value(self): 
+        return self._operands[0].value
+
+class Operation(Operand):
     def __init__(self,operands ):
-      self._operands  = operands
+      self._operands  = operands   
 
     @property
     def operands(self):
@@ -128,17 +145,8 @@ class Operator(Operand):
 
     @property
     def value(self):
-        val=self._operands[0].value
-        l=len(self._operands)
-        i=1
-        while i<l:
-            val=self.solve(val,self._operands[i].value)
-            i+=1
-        return val  
-
-    def solve(self,a,b):
-        pass 
-class Function(Operator):
+        pass
+class Function(Operation):
     def __init__(self,mgr,name,args,isChild=False):
       super(Function,self).__init__(args)
       self.mgr  = mgr
@@ -166,18 +174,7 @@ class Function(Operator):
             for p in self._operands:args.append(p.value)    
 
         return function(*args)
-class KeyValue(Operator):
-    def __init__(self,name,value:Operand):
-      super(KeyValue,self).__init__([value])
-      self._name  = name
-
-    @property
-    def name(self):
-        return self._name  
-    @property
-    def value(self): 
-        return self._operands[0].value
-class Array(Operator):
+class Array(Operation):
     def __init__(self,elements=[]):
       super(Array,self).__init__([elements])
 
@@ -187,7 +184,7 @@ class Array(Operator):
         for p in self._operands:
             list.append(p.value)
         return list 
-class Object(Operator):
+class Object(Operation):
     def __init__(self,attributes=[]):
       super(Object,self).__init__(attributes)
 
@@ -196,7 +193,39 @@ class Object(Operator):
         dic= {}
         for p in self._operands:
             dic[p.name]=p.value
-        return dic  
+        return dic 
+class Operator(Operation):
+    def __init__(self,operands ):
+      super(Operator,self).__init__(operands)
+      self._name=""
+      self._category=""
+
+    @property
+    def name(self):
+        return self._name
+    @name.setter
+    def name(self,value):
+        self._name=value 
+    @property
+    def category(self):
+        return self._category
+    @category.setter
+    def category(self,value):
+        self._category=value        
+
+    @property
+    def value(self):
+        val=self._operands[0].value
+        l=len(self._operands)
+        i=1
+        while i<l:
+            val=self.solve(val,self._operands[i].value)
+            i+=1
+        return val  
+
+    def solve(self,a,b):
+        pass 
+
 class NegativeDecorator(Operator):
     def __init__(self,operand:Operand ):
         super(NegativeDecorator,self).__init__([operand])
@@ -362,54 +391,60 @@ class AssigmentRightShift(Operator):
 
 class Parser(metaclass=Singleton):
     def __init__(self):
-       self.operators={}
-       self.enums={} 
-       self.functions={}
+       self._operators={}
+       self._tripleOperators = []
+       self._doubleOperators = [] 
+       self._enums={} 
+       self._functions={}
        self.initOperators()
        self.generalFunctions()
        self.mathFunctions()
        self.stringFunctions()
        self.initEnums()
-    def initOperators(self):        
-        self.add('+',Addition)
-        self.add('-',Subtraction)
-        self.add('*',Multiplication)
-        self.add('/',Division)
-        self.add('**',Exponentiation)
-        self.add('//',FloorDivision)
-        self.add('%',Mod)
+       self.refresh()
+             
 
-        self.add('&',BitAnd)
-        self.add('|',BitOr)
-        self.add('^',BitXor)
-        self.add('~',BitNot)
-        self.add('<<',LeftShift)
-        self.add('>>',RightShift)
+    def initOperators(self):       
 
-        self.add('==',Equal)
-        self.add('!=',NotEqual)
-        self.add('>',GreaterThan)
-        self.add('<',LessThan)
-        self.add('>=',GreaterThanOrEqual)
-        self.add('<=',LessThanOrEqual)
+        self.addOperator('+','arithmetic',Addition,4)
+        self.addOperator('-','arithmetic',Subtraction,4)
+        self.addOperator('*','arithmetic',Multiplication,5)
+        self.addOperator('/','arithmetic',Division,5)
+        self.addOperator('**','arithmetic',Exponentiation,6)
+        self.addOperator('//','arithmetic',FloorDivision,6)
+        self.addOperator('%','arithmetic',Mod,7)
 
-        self.add('&&',And)
-        self.add('||',Or)
-        self.add('!',Not)
+        self.addOperator('&','bitwise',BitAnd)
+        self.addOperator('|','bitwise',BitOr)
+        self.addOperator('^','bitwise',BitXor)
+        self.addOperator('~','bitwise',BitNot)
+        self.addOperator('<<','bitwise',LeftShift)
+        self.addOperator('>>','bitwise',RightShift)
 
-        self.add('=',Assigment)
-        self.add('+=',AssigmentAddition)
-        self.add('-=',AssigmentSubtraction)
-        self.add('*=',AssigmentMultiplication)
-        self.add('/=',AssigmentDivision)
-        self.add('**=',AssigmentExponentiation)
-        self.add('//=',AssigmentFloorDivision)
-        self.add('%=',AssigmentMod)
-        self.add('&=',AssigmentBitAnd)
-        self.add('|=',AssigmentBitOr)
-        self.add('^=',AssigmentBitXor)
-        self.add('<<=',AssigmentLeftShift)
-        self.add('>>=',AssigmentRightShift)
+        self.addOperator('==','comparison',Equal,3)
+        self.addOperator('!=','comparison',NotEqual,3)
+        self.addOperator('>','comparison',GreaterThan,3)
+        self.addOperator('<','comparison',LessThan,3)
+        self.addOperator('>=','comparison',GreaterThanOrEqual,3)
+        self.addOperator('<=','comparison',LessThanOrEqual,3)
+
+        self.addOperator('&&','logical',And,2)
+        self.addOperator('||','logical',Or,2)
+        self.addOperator('!','logical',Not)
+
+        self.addOperator('=','assignment',Assigment,1)
+        self.addOperator('+=','assignment',AssigmentAddition,1)
+        self.addOperator('-=','assignment',AssigmentSubtraction,1)
+        self.addOperator('*=','assignment',AssigmentMultiplication,1)
+        self.addOperator('/=','assignment',AssigmentDivision,1)
+        self.addOperator('**=','assignment',AssigmentExponentiation,1)
+        self.addOperator('//=','assignment',AssigmentFloorDivision,1)
+        self.addOperator('%=','assignment',AssigmentMod,1)
+        self.addOperator('&=','assignment',AssigmentBitAnd,1)
+        self.addOperator('|=','assignment',AssigmentBitOr,1)
+        self.addOperator('^=','assignment',AssigmentBitXor,1)
+        self.addOperator('<<=','assignment',AssigmentLeftShift,1)
+        self.addOperator('>>=','assignment',AssigmentRightShift,1)
 
     def generalFunctions(self): 
         self.addFunction('nvl',lambda a,b: a if a!=None else b )
@@ -456,84 +491,161 @@ class Parser(metaclass=Singleton):
         self.addFunction('lgamma',math.lgamma)
         self.addFunction('pi',math.pi)
         self.addFunction('e',math.e)
-
     def stringFunctions(self):
         # https://docs.python.org/2.5/lib/string-methods.html
-        self.addFunction('capitalize',lambda str: str.capitalize(),['str'])
-        self.addFunction('count',lambda str,sub,start=None,end=None: str.count(sub,start,end),['str'])
-        self.addFunction('decode',lambda str,encoding: str.decode(encoding),['str'])
-        self.addFunction('encode',lambda str,encoding: str.encode(encoding),['str'])
-        self.addFunction('endswith',lambda str,suffix,start=None,end=None: str.endswith(suffix,start,end),['str'])
-        self.addFunction('find',lambda str,sub,start=None,end=None: str.find(sub,start,end),['str'])
-        self.addFunction('index',lambda str,sub,start=None,end=None: str.index(sub,start,end),['str'])
-        self.addFunction('isalnum',lambda str: str.isalnum(),['str'])
-        self.addFunction('isalpha',lambda str: str.isalpha(),['str'])
-        self.addFunction('isdigit',lambda str: str.isdigit(),['str'])
-        self.addFunction('islower',lambda str: str.islower(),['str'])
-        self.addFunction('isspace',lambda str: str.isspace(),['str'])
-        self.addFunction('istitle',lambda str: str.istitle(),['str'])
-        self.addFunction('isupper',lambda str: str.isupper(),['str'])
-        self.addFunction('join',lambda str,seq: str.join(seq),['str'])
-        self.addFunction('ljust',lambda str,width,fillchar=None: str.ljust(width,fillchar),['str'])
-        self.addFunction('lower',lambda str: str.lower(),['str'])
-        self.addFunction('lstrip',lambda str,chars: str.lstrip(chars),['str'])
-        self.addFunction('partition',lambda str,sep: str.partition(sep))
-        self.addFunction('replace',lambda str,old,new,count=None: str.replace(old,new,count),['str'])
-        self.addFunction('rfind',lambda str,sub,start=None,end=None: str.rfind(sub,start,end),['str'])
-        self.addFunction('rindex',lambda str,sub,start=None,end=None: str.rindex(sub,start,end),['str'])
-        self.addFunction('rjust',lambda str,width,fillchar=None: str.rjust(width,fillchar),['str'])
-        self.addFunction('rpartition',lambda str,sep: str.rpartition(sep),['str'])
-        self.addFunction('rsplit',lambda str,sep,maxsplit=None: str.rsplit(sep,maxsplit),['str'])
-        self.addFunction('rstrip',lambda str,chars: str.lstrip(chars),['str'])
-        self.addFunction('split',lambda str,sep,maxsplit=None: str.split(sep,maxsplit),['str'])
-        self.addFunction('splitlines',lambda str,keepends=None: str.splitlines(keepends),['str'])
-        self.addFunction('startswith',lambda str,prefix,start=None,end=None: str.startswith(prefix,start,end),['str'])
-        self.addFunction('strip',lambda str,chars: str.lstrip(chars),['str'])
-        self.addFunction('swapcase',lambda str: str.swapcase(),['str'])
-        self.addFunction('title',lambda str: str.title(),['str'])
-        self.addFunction('translate',lambda str,table,deletechars=None: str.translate(table,deletechars),['str'])
-        self.addFunction('upper',lambda str: str.upper(),['str'])
-        self.addFunction('zfill',lambda str,width: str.zfill(width),['str'])   
+
+
+
+        self.addFunction('capitalize',str.capitalize,['str'])
+        self.addFunction('count',str.count,['str'])
+        self.addFunction('encode',str.encode,['str'])
+        self.addFunction('endswith',str.endswith,['str'])
+        self.addFunction('find',str.find,['str'])
+        self.addFunction('index',str.index,['str'])
+        self.addFunction('isalnum',str.isalnum,['str'])
+        self.addFunction('isalpha',str.isalpha,['str'])
+        self.addFunction('isdigit',str.isdigit,['str'])
+        self.addFunction('islower',str.islower,['str'])
+        self.addFunction('isspace',str.isspace,['str'])
+        self.addFunction('istitle',str.istitle,['str'])
+        self.addFunction('isupper',str.isupper,['str'])
+        self.addFunction('join',str.join,['str'])
+        self.addFunction('ljust',str.ljust,['str'])
+        self.addFunction('lower',str.lower,['str'])
+        self.addFunction('lstrip',str.lstrip,['str'])
+        self.addFunction('partition',str.partition,['str'])
+        self.addFunction('replace',str.replace,['str'])
+        self.addFunction('rfind',str.rfind,['str'])
+        self.addFunction('rindex',str.rindex,['str'])
+        self.addFunction('rjust',str.rjust,['str'])
+        self.addFunction('rpartition',str.rpartition,['str'])
+        self.addFunction('rsplit',str.rsplit,['str'])
+        self.addFunction('rstrip',str.lstrip,['str'])
+        self.addFunction('split',str.split,['str'])
+        self.addFunction('splitlines',str.splitlines,['str'])
+        self.addFunction('startswith',str.startswith,['str'])
+        self.addFunction('strip',str.lstrip,['str'])
+        self.addFunction('swapcase',str.swapcase,['str'])
+        self.addFunction('title',str.title,['str'])
+        self.addFunction('translate',str.translate,['str'])
+        self.addFunction('upper',str.upper,['str'])
+        self.addFunction('zfill',str.zfill,['str'])   
     def initEnums(self): 
-        self.addEnum('DayOfWeek',{"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":0})
-    def add(self,k,imp):
-        self.operators[k]=imp
-    def new(self,k,operands):
-        try:
-            return self.operators[k](operands)
+        self.addEnum('DayOfWeek',{"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":0})        
+    
+    def refresh(self):
+        for key in self._operators.keys():
+            if len(key)==2: self._doubleOperators.append(key)
+            elif len(key)==3: self._tripleOperators.append(key)
+    
+    @property
+    def doubleOperators(self):
+        return self._doubleOperators
+
+    @property
+    def tripleOperators(self):
+        return self._tripleOperators   
+
+    def newOperator(self,key,operands):
+        try: 
+            operator = self._operators[key];               
+            op= operator["imp"](operands)
+            op.name = key
+            op.category = operator["category"]
+            return op
         except:
-            raise ExpressionError('error with operator: '+str(k))    
-    def addEnum(self,key,imp:dict):
-        self.enums[key] =imp 
+            raise ExpressionError('error with operator: '+str(key))  
+    def priority(self,key):
+        return self._operators[key]["priority"] if key in self._operators else -1          
+    def addOperator(self,key:str,category:str,imp:Operator,priority:int=-1):        
+        self._operators[key]={"category":category,"priority":priority,"imp":imp}
+    def addEnum(self,key,source):
+        if(type(source).__name__ == 'dict'):
+            self._enums[key] =source
+        elif issubclass(source, Enum):
+            list ={}
+            enum = {name: value for name, value in vars(source).items() if name.isupper()}
+            for p in enum:
+                list[p]=enum[p].value
+            self._enums[key] =list
+        else:
+            raise ExpressionError('enum not supported: '+key)      
     def isEnum(self,name):    
         names = name.split('.')
-        return names[0] in self.enums.keys()
+        return names[0] in self._enums.keys()
     def getEnumValue(self,name,option): 
-        return self.enums[name][option]
+        return self._enums[name][option]
     def getEnum(self,name): 
-        return self.enums[name]
+        return self._enums[name]
     def addFunction(self,key,imp,types=['any']):
-        if key not in self.functions.keys():
-            self.functions[key]= []
-        self.functions[key].append({'types':types,'imp':imp})         
+        if key not in self._functions.keys():
+            self._functions[key]= []
+        self._functions[key].append({'types':types,'imp':imp})         
     def getFunction(self,key,type='any'):
-        for p in self.functions[key]:
+        for p in self._functions[key]:
             if type in p['types']:
                 return p['imp']
         return None
-
     def solve(self,string:str,context:dict=None):        
         expression=self.parse(string)
         return expression.eval(context) 
-
     def parse(self,string)->Operand:
-        try:
+        try:            
             parser = _Parser(self,string)
             expression= parser.parse() 
             del parser
             return expression  
-        except:
-            raise ExpressionError('error in expression: '+string)  
+        except Exception as error:
+            raise ExpressionError('expression: '+string+' error: '+str(error))
+
+    def getVars(self,expression):
+        list = {}
+        if type(expression).__name__ ==  'Variable':
+            list[expression.name] = "any"
+        if hasattr(expression, 'operands'):
+            for p in expression.operands:
+                if type(p).__name__ ==  'Variable':
+                    list[p.name] = "any"
+                elif hasattr(p, 'operands'):
+                    subList= self.getVars(p)
+                    list = {**list, **subList}
+        return list        
+
+    def getConstants(self,expression):
+        list = {}
+        if type(expression).__name__ ==  'Constant':
+            list[expression.value] = expression.type
+        if hasattr(expression, 'operands'):
+            for p in expression.operands:
+                if type(p).__name__ ==  'Constant':
+                    list[p.value] = p.type
+                elif hasattr(p, 'operands'):
+                    subList= self.getConstants(p)
+                    list = {**list, **subList}
+        return list
+
+    def getOperators(self,expression):
+        list = {}
+        if isinstance(expression,Operator):
+            list[expression.name] = expression.category
+        if hasattr(expression, 'operands'):
+            for p in expression.operands:
+                if isinstance(p,Operator):
+                    list[p.name] = p.category
+                elif hasattr(p, 'operands'):
+                    subList= self.getOperators(p)
+                    list = {**list, **subList}
+        return list    
+        
+    def setContext(self,expression,context):
+        if type(expression).__name__ ==  'Variable':
+            expression.context = context
+        if hasattr(expression, 'operands'):
+            for p in expression.operands:
+                if type(p).__name__ ==  'Variable':
+                    p.context = context
+                elif hasattr(p, 'operands'):
+                    self.setContext(p,context)           
 
 class _Parser():
     def __init__(self,mgr,string):
@@ -599,18 +711,18 @@ class _Parser():
             b=  self.getOperand()
             op2= self.getOperator()
             if op2 is None or op2 in _break:
-                expression= self.mgr.new(op1,[a,b])
+                expression= self.mgr.newOperator(op1,[a,b])
                 isbreak= True
                 break
             elif self.priority(op1)>=self.priority(op2):
-                a=self.mgr.new(op1,[a,b])
+                a=self.mgr.newOperator(op1,[a,b])
                 op1=op2
             else:
                 b = self.getExpression(a=b,op1=op2,_break=_break)
-                expression= self.mgr.new(op1,[a,b])
+                expression= self.mgr.newOperator(op1,[a,b])
                 isbreak= True
                 break
-        if not isbreak: expression=self.mgr.new(op1,[a,b])
+        if not isbreak: expression=self.mgr.newOperator(op1,[a,b])
         # if all the operands are constant, reduce the expression a constant 
         if expression != None and hasattr(expression, 'operands'):
             allConstants=True              
@@ -734,13 +846,7 @@ class _Parser():
         return operand
 
     def priority(self,op):
-        if op in ['=','+=','-=','*=','/=','%=','**=','//=','&=','|=','^=','<<=','>>='] : return 1        
-        if op in ['&&','||'] : return 2
-        if op in ['>','<','>=','<=','!=','==']: return 3
-        if op in ['+','-'] : return 4
-        if op in ['*','/'] : return 5
-        if op in ['**','//'] : return 6
-        return -1
+        return self.mgr.priority(op)        
 
     def getValue(self):
         buff=[]
@@ -754,10 +860,12 @@ class _Parser():
         op=None
         if self.index+2 < self.length:
             triple = self.current+self.next+self.chars[self.index+2]
-            if triple in ['**=','//=','<<=','>>=']:op=triple
+            if triple in self.mgr.tripleOperators :op=triple
+            # if triple in ['**=','//=','<<=','>>=']:op=triple
         if op is None and  self.index+1 < self.length:
             double = self.current+self.next
-            if double in ['**','//','>=','<=','!=','==','+=','-=','*=','/=','%=','&&','||','|=','^=','<<','>>']  :op=double
+            if double in self.mgr.doubleOperators  :op=double
+            # if double in ['**','//','>=','<=','!=','==','+=','-=','*=','/=','%=','&&','||','|=','^=','<<','>>']  :op=double
         if op is None:op=self.current 
         self.index+=len(op)
         return op

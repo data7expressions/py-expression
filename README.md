@@ -175,10 +175,28 @@ context = {"a":[1,2,3],"b":2}
 | 'a[b]'                | 3
 | 'a[b-1]'              | 2
 
+# Strings
+
+| example               | result
+|:-------------         | :----------
+| '"a"'                 | a 
+| '"a"<"b"'             | True 
+| 'nvl(c,b)'            | c  
+| 'a.capitalize()'      | Aaa    
+| '"aaa".capitalize()'  | Aaa   
+| 'a.count("a")'        | 3
+| 'a.count("b")'        | 0 
+| 'a.upper()'           | AAA  
+| '"a"+a+b'             | aaaab   
+
 # Enums
 
+## Add number from dictionary 
 ```python
-exp.addEnum('ColorConversion',{"BGR2GRAY":6
+from py_expression.core import Parser
+parser = Parser()
+
+parser.addEnum('ColorConversion',{"BGR2GRAY":6
                              ,"BGR2HSV":40
                              ,"BGR2RGB":4
                              ,"GRAY2BGR":8
@@ -186,12 +204,37 @@ exp.addEnum('ColorConversion',{"BGR2GRAY":6
                              ,"HSV2RGB":55
                              ,"RGB2GRAY":7
                              ,"RGB2HSV":41})
+
+print(parser.solve('ColorConversion.GRAY2BGR'))                             
 ```
 
 | example                    | result
 |:-------------              | :----------
 | 'ColorConversion.GRAY2BGR' | 8 
 
+
+## Add num from enum derived class 
+```python
+from py_expression.core import Parser
+from enum import Enum
+parser = Parser()
+
+class Color(Enum):
+        RED = 1
+        GREEN = 2
+        BLUE = 3        
+
+parser.addEnum('Color',Color)
+
+print(parser.solve('Color.GREEN'))
+```
+
+| example                    | result
+|:-------------              | :----------
+| 'Color.GREEN'              | 2 
+
+
+# Functions
 
 ## Math Functions
 
@@ -242,30 +285,12 @@ exp.addEnum('ColorConversion',{"BGR2GRAY":6
 | pi() | Mathematical constant, the ratio of circumference of a circle to it's diameter (3.14159...)
 | e() | mathematical constant e (2.71828...)
 
-# Strings
-
-| example               | result
-|:-------------         | :----------
-| '"a"'                 | a 
-| '"a"<"b"'             | True 
-| 'nvl(c,b)'            | c  
-| 'a.capitalize()'      | Aaa    
-| '"aaa".capitalize()'  | Aaa   
-| 'a.count("a")'        | 3
-| 'a.count("b")'        | 0 
-| 'a.upper()'           | AAA  
-| '"a"+a+b'             | aaaab   
-
-
-
-
 ## String Functions
 | function               | description
 |:-------------          | :----------
 |capitalize( 	) | Return a copy of the string with only its first character capitalized. 
 |center( 	width[, fillchar]) | Return centered in a string of length width. Padding is done using the specified fillchar
 |count( 	sub[, start[, end]]) | Return the number of occurrences of substring sub in string 
-|decode( 	[encoding[, errors]]) |Decodes the string using the codec registered for encoding. encoding defaults to the default string encoding. 
 |encode( 	[encoding[,errors]]) |Return an encoded version of the string. Default encoding is the current default string encoding.
 | endswith( 	suffix[, start[, end]])|Return True if the string ends with the specified suffix, otherwise return False.
 |expandtabs( 	[tabsize]) |Return a copy of the string where all tab characters are expanded using spaces. If tabsize is not given, a tab size of 8 characters is assumed. 

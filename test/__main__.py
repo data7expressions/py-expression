@@ -1,5 +1,6 @@
 import unittest
 from py_expression.core import Parser
+from enum import Enum
 
 parser = Parser()
 
@@ -75,7 +76,12 @@ class TestExpression(unittest.TestCase):
 
         self.assertEqual(parser.solve('ColorConversion.GRAY2BGR'),8)
 
-        
+        class Color(Enum):
+            RED = 1
+            GREEN = 2
+            BLUE = 3        
 
-def test():
-    unittest.main()
+        parser.addEnum('Color',Color)
+        self.assertEqual(parser.solve('Color.GREEN'),2)        
+
+unittest.main()
