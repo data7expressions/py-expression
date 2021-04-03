@@ -4,6 +4,25 @@ from enum import Enum
 
 parser = Parser()
 
+op = parser.parse('"expression".count("e")>= a+1')
+vars = op.vars()
+constants = op.constants()
+operators = op.operators()
+functions = op.functions()
+
+result=op.eval({"a":1})
+
+a= str(vars) == "{'a': 'any'}"
+a= str(constants) == "{'expression': 'str', 'e': 'str', 1: 'int'}"
+a= str(operators) == "{'>=': 'comparison', '+': 'arithmetic'}"
+a= str(functions) == "{'count': {'isChild': True}}"
+
+print(vars)
+print(constants)
+print(operators)
+print(functions)
+print(result)
+
 class TestExpression(unittest.TestCase):
 
     def test_arithmetic(self):
@@ -82,6 +101,14 @@ class TestExpression(unittest.TestCase):
             BLUE = 3        
 
         parser.addEnum('Color',Color)
-        self.assertEqual(parser.solve('Color.GREEN'),2)        
+        self.assertEqual(parser.solve('Color.GREEN'),2)  
+
+    def test_info(self):
+
+        op = parser.parse('"expression".count("e")>= a+1')
+        self.assertEqual(op.vars(),{'a': 'any'})
+        self.assertEqual(op.constants(),{'expression': 'str', 'e': 'str', 1: 'int'})
+        self.assertEqual(op.operators(),{'>=': 'comparison', '+': 'arithmetic'})
+        self.assertEqual(op.functions(),{'count': {'isChild': True}} )         
 
 unittest.main()

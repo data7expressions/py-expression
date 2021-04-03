@@ -234,6 +234,50 @@ print(parser.solve('Color.GREEN'))
 | 'Color.GREEN'              | 2 
 
 
+
+
+
+
+
+
+
+
+
+
+# Expression Info
+
+| function               | description
+|:-------------          | :----------
+|vars                    | list of variables on expression
+|constants               | list of constants on expression
+|operators               | list of operators on expression
+|functions               | list of functions on expression
+
+## example:
+```python
+from py_expression.core import Parser
+parser = Parser()
+
+op = parser.parse('"expression".count("e")>= a+1')
+vars = op.vars()
+constants = op.constants()
+operators = op.operators()
+functions = op.functions()
+
+print(vars)
+print(constants)
+print(operators)
+print(functions)                            
+```
+
+Output:
+```bash
+{'a': 'any'}
+{'expression': 'str', 'e': 'str', 1: 'int'}
+{'>=': 'comparison', '+': 'arithmetic'}
+{'count': {'isChild': True}}
+```
+
 # Functions
 
 ## Math Functions

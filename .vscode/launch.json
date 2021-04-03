@@ -5,25 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Test",
+            "name": "Test",
             "type": "python",
             "request": "launch",
             "console": "integratedTerminal",
-            "module": "test"
-        },
-        {
-            "name": "Python: Expression",
-            "type": "python",
-            "request": "launch",
-            "console": "integratedTerminal",
-            "module": "py_expression"
-        },
-        {
-            "name": "Python: Current File",
-            "type": "python",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal"
+            "module": "py_expression_test"
         }
     ]
 }
