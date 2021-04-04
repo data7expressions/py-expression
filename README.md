@@ -1,20 +1,43 @@
+# Description
+Py-expression is an extensible expression evaluator and parser.
+Besides the operators, functions, variables, objects and arrays that are supported; it is possible to extend it with your own functions, operators, etc. 
+
+# Features
+
+- Parse and evaluate 
+    - Arithmetic operators
+    - assignment operators 
+    - comparison operators 
+    - Logical operators
+    - Bitwise Operators
+    - Variables
+    - Constants
+    - Functions
+    - Objects
+    - Arrayas
+    - Enums
+- Simplify math operations where operands are constant
+- It allows to extend the model by adding or overwriting operators, functions and enums 
+- Supports multiline expressions using the semicolon character to separate them 
+- The evaluation receives the context where the variables will be read, written, and created. This context must be a dictionary or a class derived from a dictionary 
+- When parsing a string that contains expression, an expression object is returned, which can be reused to evolve the expression with different contexts, in this way the performance is notably improved. 
+- You can create a new expression object using expression objects and combining them with operators 
 
 
-# Parser
+# Use 
 
-Parser is the main class of the library that contains the methods to parse, evaluate and simplify mathematical expressions. In order to use the library you need to create an instance of this class:
+## Parser
+Parser is the main class of the library that contains the methods to parse, evaluate, get info of expression, etc . In order to use the library you need to create an instance of this class:
 
 ```python
 from py_expression.core import Parser
-
 parser = Parser()
-
 ```
+
 ## Parse
 
 ```python
 from py_expression.core import Parser
-
 parser = Parser()
 operand =parser.parse('a+4')
 ```
@@ -83,9 +106,13 @@ Extend the expression library by adding enums and related functions to opencv
 In this project, the expression library and an opencv library that adds enums and functions is used to execute multi-line expressions that transform an image 
 - [github](https://github.com/FlavioLionelRita/py-expression-test-opencv)
 
-# Operators
 
-## Arithmetic Operators
+# Model
+
+## Operators
+
+### Arithmetic Operators
+
 ```python
 context = {"a":9,"b":4,"c":{"a":4,"b":5},"d":None}
 ```
@@ -100,7 +127,7 @@ context = {"a":9,"b":4,"c":{"a":4,"b":5},"d":None}
 |    //   |  a // c.b    | 1
 |    %    |  a % 2       | 1
 
-### Combinations
+Combinations:
 
 | example            | result
 |:-------------      | :----------
@@ -113,7 +140,7 @@ context = {"a":9,"b":4,"c":{"a":4,"b":5},"d":None}
 |    1+(2**3)*4      |   33
 |    -1+2**(3*4)     |   4095
 
-## Assignment Operators
+### Assignment Operators
 ```python
 context = {"a":9,"b":4,"c":{"a":4,"b":5},"d":None}
 ```
@@ -129,7 +156,7 @@ context = {"a":9,"b":4,"c":{"a":4,"b":5},"d":None}
 |    **=  |  a **= 2     | 81
 
 
-## Comparison Operators    
+### Comparison Operators    
 ```python
 context = {"a":9,"b":4,"c":{"a":4,"b":5},"d":None}
 ```
@@ -143,7 +170,7 @@ context = {"a":9,"b":4,"c":{"a":4,"b":5},"d":None}
 |    >=   |a >= 4        |True
 |    <=   |a <= c.b      |False
 
-##  Logical Operators
+###  Logical Operators
 
 ```python
 context = {"a":9,"b":4,"c":{"a":4,"b":5},"d":None}
@@ -155,7 +182,7 @@ context = {"a":9,"b":4,"c":{"a":4,"b":5},"d":None}
 |    !    |  !(b != c.a &#124;&#124; a>b)  | False
 
 
-## Bitwise Operators
+### Bitwise Operators
 
 |operator | example              | result
 |:------- | :----------          | :----------
@@ -166,7 +193,7 @@ context = {"a":9,"b":4,"c":{"a":4,"b":5},"d":None}
 | >>      |  5 >> 1              |  2
 
 
-# Objects
+## Objects
 ```python
 context = {"a":1,"b":{"c":1}}
 ```
@@ -177,7 +204,7 @@ context = {"a":1,"b":{"c":1}}
 | 'a={a:1}'             | {'a': {'a': 1}, 'b': {'c': 1}}
 | 'b.c=a+1'             | {'a': 1, 'b': {'c': 2}}
 
-# Arrays
+## Arrays
 ```python
 context = {"a":[1,2,3],"b":2}
 ```
@@ -188,7 +215,7 @@ context = {"a":[1,2,3],"b":2}
 | 'a[b]'                | 3
 | 'a[b-1]'              | 2
 
-# Strings
+## Strings
 
 | example               | result
 |:-------------         | :----------
@@ -202,9 +229,9 @@ context = {"a":[1,2,3],"b":2}
 | 'a.upper()'           | AAA  
 | '"a"+a+b'             | aaaab   
 
-# Enums
+## Enums
 
-## Add number from dictionary 
+### Add enum from dictionary 
 ```python
 from py_expression.core import Parser
 parser = Parser()
@@ -226,7 +253,7 @@ print(parser.solve('ColorConversion.GRAY2BGR'))
 | 'ColorConversion.GRAY2BGR' | 8 
 
 
-## Add num from enum derived class 
+### Add enum from enum derived class 
 ```python
 from py_expression.core import Parser
 from enum import Enum
@@ -257,7 +284,7 @@ print(parser.solve('Color.GREEN'))
 
 
 
-# Expression Info
+## Expression Info
 
 | function               | description
 |:-------------          | :----------
@@ -266,7 +293,7 @@ print(parser.solve('Color.GREEN'))
 |operators               | list of operators on expression
 |functions               | list of functions on expression
 
-## example:
+### example:
 ```python
 from py_expression.core import Parser
 parser = Parser()
@@ -291,7 +318,7 @@ Output:
 {'count': {'isChild': True}}
 ```
 
-# Multiline:
+## Multiline:
 You can write several lines of expressions using how to separate the semicolon 
 
 Example:
@@ -311,9 +338,9 @@ Result:
 24
 ```
 
-# Functions
+## Functions
 
-## Math Functions
+### Math Functions
 
 | function               | description
 |:-------------          | :----------
@@ -362,7 +389,7 @@ Result:
 | pi() | Mathematical constant, the ratio of circumference of a circle to it's diameter (3.14159...)
 | e() | mathematical constant e (2.71828...)
 
-## String Functions
+### String Functions
 | function               | description
 |:-------------          | :----------
 |capitalize( 	) | Return a copy of the string with only its first character capitalized. 
