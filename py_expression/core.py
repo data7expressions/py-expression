@@ -69,9 +69,6 @@ class Operand():
         parser = Parser()
         return parser.getFunctions(self)
 
-         
-        
-
 class Constant(Operand):
     def __init__(self,value,type ):
       self._value  = value
@@ -171,17 +168,22 @@ class Function(Operation):
             parent = self._operands.pop(0)
             value = parent.value
             _type = type(value).__name__
-            function=self.mgr.getFunction(self.name,_type)            
-            for p in self._operands:args.append(p.value)
-            args.insert(0,value)            
+            if isinstance(value,object) and hasattr(value, self.name):
+                function=getattr(value, self.name)
+                for p in self._operands:args.append(p.value)
+            else:    
+                function=self.mgr.getFunction(self.name,_type)            
+                for p in self._operands:args.append(p.value)
+                args.insert(0,value)            
         else:
             function=self.mgr.getFunction(self.name)
-            for p in self._operands:args.append(p.value)    
+            for p in self._operands:args.append(p.value)
+        return function(*args)    
 
-        return function(*args)
+        
 class Array(Operation):
     def __init__(self,elements=[]):
-      super(Array,self).__init__([elements])
+      super(Array,self).__init__(elements)
 
     @property
     def value(self):
@@ -651,6 +653,13 @@ class Parser(metaclass=Singleton):
                     subList= self.getFunctions(p)
                     list = {**list, **subList}
         return list
+
+    def functionInfo(self,key):
+        if key not in self._functions: return None
+        info=[]
+        for p in self._functions[key]:
+            info.append({'types':p['types']})
+        return info;
         
     def setContext(self,expression,context):
         if type(expression).__name__ ==  'Variable':
@@ -660,7 +669,19 @@ class Parser(metaclass=Singleton):
                 if type(p).__name__ ==  'Variable':
                     p.context = context
                 elif hasattr(p, 'operands'):
-                    self.setContext(p,context)           
+                    self.setContext(p,context) 
+
+
+class Lines(Operation):
+    def __init__(self,elements=[]):
+      super(Lines,self).__init__(elements)
+
+    @property
+    def value(self):        
+        for p in self._operands:
+            p.value
+        
+
 
 class _Parser():
     def __init__(self,mgr,string):
@@ -696,7 +717,7 @@ class _Parser():
             operands.append(operand)
         if len(operands)==1 :
             return operands[0]
-        return Array(operands) 
+        return Lines(operands) 
 
     @property
     def previous(self):

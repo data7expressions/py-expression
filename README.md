@@ -278,6 +278,26 @@ Output:
 {'count': {'isChild': True}}
 ```
 
+# Multiline:
+You can write several lines of expressions using how to separate the semicolon 
+
+Example:
+```python
+from py_expression.core import Parser
+parser = Parser()
+text='a=4; '\
+     'b=a+2; '\
+     'output=a*b; ' 
+expression = parser.parse(text)
+context = {}
+expression.eval(context)
+print(context['output'])                         
+```
+Result:
+```bash
+24
+```
+
 # Functions
 
 ## Math Functions
