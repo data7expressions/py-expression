@@ -564,8 +564,8 @@ class Parser(metaclass=Singleton):
             raise ExpressionError('error with operator: '+str(key))  
     def priority(self,key):
         return self._operators[key]["priority"] if key in self._operators else -1          
-    def addOperator(self,key:str,category:str,imp:Operator,priority:int=-1):        
-        self._operators[key]={"category":category,"priority":priority,"imp":imp}
+    def addOperator(self,key:str,category:str,source:Operator,priority:int=-1):        
+        self._operators[key]={"category":category,"priority":priority,"imp":source}
     def addEnum(self,key,source):
         if(type(source).__name__ == 'dict'):
             self._enums[key] =source
@@ -584,10 +584,10 @@ class Parser(metaclass=Singleton):
         return self._enums[name][option]
     def getEnum(self,name): 
         return self._enums[name]
-    def addFunction(self,key,imp,types=['any']):
-        if key not in self._functions.keys():
-            self._functions[key]= []
-        self._functions[key].append({'types':types,'imp':imp})         
+    def addFunction(self,name,source,types=['any']):
+        if name not in self._functions.keys():
+            self._functions[name]= []
+        self._functions[name].append({'types':types,'imp':source})         
     def getFunction(self,key,type='any'):
         for p in self._functions[key]:
             if type in p['types']:
