@@ -67,8 +67,21 @@ resutl2= op3.eval({"a":5,"b":9})
 ```
 
 # Project Examples
-- [py-expression-test-graph](https://github.com/FlavioLionelRita/py-expression-test-graph)
 
+## Test Graph
+In this project, the py-expression library is used to parse and evaluate expressions that a variable uses (in this case x) and the result is assigned to y.
+then the point (x,y) is shown in a diagram.
+In this example x takes the values from -100 to 100 
+
+- [github](https://github.com/FlavioLionelRita/py-expression-test-graph)
+
+## Lib Opencv
+Extend the expression library by adding enums and related functions to opencv 
+- [github](https://github.com/FlavioLionelRita/py-expression-lib-opencv)
+
+## Test Opencv
+In this project, the expression library and an opencv library that adds enums and functions is used to execute multi-line expressions that transform an image 
+- [github](https://github.com/FlavioLionelRita/py-expression-test-opencv)
 
 # Operators
 

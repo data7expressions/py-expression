@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: py-expression
-Version: 0.0.10
+Version: 1.0.0
 Summary: parser and solve expressions
 Home-page: https://github.com/FlavioLionelRita/py-expression
 Author: Flavio Lionel Rita
@@ -285,6 +285,26 @@ Description:
         {'expression': 'str', 'e': 'str', 1: 'int'}
         {'>=': 'comparison', '+': 'arithmetic'}
         {'count': {'isChild': True}}
+        ```
+        
+        # Multiline:
+        You can write several lines of expressions using how to separate the semicolon 
+        
+        Example:
+        ```python
+        from py_expression.core import Parser
+        parser = Parser()
+        text='a=4; '\
+             'b=a+2; '\
+             'output=a*b; ' 
+        expression = parser.parse(text)
+        context = {}
+        expression.eval(context)
+        print(context['output'])                         
+        ```
+        Result:
+        ```bash
+        24
         ```
         
         # Functions
