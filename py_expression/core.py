@@ -180,7 +180,35 @@ class Function(Operation):
             for p in self._operands:args.append(p.value)
         return function(*args)    
 
-        
+class If(Operation):
+    def __init__(self,condition,block,elseblock):
+      operands = [condition,block]
+      if elseblock != None: operands.append(elseblock)  
+      super(If,self).__init__(operands)      
+      self.condition  = condition
+      self.block  = block
+      self.elseblock  = elseblock
+
+    @property
+    def value(self): 
+        if self.condition.value:
+           self.block.value
+        elif self.elseblock != None:
+           self.elseblock.value  
+
+class While(Operation):
+    def __init__(self,condition,block):
+      operands = [condition,block]
+      super(While,self).__init__(operands)      
+      self.condition  = condition
+      self.block  = block
+
+    @property
+    def value(self): 
+        while self.condition.value:
+           self.block.value
+
+
 class Array(Operation):
     def __init__(self,elements=[]):
       super(Array,self).__init__(elements)
@@ -395,7 +423,15 @@ class AssigmentRightShift(Operator):
     def value(self):
         self._operands[0].value >>= self._operands[1].value
         return self._operands[0].value
+class Block(Operation):
+    def __init__(self,elements=[]):
+      super(Block,self).__init__(elements)
 
+    @property
+    def value(self):        
+        for p in self._operands:
+            p.value
+ 
 class Parser(metaclass=Singleton):
     def __init__(self):
        self._operators={}
@@ -455,6 +491,10 @@ class Parser(metaclass=Singleton):
 
     def generalFunctions(self): 
         self.addFunction('nvl',lambda a,b: a if a!=None else b )
+
+        
+
+
     def mathFunctions(self):
         self.addFunction('ceil',math.ceil)
         self.addFunction('copysign',math.copysign) 
@@ -670,19 +710,7 @@ class Parser(metaclass=Singleton):
                     p.context = context
                 elif hasattr(p, 'operands'):
                     self.setContext(p,context) 
-
-
-class Block(Operation):
-    def __init__(self,elements=[]):
-      super(Block,self).__init__(elements)
-
-    @property
-    def value(self):        
-        for p in self._operands:
-            p.value
-        
-
-
+       
 class _Parser():
     def __init__(self,mgr,string):
        self.mgr = mgr 
@@ -793,7 +821,13 @@ class _Parser():
 
         if char.isalnum():    
             value=  self.getValue()
-            if not self.end and self.current == '(':
+            if value=='if' and self.current == '(': 
+                self.index+=1
+                operand = self.getIfBlock()
+            elif value=='while' and self.current == '(': 
+                self.index+=1
+                operand = self.getWhileBlock()
+            elif not self.end and self.current == '(':
                 self.index+=1
                 args=  self.getArgs(end=')')
                 if '.' in value:
@@ -834,7 +868,7 @@ class _Parser():
             elif value=='true':                
                  operand = Constant(True,type(True))
             elif value=='false':                
-                 operand = Constant(False,type(False))          
+                 operand = Constant(False,type(False))
             elif self.mgr.isEnum(value):                
                 if '.' in value and self.mgr.isEnum(value):
                     names = value.split('.')
@@ -884,11 +918,17 @@ class _Parser():
     def priority(self,op):
         return self.mgr.priority(op)        
 
-    def getValue(self):
+    def getValue(self,increment:bool=True):
         buff=[]
-        while not self.end and self.reAlphanumeric.match(self.current):
-            buff.append(self.current)
-            self.index+=1
+        if increment:
+            while not self.end and self.reAlphanumeric.match(self.current):
+                buff.append(self.current)
+                self.index+=1
+        else:
+            index = self.index
+            while not self.end and self.reAlphanumeric.match(self.chars[index]):
+                buff.append(self.chars[index])
+                index+=1        
         return ''.join(buff)
 
     def getOperator(self):
@@ -939,3 +979,42 @@ class _Parser():
                 break
         
         return Object(attributes) 
+
+    def getBlock(self):
+        lines= []
+        while True:
+            line= self.getExpression(_break=';}')
+            if line != None :lines.append(line)
+            if self.previous=='}':
+                break        
+        return Block(lines)     
+
+    def getIfBlock(self):
+        condition= self.getExpression(_break=')')
+        if  self.current == '{':
+            self.index+=1  
+            block= self.getBlock()
+        else:
+            block= self.getExpression(_break=';') 
+
+        nextValue=self.getValue(increment=False)
+        elseblock=None
+        if nextValue=='else':
+            self.index+=len(nextValue)
+            if  self.current == '{':
+                self.index+=1  
+                elseblock= self.getBlock()
+            else:
+                elseblock= self.getExpression(_break=';') 
+
+        return If(condition,block,elseblock) 
+
+    def getWhileBlock(self):
+        condition= self.getExpression(_break=')')
+        if  self.current == '{':
+            self.index+=1  
+            block= self.getBlock()
+        else:
+            block= self.getExpression(_break=';') 
+
+        return While(condition,block)           

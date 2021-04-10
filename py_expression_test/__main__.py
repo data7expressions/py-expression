@@ -102,4 +102,21 @@ class TestExpression(unittest.TestCase):
         expression.eval(context)
         self.assertEqual(context['output'],24)
 
+    def test_blockControl(self):
+        
+        context = {}
+        parser.solve('output=1;if(1==2){output=2}else {output=3}',context)
+        self.assertEqual(context['output'],3)
+        parser.solve('output=1;if(1==1){output=2;}else {output=3;}',context)
+        self.assertEqual(context['output'],2)
+        parser.solve('i=0;while(i<=6){output=i*2;i=i+1;}',context)
+        self.assertEqual(context['output'],12)    
+
+
+text='i=0;while(i<6){output=i*2;i=i+1;}' 
+expression = parser.parse(text)
+context = {}
+result= expression.eval(context)
+print(context['output']) 
+
 unittest.main()
