@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: py-expression
-Version: 1.0.2
+Version: 1.0.3
 Summary: parser and solve expressions
 Home-page: https://github.com/FlavioLionelRita/py-expression
 Author: Flavio Lionel Rita
@@ -240,7 +240,7 @@ Description: # Description
         
         ## Enums
         
-        ### Add enum from dictionary 
+        Add enum and use
         ```python
         from py_expression.core import Parser
         parser = Parser()
@@ -260,37 +260,6 @@ Description: # Description
         | example                    | result
         |:-------------              | :----------
         | 'ColorConversion.GRAY2BGR' | 8 
-        
-        
-        ### Add enum from enum derived class 
-        ```python
-        from py_expression.core import Parser
-        from enum import Enum
-        parser = Parser()
-        
-        class Color(Enum):
-                RED = 1
-                GREEN = 2
-                BLUE = 3        
-        
-        parser.addEnum('Color',Color)
-        
-        print(parser.solve('Color.GREEN'))
-        ```
-        
-        | example                    | result
-        |:-------------              | :----------
-        | 'Color.GREEN'              | 2 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         
         
         ## Expression Info
@@ -436,6 +405,128 @@ Description: # Description
         |upper( 	) | Return a copy of the string converted to uppercase. 
         |zfill( 	width) |Return the numeric string left filled with zeros in a string of length width. The original string is returned if width is less than len(s)
         
+        
+        # Extend Model
+        It allows to extend the model by adding or overwriting enums, functions and operators
+        
+        ## Add Enum
+        To add an enum to the model the method addEnum is used, this method can add an enum from a dictionary or from a class derived from Enum 
+        
+        Parameters:
+        - name: name of enum
+        - source: dictionary or class derived from Enum 
+        
+        
+        ### Add enum from dictionary 
+        
+        Example:
+        ```python
+        from py_expression.core import Parser
+        parser = Parser()
+        
+        parser.addEnum('ColorConversion',{"BGR2GRAY":6
+                                     ,"BGR2HSV":40
+                                     ,"BGR2RGB":4
+                                     ,"GRAY2BGR":8
+                                     ,"HSV2BGR":54
+                                     ,"HSV2RGB":55
+                                     ,"RGB2GRAY":7
+                                     ,"RGB2HSV":41})
+        ```
+        
+        Use
+        ```python
+        print(parser.solve('ColorConversion.GRAY2BGR'))                             
+        ```
+        
+        | example                    | result
+        |:-------------              | :----------
+        | 'ColorConversion.GRAY2BGR' | 8 
+        
+        
+        ### Add enum from enum derived class
+        
+        Example:
+        ```python
+        from py_expression.core import Parser
+        from enum import Enum
+        parser = Parser()
+        
+        class Color(Enum):
+                RED = 1
+                GREEN = 2
+                BLUE = 3        
+        
+        parser.addEnum('Color',Color)
+        ```
+        
+        Use
+        ```python
+        print(parser.solve('Color.GREEN'))
+        ```
+        
+        | example                    | result
+        |:-------------              | :----------
+        | 'Color.GREEN'              | 2 
+        
+        
+        
+        ## Add Function
+        To add a function to the model, the addFunction method is used, this method adds a function from one created. 
+        
+        Parameters:
+        - name : name of function
+        - source: reference of def
+        - types (optional) :types associated with the function   
+        
+        Example:
+        ```python
+        from py_expression.core import Parser
+        parser = Parser()
+        
+        def cvCanny(image,threshold1,threshold2):
+            color = False
+            if len(image.shape) >= 3:
+                image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+                color = True
+            output = cv.Canny(image,threshold1,threshold2)
+            return cv.cvtColor(output, cv.COLOR_GRAY2BGR) if color else output
+        
+        parser.addFunction('cvImread',cv.imread)
+        parser.addFunction('cvImwrite',cv.imwrite)
+        parser.addFunction('cvtColor',cv.cvtColor)
+        parser.addFunction('cvCanny',cvCanny)
+        ```
+        
+        ## Add or override Operator
+        To add or overwrite an operator to the model, the addOperator method is used, this method adds an Operator from a class derived from Operator. 
+        
+        Parameters:
+        - key : symbol representing the operator
+        - category: category to which the operator belongs 
+        - source: reference to the class, this class must derive from Operator 
+        - priority (optional) : is the priority that this operator has over others when it is evaluated (Example: the addition operator has higher priority than the sum operator)   
+        
+        
+        Example:
+        ```python
+        from py_expression.core import Parser,Operator
+        parser = Parser()
+        
+        class Assigment(Operator):
+            @property
+            def value(self):
+                self._operands[0].value = self._operands[1].value
+                return self._operands[0].value
+        
+        class Addition(Operator):
+            def solve(self,a,b):
+                return a+b 
+        
+        self.addOperator('+','arithmetic',Addition,4)
+        self.addOperator('=','assignment',Assigment,1)
+        
+        ```
         
 Keywords: parser,expression
 Platform: UNKNOWN

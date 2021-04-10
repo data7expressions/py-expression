@@ -672,9 +672,9 @@ class Parser(metaclass=Singleton):
                     self.setContext(p,context) 
 
 
-class Lines(Operation):
+class Block(Operation):
     def __init__(self,elements=[]):
-      super(Lines,self).__init__(elements)
+      super(Block,self).__init__(elements)
 
     @property
     def value(self):        
@@ -717,7 +717,7 @@ class _Parser():
             operands.append(operand)
         if len(operands)==1 :
             return operands[0]
-        return Lines(operands) 
+        return Block(operands) 
 
     @property
     def previous(self):
@@ -732,33 +732,33 @@ class _Parser():
     def end(self):
         return self.index >= self.length   
 
-    def getExpression(self,a=None,op1=None,_break=''):
+    def getExpression(self,operand1=None,operator=None,_break=''):
         expression = None
-        b = None
+        operand2 = None
         isbreak = False               
         while not self.end:
-            if a is None and op1 is None: 
-                a=  self.getOperand()
-                op1= self.getOperator()
-                if op1 is None or op1 in _break: 
-                    expression = a
+            if operand1 is None and operator is None: 
+                operand1=  self.getOperand()
+                operator= self.getOperator()
+                if operator is None or operator in _break: 
+                    expression = operand1
                     isbreak= True
                     break
-            b=  self.getOperand()
-            op2= self.getOperator()
-            if op2 is None or op2 in _break:
-                expression= self.mgr.newOperator(op1,[a,b])
+            operand2=  self.getOperand()
+            nextOperator= self.getOperator()
+            if nextOperator is None or nextOperator in _break:
+                expression= self.mgr.newOperator(operator,[operand1,operand2])
                 isbreak= True
                 break
-            elif self.priority(op1)>=self.priority(op2):
-                a=self.mgr.newOperator(op1,[a,b])
-                op1=op2
+            elif self.priority(operator)>=self.priority(nextOperator):
+                operand1=self.mgr.newOperator(operator,[operand1,operand2])
+                operator=nextOperator
             else:
-                b = self.getExpression(a=b,op1=op2,_break=_break)
-                expression= self.mgr.newOperator(op1,[a,b])
+                operand2 = self.getExpression(operand1=operand2,operator=nextOperator,_break=_break)
+                expression= self.mgr.newOperator(operator,[operand1,operand2])
                 isbreak= True
                 break
-        if not isbreak: expression=self.mgr.newOperator(op1,[a,b])
+        if not isbreak: expression=self.mgr.newOperator(operator,[operand1,operand2])
         # if all the operands are constant, reduce the expression a constant 
         if expression != None and hasattr(expression, 'operands'):
             allConstants=True              
