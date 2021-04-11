@@ -426,6 +426,9 @@ class Block(Operation):
  
 class Exp(metaclass=Singleton):
     def __init__(self):
+       self.reAlphanumeric = re.compile('[a-zA-Z0-9_.]+$') 
+       self.reInt = re.compile('[0-9]+$')
+       self.reFloat = re.compile('(\d+(\.\d*)?|\.\d+)([eE]\d+)?')
        self._operators={}
        self._tripleOperators = []
        self._doubleOperators = [] 
@@ -482,10 +485,8 @@ class Exp(metaclass=Singleton):
 
     def generalFunctions(self): 
         self.addFunction('nvl',lambda a,b: a if a!=None and a!="" else b )
-
-        
-
-
+        self.addFunction('isEmpty',lambda a: a==None or a =="")
+      
     def mathFunctions(self):
         self.addFunction('ceil',math.ceil)
         self.addFunction('copysign',math.copysign) 
@@ -715,11 +716,7 @@ class Parser():
        self.chars = self.clear(string)
        self.length=len(self.chars)
        self.index=0
-       self.reAlphanumeric = re.compile('[a-zA-Z0-9_.]+$') 
-       self.reInt = re.compile('[0-9]+$')
-       self.reFloat = re.compile('(\d+(\.\d*)?|\.\d+)([eE]\d+)?')
-  
-
+       
     @staticmethod
     def clear(string):
         isString=False
@@ -827,23 +824,11 @@ class Parser():
                 operand = self.getWhileBlock()
             elif not self.end and self.current == '(':
                 self.index+=1
-                args=  self.getArgs(end=')')
-                if '.' in value:
-                    names = value.split('.')
-                    key = names.pop()
-                    variableName= '.'.join(names)
-                    variable = Variable(variableName)
-                    args.insert(0,variable)
-                    operand= Function(self.mgr,key,args,True)
-                else:
-                    operand= Function(self.mgr,value,args)       
-
+                operand= self.getFunction(value)
             elif not self.end and self.current == '[':
                 self.index+=1    
-                idx= self.getExpression(_break=']')
-                operand= Variable(value)
-                operand = IndexDecorator(operand,idx)                
-            elif self.reInt.match(value): 
+                operand = self.getIndexOperand(value)              
+            elif self.mgr.reInt.match(value): 
                 if isNegative:
                     value = int(value)* -1
                     isNegative= False 
@@ -853,7 +838,7 @@ class Parser():
                 else:
                     value =int(value)
                 operand = Constant(value,'int')
-            elif self.reFloat.match(value):
+            elif self.mgr.reFloat.match(value):
                 if isNegative:
                     value = float(value)* -1
                     isNegative= False
@@ -864,26 +849,11 @@ class Parser():
                     value =float(value)
                 operand = Constant(value,'float')
             elif value=='true':                
-                 operand = Constant(True,type(True))
+                operand = Constant(True,type(True))
             elif value=='false':                
-                 operand = Constant(False,type(False))
+                operand = Constant(False,type(False))
             elif self.mgr.isEnum(value):                
-                if '.' in value and self.mgr.isEnum(value):
-                    names = value.split('.')
-                    enumName = names[0]
-                    enumOption = names[1] 
-                    enumValue= self.mgr.getEnumValue(enumName,enumOption)
-                    enumType = type(enumValue).__name__
-                    operand = Constant(enumValue,enumType)
-                else:
-                    values= self.mgr.getEnum(value)
-                    attributes= []
-                    for name in values:
-                        _value = values[name]
-                        _valueType = type(_value).__name__
-                        attribute = KeyValue(name,Constant(_value,_valueType))
-                        attributes.append(attribute)
-                    operand= Object(attributes)
+                operand= self.getEnum(value)
             else:
                 operand = Variable(value)
         elif char == '\'' or char == '"':
@@ -919,12 +889,12 @@ class Parser():
     def getValue(self,increment:bool=True):
         buff=[]
         if increment:
-            while not self.end and self.reAlphanumeric.match(self.current):
+            while not self.end and self.mgr.reAlphanumeric.match(self.current):
                 buff.append(self.current)
                 self.index+=1
         else:
             index = self.index
-            while not self.end and self.reAlphanumeric.match(self.chars[index]):
+            while not self.end and self.mgr.reAlphanumeric.match(self.chars[index]):
                 buff.append(self.chars[index])
                 index+=1        
         return ''.join(buff)
@@ -1015,4 +985,42 @@ class Parser():
         else:
             block= self.getExpression(_break=';') 
 
-        return While(condition,block)           
+        return While(condition,block)   
+
+    def getFunction(self,name):
+        args=  self.getArgs(end=')')
+        if '.' in name:
+            names = name.split('.')
+            key = names.pop()
+            variableName= '.'.join(names)
+            variable = Variable(variableName)
+            args.insert(0,variable)
+            return Function(self.mgr,key,args,True)
+        else:
+            return Function(self.mgr,name,args)
+
+    def getIndexOperand(self,name):
+        idx= self.getExpression(_break=']')
+        operand= Variable(name)
+        return IndexDecorator(operand,idx) 
+
+    def getEnum(self,value):
+        if '.' in value and self.mgr.isEnum(value):
+            names = value.split('.')
+            enumName = names[0]
+            enumOption = names[1] 
+            enumValue= self.mgr.getEnumValue(enumName,enumOption)
+            enumType = type(enumValue).__name__
+            return Constant(enumValue,enumType)
+        else:
+            values= self.mgr.getEnum(value)
+            attributes= []
+            for name in values:
+                _value = values[name]
+                _valueType = type(_value).__name__
+                attribute = KeyValue(name,Constant(_value,_valueType))
+                attributes.append(attribute)
+            return Object(attributes)
+   
+
+                            
