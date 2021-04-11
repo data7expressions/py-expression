@@ -3,6 +3,7 @@ setup.cfg
 setup.py
 py_expression/__init__.py
 py_expression/core.py
+py_expression/functions.py
 py_expression.egg-info/PKG-INFO
 py_expression.egg-info/SOURCES.txt
 py_expression.egg-info/dependency_links.txt
