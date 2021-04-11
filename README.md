@@ -26,47 +26,47 @@ Besides the operators, functions, variables, objects and arrays that are support
 
 # Use 
 
-## Parser
-Parser is the main class of the library that contains the methods to parse, evaluate, get info of expression, etc . In order to use the library you need to create an instance of this class:
+## Exp
+Exp is the main class of the library that contains the methods to parse, evaluate, get info of expression, etc . In order to use the library you need to create an instance of this class:
 
 ```python
-from py_expression.core import Parser
-parser = Parser()
+from py_expression.core import Exp
+exp = Exp()
 ```
 
 ## Parse
 
 ```python
-from py_expression.core import Parser
-parser = Parser()
-operand =parser.parse('a+4')
+from py_expression.core import Exp
+exp = Exp()
+operand =exp.parse('a+4')
 ```
 
 ## Eval
 
 ```python
-from py_expression.core import Parser
+from py_expression.core import Exp
 
-parser = Parser()
-operand =parser.parse('a+4')
+exp = Exp()
+operand =exp.parse('a+4')
 result = operand.eval({"a":2})
 ```
 
 ```python
-from py_expression.core import Parser
+from py_expression.core import Exp
 
-parser = Parser()
-result =parser.parse('a+4').eval({"a":2})
+exp = Exp()
+result =exp.parse('a+4').eval({"a":2})
 ```
 
 ## Work with expressions
 
 reuse the parsed expression:
 ```python
-from py_expression.core import Parser
+from py_expression.core import Exp
 
-parser = Parser()
-op = parser.parse('sin(x)') 
+exp = Exp()
+op = exp.parse('sin(x)') 
 xs=[]
 ys=[] 
 for x in range(-100,100):
@@ -77,12 +77,11 @@ for x in range(-100,100):
 
 create a new expression based on two or more parsed expressions:
 ```python
-from py_expression.core import Parser
+from py_expression.core import Exp
 
-parser = Parser()
-parser = Parser()
-op1 = parser.parse('a+1')
-op2 = parser.parse('b')
+exp = Exp()
+op1 = exp.parse('a+1')
+op2 = exp.parse('b')
 op3 = (op1+op2)*(op1-op2) >= (op1*2)
 
 resutl1= op3.eval({"a":1,"b":2})
@@ -233,10 +232,10 @@ context = {"a":[1,2,3],"b":2}
 
 Add enum and use
 ```python
-from py_expression.core import Parser
-parser = Parser()
+from py_expression.core import Exp
+exp = Exp()
 
-parser.addEnum('ColorConversion',{"BGR2GRAY":6
+exp.addEnum('ColorConversion',{"BGR2GRAY":6
                              ,"BGR2HSV":40
                              ,"BGR2RGB":4
                              ,"GRAY2BGR":8
@@ -245,7 +244,7 @@ parser.addEnum('ColorConversion',{"BGR2GRAY":6
                              ,"RGB2GRAY":7
                              ,"RGB2HSV":41})
 
-print(parser.solve('ColorConversion.GRAY2BGR'))                             
+print(exp.solve('ColorConversion.GRAY2BGR'))                             
 ```
 
 | example                    | result
@@ -264,10 +263,10 @@ print(parser.solve('ColorConversion.GRAY2BGR'))
 
 ### example:
 ```python
-from py_expression.core import Parser
-parser = Parser()
+from py_expression.core import Exp
+exp = Exp()
 
-op = parser.parse('"expression".count("e")>= a+1')
+op = exp.parse('"expression".count("e")>= a+1')
 vars = op.vars()
 constants = op.constants()
 operators = op.operators()
@@ -292,12 +291,12 @@ You can write several lines of expressions using how to separate the semicolon
 
 Example:
 ```python
-from py_expression.core import Parser
-parser = Parser()
+from py_expression.core import Exp
+exp = Exp()
 text='a=4; '\
      'b=a+2; '\
      'output=a*b; ' 
-expression = parser.parse(text)
+expression = exp.parse(text)
 context = {}
 expression.eval(context)
 print(context['output'])                         
@@ -412,10 +411,10 @@ Parameters:
 
 Example:
 ```python
-from py_expression.core import Parser
-parser = Parser()
+from py_expression.core import Exp
+exp = Exp()
 
-parser.addEnum('ColorConversion',{"BGR2GRAY":6
+exp.addEnum('ColorConversion',{"BGR2GRAY":6
                              ,"BGR2HSV":40
                              ,"BGR2RGB":4
                              ,"GRAY2BGR":8
@@ -427,7 +426,7 @@ parser.addEnum('ColorConversion',{"BGR2GRAY":6
 
 Use
 ```python
-print(parser.solve('ColorConversion.GRAY2BGR'))                             
+print(exp.solve('ColorConversion.GRAY2BGR'))                             
 ```
 
 | example                    | result
@@ -439,21 +438,21 @@ print(parser.solve('ColorConversion.GRAY2BGR'))
 
 Example:
 ```python
-from py_expression.core import Parser
+from py_expression.core import Exp
 from enum import Enum
-parser = Parser()
+exp = Exp()
 
 class Color(Enum):
         RED = 1
         GREEN = 2
         BLUE = 3        
 
-parser.addEnum('Color',Color)
+exp.addEnum('Color',Color)
 ```
 
 Use
 ```python
-print(parser.solve('Color.GREEN'))
+print(exp.solve('Color.GREEN'))
 ```
 
 | example                    | result
@@ -472,8 +471,8 @@ Parameters:
 
 Example:
 ```python
-from py_expression.core import Parser
-parser = Parser()
+from py_expression.core import Exp
+exp = Exp()
 
 def cvCanny(image,threshold1,threshold2):
     color = False
@@ -483,10 +482,10 @@ def cvCanny(image,threshold1,threshold2):
     output = cv.Canny(image,threshold1,threshold2)
     return cv.cvtColor(output, cv.COLOR_GRAY2BGR) if color else output
 
-parser.addFunction('cvImread',cv.imread)
-parser.addFunction('cvImwrite',cv.imwrite)
-parser.addFunction('cvtColor',cv.cvtColor)
-parser.addFunction('cvCanny',cvCanny)
+exp.addFunction('cvImread',cv.imread)
+exp.addFunction('cvImwrite',cv.imwrite)
+exp.addFunction('cvtColor',cv.cvtColor)
+exp.addFunction('cvCanny',cvCanny)
 ```
 
 ## Add or override Operator
@@ -501,8 +500,8 @@ Parameters:
 
 Example:
 ```python
-from py_expression.core import Parser,Operator
-parser = Parser()
+from py_expression.core import Exp,Operator
+exp = Exp()
 
 class Assigment(Operator):
     @property
@@ -514,7 +513,7 @@ class Addition(Operator):
     def solve(self,a,b):
         return a+b 
 
-self.addOperator('+','arithmetic',Addition,4)
-self.addOperator('=','assignment',Assigment,1)
+exp.addOperator('+','arithmetic',Addition,4)
+exp.addOperator('=','assignment',Assigment,1)
 
 ```

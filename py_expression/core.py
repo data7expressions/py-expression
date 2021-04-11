@@ -51,23 +51,15 @@ class Operand():
     def __ipow__(self, other):return AssigmentExponentiation([other,self])
 
     def eval(self,context:dict=None):
-        parser = Parser()
-        if context != None:
-            parser.setContext(self,context)
-        return self.value
-
+        return Exp().eval(self,context)
     def vars(self):
-        parser = Parser()
-        return parser.getVars(self)
+        return Exp().getVars(self)
     def constants(self):
-        parser = Parser()
-        return parser.getConstants(self) 
+        return Exp().getConstants(self) 
     def operators(self):
-        parser = Parser()
-        return parser.getOperators(self)
+        return Exp().getOperators(self)
     def functions(self):
-        parser = Parser()
-        return parser.getFunctions(self)
+        return Exp().getFunctions(self)
 
 class Constant(Operand):
     def __init__(self,value,type ):
@@ -432,7 +424,7 @@ class Block(Operation):
         for p in self._operands:
             p.value
  
-class Parser(metaclass=Singleton):
+class Exp(metaclass=Singleton):
     def __init__(self):
        self._operators={}
        self._tripleOperators = []
@@ -445,8 +437,7 @@ class Parser(metaclass=Singleton):
        self.stringFunctions()
        self.initEnums()
        self.refresh()
-             
-
+           
     def initOperators(self):       
 
         self.addOperator('+','arithmetic',Addition,4)
@@ -490,7 +481,7 @@ class Parser(metaclass=Singleton):
         self.addOperator('>>=','assignment',AssigmentRightShift,1)
 
     def generalFunctions(self): 
-        self.addFunction('nvl',lambda a,b: a if a!=None else b )
+        self.addFunction('nvl',lambda a,b: a if a!=None and a!="" else b )
 
         
 
@@ -633,17 +624,24 @@ class Parser(metaclass=Singleton):
             if type in p['types']:
                 return p['imp']
         return None
-    def solve(self,string:str,context:dict=None):        
-        expression=self.parse(string)
-        return expression.eval(context) 
+   
     def parse(self,string)->Operand:
         try:            
-            parser = _Parser(self,string)
+            parser = Parser(self,string)
             expression= parser.parse() 
             del parser
             return expression  
         except Exception as error:
             raise ExpressionError('expression: '+string+' error: '+str(error))
+
+    def eval(self,operand:Operand,context:dict=None):
+        if context != None:
+            self.setContext(operand,context)
+        return operand.value
+
+    def solve(self,string:str,context:dict=None):        
+        expression=self.parse(string)
+        return self.eval(expression,context) 
 
     def getVars(self,expression):
         list = {}
@@ -711,7 +709,7 @@ class Parser(metaclass=Singleton):
                 elif hasattr(p, 'operands'):
                     self.setContext(p,context) 
        
-class _Parser():
+class Parser():
     def __init__(self,mgr,string):
        self.mgr = mgr 
        self.chars = self.clear(string)
