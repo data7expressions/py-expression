@@ -113,7 +113,7 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(context['output'],12)    
 
 
-text='i=0;while(i<6){output=i*2;i=i+1;}' 
+text='a=1;\nb=2\r\n' 
 expression = exp.parse(text)
 context = {}
 result= expression.eval(context)

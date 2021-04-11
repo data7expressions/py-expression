@@ -1,13 +1,7 @@
 import re
 import math
 from enum import Enum
-
-class Singleton(type):
-    _instances = {}
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
+from .base import *
 
 class ExpressionError(Exception):pass
 
@@ -716,7 +710,7 @@ class Parser():
        self.chars = self.clear(string)
        self.length=len(self.chars)
        self.index=0
-       
+
     @staticmethod
     def clear(string):
         isString=False
@@ -728,7 +722,7 @@ class Parser():
             elif not isString and (p == '\'' or p=='"'):
                 isString=True
                 quotes=p
-            if p != ' ' or isString:
+            if (p != ' ' and p!='\n' and p!='\r' and p!='\t' ) or isString:
                result.append(p)
         return result
 
