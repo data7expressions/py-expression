@@ -49,6 +49,14 @@ from py_expression.core import Exp
 
 exp = Exp()
 operand =exp.parse('a+4')
+result = exp.eval(operand,{"a":2})
+```
+
+```python
+from py_expression.core import Exp
+
+exp = Exp()
+operand =exp.parse('a+4')
 result = operand.eval({"a":2})
 ```
 
