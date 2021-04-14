@@ -113,10 +113,10 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(context['output'],12)    
 
 
-text='a=1;\nb=2\r\n' 
-expression = exp.parse(text)
-context = {}
-result= expression.eval(context)
-print(context['output']) 
+# text='a=1;\nb=2\r\n' 
+# expression = exp.parse(text)
+# context = {}
+# result= expression.eval(context)
+# print(context['output']) 
 
 unittest.main()
