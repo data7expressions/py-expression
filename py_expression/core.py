@@ -1,5 +1,6 @@
 import re
 import math
+import time as t
 from datetime import date,datetime,time,timedelta
 import pytz
 from os import path,getcwd
@@ -485,7 +486,7 @@ class Exp(metaclass=Singleton):
     def generalFunctions(self): 
         self.addFunction('nvl',lambda a,b: a if a!=None and a!="" else b )
         self.addFunction('isEmpty',lambda a: a==None or a =="")
-        self.addFunction('sleep',time.sleep)        
+        self.addFunction('sleep',t.sleep)        
       
     def mathFunctions(self):
         self.addFunction('ceil',math.ceil)
