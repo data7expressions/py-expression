@@ -1,5 +1,8 @@
 import re
 import math
+from datetime import date,datetime,time,timedelta
+import pytz
+from os import path,getcwd
 from enum import Enum
 from .base import *
 
@@ -431,7 +434,9 @@ class Exp(metaclass=Singleton):
        self.initOperators()
        self.generalFunctions()
        self.mathFunctions()
+       self.datetimeFunctions()
        self.stringFunctions()
+       self.ioFunctions()
        self.initEnums()
        self.refresh()
            
@@ -480,6 +485,7 @@ class Exp(metaclass=Singleton):
     def generalFunctions(self): 
         self.addFunction('nvl',lambda a,b: a if a!=None and a!="" else b )
         self.addFunction('isEmpty',lambda a: a==None or a =="")
+        self.addFunction('sleep',time.sleep)        
       
     def mathFunctions(self):
         self.addFunction('ceil',math.ceil)
@@ -524,10 +530,24 @@ class Exp(metaclass=Singleton):
         self.addFunction('lgamma',math.lgamma)
         self.addFunction('pi',math.pi)
         self.addFunction('e',math.e)
+    
+    def datetimeFunctions(self):
+        # https://stackabuse.com/how-to-format-dates-in-python/
+        # https://www.programiz.com/python-programming/datetime
+
+        self.addFunction('strftime',datetime.strftime,['datetime'])
+        self.addFunction('strptime',datetime.strptime)        
+        self.addFunction('datetime',datetime)
+        self.addFunction('today',date.today)
+        self.addFunction('now',datetime.now)
+        self.addFunction('date',date)
+        self.addFunction('fromtimestamp',date.fromtimestamp)
+        self.addFunction('time',time)
+        self.addFunction('timedelta',timedelta)
+        self.addFunction('timezone',pytz.timezone) 
+
     def stringFunctions(self):
         # https://docs.python.org/2.5/lib/string-methods.html
-
-
 
         self.addFunction('capitalize',str.capitalize,['str'])
         self.addFunction('count',str.count,['str'])
@@ -563,6 +583,19 @@ class Exp(metaclass=Singleton):
         self.addFunction('translate',str.translate,['str'])
         self.addFunction('upper',str.upper,['str'])
         self.addFunction('zfill',str.zfill,['str'])   
+
+    def ioFunctions(self): 
+        class Volume():
+            def __init__(self,_path):        
+                self._root = _path if path.isabs(_path) else path.join(getcwd(),_path) 
+            def fullpath(self,_path):
+                return path.join(self._root,_path)
+        def createVolume(_path):return Volume(_path)
+
+        self.addFunction('Volume',createVolume)
+        self.addFunction('pathRoot',getcwd)
+        self.addFunction('pathJoin',path.join)
+
     def initEnums(self): 
         self.addEnum('DayOfWeek',{"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":0})        
     
