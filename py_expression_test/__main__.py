@@ -110,13 +110,16 @@ class TestExpression(unittest.TestCase):
         exp.solve('output=1;if(1==1){output=2;}else {output=3;}',context)
         self.assertEqual(context['output'],2)
         exp.solve('i=0;while(i<=6){output=i*2;i=i+1;}',context)
-        self.assertEqual(context['output'],12)    
+        self.assertEqual(context['output'],12)   
 
-
-# text='a=1;\nb=2\r\n' 
-# expression = exp.parse(text)
-# context = {}
-# result= expression.eval(context)
-# print(context['output']) 
+    def test_initializeLines(self):
+            
+        text = 'rectangle = {"x":50,"y":50,"width":80,"height":60}; '\
+               'sleepSecs = 1;'\
+               'source=nvl(source,"data/source.jpg");'
+        expression = exp.parse(text)
+        context = {}
+        result= expression.eval(context)
+        self.assertEqual(context['rectangle']['x'],50)
 
 unittest.main()

@@ -96,6 +96,7 @@ class Variable(Operand):
     def value(self):
         _value = self._context
         for n in self._names:
+            if n not in _value: return None
             _value=_value[n]
         return _value
 
@@ -115,17 +116,7 @@ class Variable(Operand):
         return self._name
     def __repr__(self):
         return self._name      
-class KeyValue(Operand):
-    def __init__(self,name,value:Operand):
-      super(KeyValue,self).__init__([value])
-      self._name  = name
 
-    @property
-    def name(self):
-        return self._name  
-    @property
-    def value(self): 
-        return self._operands[0].value
 
 class Operation(Operand):
     def __init__(self,operands ):
@@ -138,6 +129,19 @@ class Operation(Operand):
     @property
     def value(self):
         pass
+
+class KeyValue(Operation):
+    def __init__(self,name,value:Operand):
+      super(KeyValue,self).__init__([value])
+      self._name  = name
+
+    @property
+    def name(self):
+        return self._name  
+    @property
+    def value(self): 
+        return self._operands[0].value
+        
 class Function(Operation):
     def __init__(self,mgr,name,args,isChild=False):
       super(Function,self).__init__(args)
@@ -964,14 +968,19 @@ class Parser():
     def getObject(self):
         attributes= []
         while True:
-            name= self.getValue()
+            name=None
+            if self.current== '"' or  self.current == "'":
+                char= self.current
+                self.index+=1
+                name= self.getString(char)
+            else:    
+                name= self.getValue()
             if self.current==':':self.index+=1
             else:raise ExpressionError('attribute '+name+' without value')
             value= self.getExpression(_break=',}')
             attribute = KeyValue(name,value)
             attributes.append(attribute)
             if self.previous=='}':
-                self.index+=1 
                 break
         
         return Object(attributes) 
