@@ -21,12 +21,21 @@ class ExpressionError(Exception):pass
 
 class Operand():
     def __init__(self,name,operands=[]): 
-        self._name = name
+        self._name = name         
         self._operands  = operands
+        self._parent = None 
 
     @property
     def name(self):
         return self._name
+
+    @property
+    def parent(self):
+        return self._parent 
+
+    @parent.setter
+    def parent(self,value):
+        self._parent =value       
 
     @property
     def value(self): 
@@ -34,7 +43,8 @@ class Operand():
 
     @property
     def operands(self):
-        return self._operands    
+        return self._operands
+
 
     def __add__(self, other):return Exp().newOperator('+',[other,self]) 
     def __sub__(self, other):return Exp().newOperator('-',[other,self])    
@@ -686,9 +696,10 @@ class Exp(metaclass=Singleton):
             children.append(self.tree(p))
         return OperandTree(o=expression.name,c=children)     
 
-    def debug(self,breakpoint:OperandDebug)-> OperandDebug:
+    def debug(self,breakpoint:OperandDebug=None)-> OperandDebug:
         pass 
         
+
 
 
     def getVars(self,expression:Operand)->dict:
@@ -742,14 +753,20 @@ class Exp(metaclass=Singleton):
             info.append({'types':p['types']})
         return info;
   
-    def setContext(self,expression,context):
+    def setContext(self,expression:Operand,context:dict):
         if type(expression).__name__ ==  'Variable':
             expression.context = context    
         for p in expression.operands:
             if type(p).__name__ ==  'Variable':
                 p.context = context
             elif len(p.operands)>0:
-                self.setContext(p,context) 
+                self.setContext(p,context)
+
+    def setParent(self,expression:Operand,parent:Operand=None):
+        expression.parent = parent
+        if  len(expression.operands)>0: 
+            for p in expression.operands:
+                self.setParent(p,expression)              
        
 class Parser():
     def __init__(self,mgr,string):
