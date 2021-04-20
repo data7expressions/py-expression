@@ -5,48 +5,70 @@ from datetime import date,datetime,time,timedelta
 import pytz
 from os import path,getcwd
 from enum import Enum
-from .base import *
+from typing import List, Optional
+from pydantic import BaseModel
+# from .base import *
+
+class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
 
 class ExpressionError(Exception):pass
 
 class Operand():
+    def __init__(self,name,operands=[]): 
+        self._name = name
+        self._operands  = operands
+
+    @property
+    def name(self):
+        return self._name
+
     @property
     def value(self): 
-        pass
+        pass   
 
-    def __add__(self, other):return Addition([other,self]) 
-    def __sub__(self, other):return Subtraction([other,self])    
-    def __mul__(self, other):return Multiplication([other,self])
-    # def __pow__(self, other):return Exponentiation([other,self]) 
-    def __truediv__(self, other):return Division([other,self]) 
-    # def __floordiv__(self, other):return FloorDivision([other,self]) 
-    def __mod__(self, other):return Mod([other,self])
+    @property
+    def operands(self):
+        return self._operands    
 
-    def __lshift__(self, other):return LeftShift([other,self])
-    def __rshift__(self, other):return RightShift([other,self])
-    def __and__(self, other):return BitAnd([other,self])
-    def __or__(self, other):return BitOr([other,self])
-    def __xor__(self, other):return BitXor([other,self])
-    def __invert__(self, other):return BitNot([other,self])
+    def __add__(self, other):return Exp().newOperator('+',[other,self]) 
+    def __sub__(self, other):return Exp().newOperator('-',[other,self])    
+    def __mul__(self, other):return Exp().newOperator('*',[other,self])
+    def __pow__(self, other):return Exp().newOperator('**',[other,self]) 
+    def __truediv__(self, other):return Exp().newOperator('/',[other,self]) 
+    def __floordiv__(self, other):return Exp().newOperator('//',[other,self]) 
+    def __mod__(self, other):return Exp().newOperator('%',[other,self])
 
-    def __lt__(self, other):return LessThan([other,self])
-    def __le__(self, other):return LessThanOrEqual([other,self])
-    def __eq__(self, other):return Equal([other,self])
-    def __ne__(self, other):return NotEqual([other,self])
-    def __gt__(self, other):return GreaterThan([other,self])
-    def __ge__(self, other):return GreaterThanOrEqual([other,self])
+    def __lshift__(self, other):return Exp().newOperator('<<',[other,self])
+    def __rshift__(self, other):return Exp().newOperator('>>',[other,self])
+    def __and__(self, other):return Exp().newOperator('&',[other,self])
+    def __or__(self, other):return Exp().newOperator('|',[other,self])
+    def __xor__(self, other):return Exp().newOperator('^',[other,self])
+    def __invert__(self, other):return Exp().newOperator('~',[other,self])
 
-    def __not__(self):return Not([self])
-    def __and2__(self, other):return And([other,self])
-    def __or2__(self, other):return Or([other,self])
+    def __lt__(self, other):return Exp().newOperator('<',[other,self])
+    def __le__(self, other):return Exp().newOperator('<=',[other,self])
+    def __eq__(self, other):return Exp().newOperator('==',[other,self])
+    def __ne__(self, other):return Exp().newOperator('!=',[other,self])
+    def __gt__(self, other):return Exp().newOperator('>',[other,self])
+    def __ge__(self, other):return Exp().newOperator('>=',[other,self])
 
-    def __isub__(self, other):return AssigmentSubtraction([other,self])
-    def __iadd__(self, other):return AssigmentAddition([other,self])
-    def __imul__(self, other):return AssigmentMultiplication([other,self])
-    def __idiv__(self, other):return AssigmentDivision([other,self])
-    def __ifloordiv__(self, other):return AssigmentFloorDivision([other,self])
-    def __imod__(self, other):return AssigmentMod([other,self])
-    def __ipow__(self, other):return AssigmentExponentiation([other,self])
+    def __not__(self):return Exp().newOperator('!',[self])
+    def __and2__(self, other):return Exp().newOperator('&&',[other,self])
+    def __or2__(self, other):return Exp().newOperator('||',[other,self])
+
+    def __isub__(self, other):return Exp().newOperator('-=',[other,self])
+    def __iadd__(self, other):return Exp().newOperator('+=',[other,self])
+    def __imul__(self, other):return Exp().newOperator('*=',[other,self])
+    def __idiv__(self, other):return Exp().newOperator('/=',[other,self])
+    def __ifloordiv__(self, other):return Exp().newOperator('//=',[other,self])
+    def __imod__(self, other):return Exp().newOperator('%=',[other,self])
+    def __ipow__(self, other):return Exp().newOperator('**=',[other,self])
 
     def eval(self,context:dict=None):
         return Exp().eval(self,context)
@@ -61,6 +83,7 @@ class Operand():
 
 class Constant(Operand):
     def __init__(self,value,type ):
+      super(Constant,self).__init__(str(value))  
       self._value  = value
       self._type  = type
 
@@ -75,15 +98,12 @@ class Constant(Operand):
         return str(self._value)
     def __repr__(self):
         return str(self._value)  
+
 class Variable(Operand):
     def __init__(self,name ):
-      self._name  = name
+      super(Variable,self).__init__(name) 
       self._names = name.split('.')
       self._context  = None
-
-    @property
-    def name(self):
-        return self._name
 
     @property
     def context(self):
@@ -95,6 +115,7 @@ class Variable(Operand):
     @property
     def value(self):
         _value = self._context
+        if _value == None: return None
         for n in self._names:
             if n not in _value: return None
             _value=_value[n]
@@ -117,36 +138,31 @@ class Variable(Operand):
     def __repr__(self):
         return self._name      
 
+# class Operation(Operand):
+#     def __init__(self,name,operands ):
+#       self._operands  = operands
+#       super(Operation,self).__init__(name)    
 
-class Operation(Operand):
-    def __init__(self,operands ):
-      self._operands  = operands   
+#     @property
+#     def operands(self):
+#         return self._operands
 
-    @property
-    def operands(self):
-        return self._operands
+#     @property
+#     def value(self):
+#         pass
 
-    @property
-    def value(self):
-        pass
-
-class KeyValue(Operation):
+class KeyValue(Operand):
     def __init__(self,name,value:Operand):
-      super(KeyValue,self).__init__([value])
-      self._name  = name
+        super(KeyValue,self).__init__(name,[value])
 
-    @property
-    def name(self):
-        return self._name  
     @property
     def value(self): 
         return self._operands[0].value
         
-class Function(Operation):
+class Function(Operand):
     def __init__(self,mgr,name,args,isChild=False):
-      super(Function,self).__init__(args)
+      super(Function,self).__init__(name,args)
       self.mgr  = mgr
-      self.name  = name
       self._isChild  = isChild
 
     @property
@@ -174,11 +190,11 @@ class Function(Operation):
             for p in self._operands:args.append(p.value)
         return function(*args)    
 
-class If(Operation):
+class If(Operand):
     def __init__(self,condition,block,elseblock):
       operands = [condition,block]
-      if elseblock != None: operands.append(elseblock)  
-      super(If,self).__init__(operands)      
+      if elseblock is not None: operands.append(elseblock)  
+      super(If,self).__init__('if',operands)      
       self.condition  = condition
       self.block  = block
       self.elseblock  = elseblock
@@ -187,13 +203,13 @@ class If(Operation):
     def value(self): 
         if self.condition.value:
            self.block.value
-        elif self.elseblock != None:
+        elif self.elseblock is not None:
            self.elseblock.value  
 
-class While(Operation):
+class While(Operand):
     def __init__(self,condition,block):
       operands = [condition,block]
-      super(While,self).__init__(operands)      
+      super(While,self).__init__('while',operands)      
       self.condition  = condition
       self.block  = block
 
@@ -202,10 +218,9 @@ class While(Operation):
         while self.condition.value:
            self.block.value
 
-
-class Array(Operation):
+class Array(Operand):
     def __init__(self,elements=[]):
-      super(Array,self).__init__(elements)
+      super(Array,self).__init__('array',elements)
 
     @property
     def value(self):
@@ -213,34 +228,26 @@ class Array(Operation):
         for p in self._operands:
             list.append(p.value)
         return list 
-class Object(Operation):
+
+class Object(Operand):
     def __init__(self,attributes=[]):
-      super(Object,self).__init__(attributes)
+      super(Object,self).__init__('object',attributes)
 
     @property
     def value(self):
         dic= {}
         for p in self._operands:
             dic[p.name]=p.value
-        return dic 
-class Operator(Operation):
-    def __init__(self,operands ):
-      super(Operator,self).__init__(operands)
-      self._name=""
-      self._category=""
+        return dic
 
-    @property
-    def name(self):
-        return self._name
-    @name.setter
-    def name(self,value):
-        self._name=value 
+class Operator(Operand):
+    def __init__(self,name,category,operands=[]):
+      super(Operator,self).__init__(name,operands)
+      self._category=category
+   
     @property
     def category(self):
         return self._category
-    @category.setter
-    def category(self,value):
-        self._category=value        
 
     @property
     def value(self):
@@ -257,21 +264,21 @@ class Operator(Operation):
 
 class NegativeDecorator(Operator):
     def __init__(self,operand:Operand ):
-        super(NegativeDecorator,self).__init__([operand])
+        super(NegativeDecorator,self).__init__('-','arithmetic',[operand])
 
     @property
     def value(self): 
         return self._operands[0].value * -1
 class NotDecorator(Operator):
     def __init__(self,operand:Operand ):
-      super(NotDecorator,self).__init__([operand])
+      super(NotDecorator,self).__init__('!','logical',[operand])
 
     @property
     def value(self): 
         return not self._operands[0].value 
 class IndexDecorator(Operator):
     def __init__(self,operand:Operand,idx:Operand ):
-      super(IndexDecorator,self).__init__([operand,idx])        
+      super(IndexDecorator,self).__init__('[]','array',[operand,idx])        
 
     @property
     def value(self): 
@@ -417,15 +424,24 @@ class AssigmentRightShift(Operator):
     def value(self):
         self._operands[0].value >>= self._operands[1].value
         return self._operands[0].value
-class Block(Operation):
+class Block(Operand):
     def __init__(self,elements=[]):
-      super(Block,self).__init__(elements)
+      super(Block,self).__init__('block',elements)
 
     @property
     def value(self):        
         for p in self._operands:
             p.value
  
+
+
+   
+class OperandTree(BaseModel):
+    op: str
+    children: Optional[List['OperandTree']] =[]
+
+OperandTree.update_forward_refs()
+
 class Exp(metaclass=Singleton):
     def __init__(self):
        self.reAlphanumeric = re.compile('[a-zA-Z0-9_.]+$') 
@@ -620,10 +636,7 @@ class Exp(metaclass=Singleton):
     def newOperator(self,key,operands):
         try: 
             operator = self._operators[key];               
-            op= operator["imp"](operands)
-            op.name = key
-            op.category = operator["category"]
-            return op
+            return operator["imp"](key,operator["category"],operands)
         except:
             raise ExpressionError('error with operator: '+str(key))  
     def priority(self,key):
@@ -668,13 +681,20 @@ class Exp(metaclass=Singleton):
             raise ExpressionError('expression: '+string+' error: '+str(error))
 
     def eval(self,operand:Operand,context:dict=None):
-        if context != None:
+        if context is not None:
             self.setContext(operand,context)
         return operand.value
 
-    def solve(self,string:str,context:dict=None):        
+    def solve(self,string:str,context:dict=None)-> any :        
         expression=self.parse(string)
         return self.eval(expression,context) 
+
+    def tree(self,operand:Operand)-> OperandTree:
+
+
+
+        result= OperandTree(op='+',children=[OperandTree(op='1'),OperandTree(op='2')])
+        return result 
 
     def getVars(self,expression):
         list = {}
@@ -815,7 +835,8 @@ class Parser():
                 break
         if not isbreak: expression=self.mgr.newOperator(operator,[operand1,operand2])
         # if all the operands are constant, reduce the expression a constant 
-        if expression != None and hasattr(expression, 'operands'):
+        # if expression != None and hasattr(expression, 'operands'):
+        if expression is not None and len(expression.operands)>0:    
             allConstants=True              
             for p in expression.operands:
                 if type(p).__name__ !=  'Constant':
@@ -961,7 +982,7 @@ class Parser():
         args= []
         while True:
             arg= self.getExpression(_break=','+end)
-            if arg != None:args.append(arg)
+            if arg is not None:args.append(arg)
             if self.previous==end: break
         return args
 
@@ -989,7 +1010,7 @@ class Parser():
         lines= []
         while True:
             line= self.getExpression(_break=';}')
-            if line != None :lines.append(line)
+            if line is not None :lines.append(line)
             if self.previous=='}':
                 break        
         return Block(lines)     
