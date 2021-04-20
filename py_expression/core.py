@@ -138,19 +138,6 @@ class Variable(Operand):
     def __repr__(self):
         return self._name      
 
-# class Operation(Operand):
-#     def __init__(self,name,operands ):
-#       self._operands  = operands
-#       super(Operation,self).__init__(name)    
-
-#     @property
-#     def operands(self):
-#         return self._operands
-
-#     @property
-#     def value(self):
-#         pass
-
 class KeyValue(Operand):
     def __init__(self,name,value:Operand):
         super(KeyValue,self).__init__(name,[value])
@@ -432,15 +419,18 @@ class Block(Operand):
     def value(self):        
         for p in self._operands:
             p.value
- 
-
-
    
 class OperandTree(BaseModel):
-    op: str
-    children: Optional[List['OperandTree']] =[]
-
+    o: str
+    c: Optional[List['OperandTree']]
 OperandTree.update_forward_refs()
+
+class OperandDebug(BaseModel):
+    path: str
+    expression: str
+    valueSerialized: str
+    valueType: str
+    context: dict
 
 class Exp(metaclass=Singleton):
     def __init__(self):
@@ -689,78 +679,77 @@ class Exp(metaclass=Singleton):
         expression=self.parse(string)
         return self.eval(expression,context) 
 
-    def tree(self,operand:Operand)-> OperandTree:
+    def tree(self,expression:Operand)-> OperandTree:        
+        if len(expression.operands)==0:return OperandTree(o=expression.name)
+        children = []                
+        for p in expression.operands:
+            children.append(self.tree(p))
+        return OperandTree(o=expression.name,c=children)     
+
+    def debug(self,breakpoint:OperandDebug)-> OperandDebug:
+        pass 
+        
 
 
-
-        result= OperandTree(op='+',children=[OperandTree(op='1'),OperandTree(op='2')])
-        return result 
-
-    def getVars(self,expression):
+    def getVars(self,expression:Operand)->dict:
         list = {}
         if type(expression).__name__ ==  'Variable':
             list[expression.name] = "any"
-        if hasattr(expression, 'operands'):
-            for p in expression.operands:
-                if type(p).__name__ ==  'Variable':
-                    list[p.name] = "any"
-                elif hasattr(p, 'operands'):
-                    subList= self.getVars(p)
-                    list = {**list, **subList}
+        for p in expression.operands:
+            if type(p).__name__ ==  'Variable':
+                list[p.name] = "any"
+            elif len(p.operands)>0:
+                subList= self.getVars(p)
+                list = {**list, **subList}
         return list        
-    def getConstants(self,expression):
+    def getConstants(self,expression:Operand)->dict:
         list = {}
         if type(expression).__name__ ==  'Constant':
             list[expression.value] = expression.type
-        if hasattr(expression, 'operands'):
-            for p in expression.operands:
-                if type(p).__name__ ==  'Constant':
-                    list[p.value] = p.type
-                elif hasattr(p, 'operands'):
-                    subList= self.getConstants(p)
-                    list = {**list, **subList}
+        for p in expression.operands:
+            if type(p).__name__ ==  'Constant':
+                list[p.value] = p.type
+            elif len(p.operands)>0:
+                subList= self.getConstants(p)
+                list = {**list, **subList}
         return list
-    def getOperators(self,expression):
+    def getOperators(self,expression:Operand)->dict:
         list = {}
         if isinstance(expression,Operator):
             list[expression.name] = expression.category
-        if hasattr(expression, 'operands'):
-            for p in expression.operands:
-                if isinstance(p,Operator):
-                    list[p.name] = p.category
-                elif hasattr(p, 'operands'):
-                    subList= self.getOperators(p)
-                    list = {**list, **subList}
+        for p in expression.operands:
+            if isinstance(p,Operator):
+                list[p.name] = p.category
+            elif len(p.operands)>0:
+                subList= self.getOperators(p)
+                list = {**list, **subList}
         return list
-    def getFunctions(self,expression):
+    def getFunctions(self,expression:Operand)->dict:
         list = {}
         if type(expression).__name__ ==  'Function':
             list[expression.name] = {"isChild":expression.isChild}
-        if hasattr(expression, 'operands'):
-            for p in expression.operands:
-                if type(p).__name__ ==  'Function':
-                    list[p.name] =  {"isChild":p.isChild}
-                elif hasattr(p, 'operands'):
-                    subList= self.getFunctions(p)
-                    list = {**list, **subList}
+        for p in expression.operands:
+            if type(p).__name__ ==  'Function':
+                list[p.name] =  {"isChild":p.isChild}
+            elif len(p.operands)>0:
+                subList= self.getFunctions(p)
+                list = {**list, **subList}
         return list
-
     def functionInfo(self,key):
         if key not in self._functions: return None
         info=[]
         for p in self._functions[key]:
             info.append({'types':p['types']})
         return info;
-        
+  
     def setContext(self,expression,context):
         if type(expression).__name__ ==  'Variable':
-            expression.context = context
-        if hasattr(expression, 'operands'):
-            for p in expression.operands:
-                if type(p).__name__ ==  'Variable':
-                    p.context = context
-                elif hasattr(p, 'operands'):
-                    self.setContext(p,context) 
+            expression.context = context    
+        for p in expression.operands:
+            if type(p).__name__ ==  'Variable':
+                p.context = context
+            elif len(p.operands)>0:
+                self.setContext(p,context) 
        
 class Parser():
     def __init__(self,mgr,string):
@@ -835,7 +824,6 @@ class Parser():
                 break
         if not isbreak: expression=self.mgr.newOperator(operator,[operand1,operand2])
         # if all the operands are constant, reduce the expression a constant 
-        # if expression != None and hasattr(expression, 'operands'):
         if expression is not None and len(expression.operands)>0:    
             allConstants=True              
             for p in expression.operands:
