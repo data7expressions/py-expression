@@ -122,7 +122,7 @@ class TestExpression(unittest.TestCase):
         result= expression.eval(context)
         self.assertEqual(context['rectangle']['x'],50)
 
-operand=exp.parse('output=1;if(1==2){output=2}else{output=3}')
-node= exp.toNode(operand)
-print(node)
-# unittest.main()
+# operand=exp.parse('output=1;if(1==2){output=2}else{output=3}')
+# node= exp.toNode(operand)
+# print(node)
+unittest.main()

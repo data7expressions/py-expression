@@ -92,10 +92,10 @@ class Operand():
         return Exp().getFunctions(self)
 
 class Constant(Operand):
-    def __init__(self,value,type ):
+    def __init__(self,value):
       super(Constant,self).__init__(str(value))  
       self._value  = value
-      self._type  = type
+      self._type  = type(value).__name__
 
     @property
     def value(self): 
@@ -848,9 +848,8 @@ class Parser():
                     allConstants=False
                     break
             if  allConstants:
-                value = expression.value
-                _type = type(value).__name__
-                return Constant(value,_type)
+                value = expression.value                
+                return Constant(value)
         return expression             
 
     def getOperand(self):        
@@ -895,7 +894,7 @@ class Parser():
                     isBitNot= False     
                 else:
                     value =int(value)
-                operand = Constant(value,'int')
+                operand = Constant(value)
             elif self.mgr.reFloat.match(value):
                 if isNegative:
                     value = float(value)* -1
@@ -905,11 +904,11 @@ class Parser():
                     isBitNot= False      
                 else:
                     value =float(value)
-                operand = Constant(value,'float')
+                operand = Constant(value)
             elif value=='true':                
-                operand = Constant(True,type(True))
+                operand = Constant(True)
             elif value=='false':                
-                operand = Constant(False,type(False))
+                operand = Constant(False)
             elif self.mgr.isEnum(value):                
                 operand= self.getEnum(value)
             else:
@@ -917,7 +916,7 @@ class Parser():
         elif char == '\'' or char == '"':
             self.index+=1
             result=  self.getString(char)
-            operand= Constant(result,'str')
+            operand= Constant(result)
         elif char == '(':
             self.index+=1
             operand=  self.getExpression(_break=')') 
@@ -1073,15 +1072,15 @@ class Parser():
             enumName = names[0]
             enumOption = names[1] 
             enumValue= self.mgr.getEnumValue(enumName,enumOption)
-            enumType = type(enumValue).__name__
-            return Constant(enumValue,enumType)
+            # enumType = type(enumValue).__name__
+            return Constant(enumValue)
         else:
             values= self.mgr.getEnum(value)
             attributes= []
             for name in values:
                 _value = values[name]
-                _valueType = type(_value).__name__
-                attribute = KeyValue(name,Constant(_value,_valueType))
+                # _valueType = type(_value).__name__
+                attribute = KeyValue(name,Constant(_value))
                 attributes.append(attribute)
             return Object(attributes)
    
