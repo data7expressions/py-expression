@@ -28,11 +28,13 @@ class Operand():
     @property
     def name(self):
         return self._name
+    @name.setter
+    def name(self,value):
+        self._name =value    
 
     @property
     def parent(self):
         return self._parent 
-
     @parent.setter
     def parent(self,value):
         self._parent =value       
@@ -155,42 +157,32 @@ class KeyValue(Operand):
     @property
     def value(self): 
         return self._operands[0].value
-        
-# TODO: hay que sacar isChild del constructor y ver de resolverlo aberiguando por el parent u otra forma.
+
 class Function(Operand):
-    def __init__(self,name,operands=[],isChild=False):
+    def __init__(self,name,operands=[]):
       super(Function,self).__init__(name,operands)
       self._mgr  = None
-      self._isChild  = isChild
-
-    @property
-    def isChild(self):
-        return self._isChild
-    @isChild.setter
-    def isChild(self,value):
-        self._isChild=value
 
     @property
     def mgr(self):
         return self._mgr
     @mgr.setter
     def mgr(self,value):
-        self._mgr=value    
-
-
+        self._mgr=value 
 
     @property
     def value(self): 
         args=[]
-        if self._isChild:
+        if '.' in self.name:
+            name = self.name.replace('.','')
             parent = self._operands.pop(0)
             value = parent.value
             _type = type(value).__name__
-            if isinstance(value,object) and hasattr(value, self.name):
-                function=getattr(value, self.name)
+            if isinstance(value,object) and hasattr(value, name):
+                function=getattr(value, name)
                 for p in self._operands:args.append(p.value)
             else:    
-                function=self._mgr.getFunction(self.name,_type)            
+                function=self._mgr.getFunction(name,_type)            
                 for p in self._operands:args.append(p.value)
                 args.insert(0,value)            
         else:
@@ -280,7 +272,7 @@ class IndexDecorator(Operator):
     @property
     def value(self): 
         return self._operands[0].value[self._operands[1].value]
-        
+
 class Addition(Operator):
     def solve(self,a,b):
         return a+b 
@@ -755,11 +747,9 @@ class Exp(metaclass=Singleton):
         return list
     def getFunctions(self,expression:Operand)->dict:
         list = {}
-        if type(expression).__name__ ==  'Function':
-            list[expression.name] = {"isChild":expression.isChild}
+        if type(expression).__name__ ==  'Function':list[expression.name] = {"isChild": '.' in expression.name}
         for p in expression.operands:
-            if type(p).__name__ ==  'Function':
-                list[p.name] =  {"isChild":p.isChild}
+            if type(p).__name__ ==  'Function':list[p.name] =  {"isChild": '.' in p.name}
             elif len(p.operands)>0:
                 subList= self.getFunctions(p)
                 list = {**list, **subList}
@@ -937,7 +927,8 @@ class Parser():
             self.index+=1
             function= self.getOperand()
             function.operands.insert(0,operand)
-            function.isChild = True
+            if '.' not in function.name :function.name = '.'+function.name
+            # function.isChild = True
             operand=function
 
         if isNegative:operand=NegativeDecorator('-',[operand])
@@ -1062,7 +1053,7 @@ class Parser():
             variableName= '.'.join(names)
             variable = Variable(variableName)
             args.insert(0,variable)
-            return Function(key,args,True)
+            return Function('.'+key,args)
         else:
             return Function(name,args)
 

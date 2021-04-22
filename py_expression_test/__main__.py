@@ -90,7 +90,7 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(op.vars(),{'a': 'any'})
         self.assertEqual(op.constants(),{'expression': 'str', 'e': 'str', 1: 'int'})
         self.assertEqual(op.operators(),{'>=': 'comparison', '+': 'arithmetic'})
-        self.assertEqual(op.functions(),{'count': {'isChild': True}} )    
+        self.assertEqual(op.functions(),{'.count': {'isChild': True}} )    
 
     def test_multine(self):
     
@@ -125,4 +125,7 @@ class TestExpression(unittest.TestCase):
 # operand=exp.parse('output=1;if(1==2){output=2}else{output=3}')
 # node= exp.toNode(operand)
 # print(node)
+
+# op = exp.parse('"expression".count("e")>= a+1')
+# print(op.functions())
 unittest.main()
