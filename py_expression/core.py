@@ -430,10 +430,11 @@ class Block(Operand):
         for p in self._operands:
             p.value
    
-class OperandTree(BaseModel):
-    o: str
-    c: Optional[List['OperandTree']]
-OperandTree.update_forward_refs()
+class Node(BaseModel):
+    n: str
+    t: str
+    c: Optional[List['Node']]
+Node.update_forward_refs()
 
 class OperandDebug(BaseModel):
     path: str
@@ -689,17 +690,29 @@ class Exp(metaclass=Singleton):
         expression=self.parse(string)
         return self.eval(expression,context) 
 
-    def tree(self,expression:Operand)-> OperandTree:        
-        if len(expression.operands)==0:return OperandTree(o=expression.name)
+    def toNode(self,operand:Operand)-> Node:        
+        if len(operand.operands)==0:return Node(n=operand.name,t=type(operand).__name__)
         children = []                
-        for p in expression.operands:
-            children.append(self.tree(p))
-        return OperandTree(o=expression.name,c=children)     
+        for p in operand.operands:
+            children.append(self.toNode(p))
+        return Node(n=operand.name,t=type(operand).__name__,c=children)     
 
     def debug(self,breakpoint:OperandDebug=None)-> OperandDebug:
         pass 
         
+    def setContext(self,expression:Operand,context:dict):
+        if type(expression).__name__ ==  'Variable':expression.context = context    
+        for p in expression.operands:
+            if type(p).__name__ ==  'Variable':
+                p.context = context
+            elif len(p.operands)>0:
+                self.setContext(p,context)
 
+    def setParent(self,expression:Operand,parent:Operand=None):
+        expression.parent = parent
+        if  len(expression.operands)>0: 
+            for p in expression.operands:
+                self.setParent(p,expression)        
 
 
     def getVars(self,expression:Operand)->dict:
@@ -753,20 +766,7 @@ class Exp(metaclass=Singleton):
             info.append({'types':p['types']})
         return info;
   
-    def setContext(self,expression:Operand,context:dict):
-        if type(expression).__name__ ==  'Variable':
-            expression.context = context    
-        for p in expression.operands:
-            if type(p).__name__ ==  'Variable':
-                p.context = context
-            elif len(p.operands)>0:
-                self.setContext(p,context)
-
-    def setParent(self,expression:Operand,parent:Operand=None):
-        expression.parent = parent
-        if  len(expression.operands)>0: 
-            for p in expression.operands:
-                self.setParent(p,expression)              
+            
        
 class Parser():
     def __init__(self,mgr,string):
