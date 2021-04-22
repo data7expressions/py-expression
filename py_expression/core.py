@@ -92,25 +92,25 @@ class Operand():
         return Exp().getFunctions(self)
 
 class Constant(Operand):
-    def __init__(self,value):
-      super(Constant,self).__init__(str(value))  
-      self._value  = value
-      self._type  = type(value).__name__
+    def __init__(self,name,operands=[]):
+      super(Constant,self).__init__(name)  
+    #   self._value  = name
+      self._type  = type(name).__name__
 
     @property
     def value(self): 
-        return self._value
+        return self.name
     @property
     def type(self): 
         return self._type     
 
     def __str__(self):
-        return str(self._value)
+        return str(self.name)
     def __repr__(self):
-        return str(self._value)  
+        return str(self.name)  
 
 class Variable(Operand):
-    def __init__(self,name ):
+    def __init__(self,name,operands=[]):
       super(Variable,self).__init__(name) 
       self._names = name.split('.')
       self._context  = None
@@ -149,17 +149,18 @@ class Variable(Operand):
         return self._name      
 
 class KeyValue(Operand):
-    def __init__(self,name,value:Operand):
-        super(KeyValue,self).__init__(name,[value])
+    def __init__(self,name,operands=[]):
+        super(KeyValue,self).__init__(name,operands)
 
     @property
     def value(self): 
         return self._operands[0].value
         
+# TODO: hay que sacar isChild del constructor y ver de resolverlo aberiguando por el parent u otra forma.
 class Function(Operand):
-    def __init__(self,mgr,name,args,isChild=False):
-      super(Function,self).__init__(name,args)
-      self.mgr  = mgr
+    def __init__(self,name,operands=[],isChild=False):
+      super(Function,self).__init__(name,operands)
+      self._mgr  = None
       self._isChild  = isChild
 
     @property
@@ -168,6 +169,16 @@ class Function(Operand):
     @isChild.setter
     def isChild(self,value):
         self._isChild=value
+
+    @property
+    def mgr(self):
+        return self._mgr
+    @mgr.setter
+    def mgr(self,value):
+        self._mgr=value    
+
+
+
     @property
     def value(self): 
         args=[]
@@ -179,45 +190,37 @@ class Function(Operand):
                 function=getattr(value, self.name)
                 for p in self._operands:args.append(p.value)
             else:    
-                function=self.mgr.getFunction(self.name,_type)            
+                function=self._mgr.getFunction(self.name,_type)            
                 for p in self._operands:args.append(p.value)
                 args.insert(0,value)            
         else:
-            function=self.mgr.getFunction(self.name)
+            function=self._mgr.getFunction(self.name)
             for p in self._operands:args.append(p.value)
         return function(*args)    
 
 class If(Operand):
-    def __init__(self,condition,block,elseblock):
-      operands = [condition,block]
-      if elseblock is not None: operands.append(elseblock)  
-      super(If,self).__init__('if',operands)      
-      self.condition  = condition
-      self.block  = block
-      self.elseblock  = elseblock
+    def __init__(self,name,operands=[]):
+      super(If,self).__init__(name,operands)      
 
     @property
-    def value(self): 
-        if self.condition.value:
-           self.block.value
-        elif self.elseblock is not None:
-           self.elseblock.value  
+    def value(self):         
+        if self.operands[0].value:
+           self.operands[1].value
+        elif len(self.operands) > 2 and self.operands[2] is not None:       
+            self.operands[2].value 
 
 class While(Operand):
-    def __init__(self,condition,block):
-      operands = [condition,block]
-      super(While,self).__init__('while',operands)      
-      self.condition  = condition
-      self.block  = block
+    def __init__(self,name,operands=[]):
+      super(While,self).__init__(name,operands)      
 
     @property
     def value(self): 
-        while self.condition.value:
-           self.block.value
+        while self.operands[0].value:
+           self.operands[1].value
 
 class Array(Operand):
-    def __init__(self,elements=[]):
-      super(Array,self).__init__('array',elements)
+    def __init__(self,name,operands=[]):
+      super(Array,self).__init__(name,operands)
 
     @property
     def value(self):
@@ -227,8 +230,8 @@ class Array(Operand):
         return list 
 
 class Object(Operand):
-    def __init__(self,attributes=[]):
-      super(Object,self).__init__('object',attributes)
+    def __init__(self,name,operands=[]):
+      super(Object,self).__init__(name,operands)
 
     @property
     def value(self):
@@ -238,13 +241,8 @@ class Object(Operand):
         return dic
 
 class Operator(Operand):
-    def __init__(self,name,category,operands=[]):
+    def __init__(self,name,operands=[]):
       super(Operator,self).__init__(name,operands)
-      self._category=category
-   
-    @property
-    def category(self):
-        return self._category
 
     @property
     def value(self):
@@ -260,26 +258,29 @@ class Operator(Operand):
         pass 
 
 class NegativeDecorator(Operator):
-    def __init__(self,operand:Operand ):
-        super(NegativeDecorator,self).__init__('-','arithmetic',[operand])
+    def __init__(self,name,operands=[] ):
+        super(NegativeDecorator,self).__init__(name,operands)
 
     @property
     def value(self): 
         return self._operands[0].value * -1
+
 class NotDecorator(Operator):
-    def __init__(self,operand:Operand ):
-      super(NotDecorator,self).__init__('!','logical',[operand])
+    def __init__(self,name,operands=[]):
+      super(NotDecorator,self).__init__(name,operands)
 
     @property
     def value(self): 
         return not self._operands[0].value 
+
 class IndexDecorator(Operator):
-    def __init__(self,operand:Operand,idx:Operand ):
-      super(IndexDecorator,self).__init__('[]','array',[operand,idx])        
+    def __init__(self,name,operands=[] ):
+      super(IndexDecorator,self).__init__(name,operands)        
 
     @property
     def value(self): 
         return self._operands[0].value[self._operands[1].value]
+        
 class Addition(Operator):
     def solve(self,a,b):
         return a+b 
@@ -637,7 +638,7 @@ class Exp(metaclass=Singleton):
     def newOperator(self,key,operands):
         try: 
             operator = self._operators[key];               
-            return operator["imp"](key,operator["category"],operands)
+            return operator["imp"](key,operands)
         except:
             raise ExpressionError('error with operator: '+str(key))  
     def priority(self,key):
@@ -701,12 +702,14 @@ class Exp(metaclass=Singleton):
         pass 
         
     def setContext(self,expression:Operand,context:dict):
-        if type(expression).__name__ ==  'Variable':expression.context = context    
-        for p in expression.operands:
-            if type(p).__name__ ==  'Variable':
-                p.context = context
-            elif len(p.operands)>0:
-                self.setContext(p,context)
+        if type(expression).__name__ ==  'Variable':expression.context = context
+        elif type(expression).__name__ ==  'Function':expression.mgr = self
+        if len(expression.operands)>0 :       
+            for p in expression.operands:
+                if type(p).__name__ ==  'Variable':p.context = context
+                elif type(expression).__name__ ==  'Function':expression.mgr = self
+                if len(p.operands)>0:
+                    self.setContext(p,context)
 
     def setParent(self,expression:Operand,parent:Operand=None):
         expression.parent = parent
@@ -740,10 +743,12 @@ class Exp(metaclass=Singleton):
     def getOperators(self,expression:Operand)->dict:
         list = {}
         if isinstance(expression,Operator):
-            list[expression.name] = expression.category
+            operator = self._operators[expression.name]; 
+            list[expression.name] = operator['category']
         for p in expression.operands:
             if isinstance(p,Operator):
-                list[p.name] = p.category
+                operator = self._operators[p.name]; 
+                list[p.name] =  operator['category']
             elif len(p.operands)>0:
                 subList= self.getOperators(p)
                 list = {**list, **subList}
@@ -926,7 +931,7 @@ class Parser():
         elif char == '[':
             self.index+=1
             elements=  self.getArgs(end=']')
-            operand = Array(elements)
+            operand = Array('array',elements)
 
         if not self.end and  self.current=='.':
             self.index+=1
@@ -935,9 +940,9 @@ class Parser():
             function.isChild = True
             operand=function
 
-        if isNegative:operand=NegativeDecorator(operand)
-        if isNot:operand=NotDecorator(operand)
-        if isBitNot:operand=BitNot(operand)  
+        if isNegative:operand=NegativeDecorator('-',[operand])
+        if isNot:operand=NotDecorator('!',[operand])
+        if isBitNot:operand=BitNot('~',[operand])  
         return operand
 
     def priority(self,op):
@@ -1003,12 +1008,12 @@ class Parser():
             if self.current==':':self.index+=1
             else:raise ExpressionError('attribute '+name+' without value')
             value= self.getExpression(_break=',}')
-            attribute = KeyValue(name,value)
+            attribute = KeyValue(name,[value])
             attributes.append(attribute)
             if self.previous=='}':
                 break
         
-        return Object(attributes) 
+        return Object('object',attributes) 
 
     def getBlock(self):
         lines= []
@@ -1037,7 +1042,7 @@ class Parser():
             else:
                 elseblock= self.getExpression(_break=';') 
 
-        return If(condition,block,elseblock) 
+        return If('if',[condition,block,elseblock]) 
 
     def getWhileBlock(self):
         condition= self.getExpression(_break=')')
@@ -1047,7 +1052,7 @@ class Parser():
         else:
             block= self.getExpression(_break=';') 
 
-        return While(condition,block)   
+        return While('while',[condition,block])   
 
     def getFunction(self,name):
         args=  self.getArgs(end=')')
@@ -1057,14 +1062,14 @@ class Parser():
             variableName= '.'.join(names)
             variable = Variable(variableName)
             args.insert(0,variable)
-            return Function(self.mgr,key,args,True)
+            return Function(key,args,True)
         else:
-            return Function(self.mgr,name,args)
+            return Function(name,args)
 
     def getIndexOperand(self,name):
         idx= self.getExpression(_break=']')
         operand= Variable(name)
-        return IndexDecorator(operand,idx) 
+        return IndexDecorator('[]',[operand,idx]) 
 
     def getEnum(self,value):
         if '.' in value and self.mgr.isEnum(value):
@@ -1080,9 +1085,9 @@ class Parser():
             for name in values:
                 _value = values[name]
                 # _valueType = type(_value).__name__
-                attribute = KeyValue(name,Constant(_value))
+                attribute = KeyValue(name,[Constant(_value)])
                 attributes.append(attribute)
-            return Object(attributes)
+            return Object('object',attributes)
    
 
                             
