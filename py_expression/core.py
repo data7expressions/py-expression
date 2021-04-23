@@ -9,6 +9,63 @@ from typing import List, Optional
 from pydantic import BaseModel
 # from .base import *
 
+class Context():
+    def __init__(self,data:dict={},parent:'Context'=None):
+        self.data = data
+        self._parent= parent
+
+    def newContext(self):        
+        return Context({},self)
+
+    def getConext(self,variable):
+        if variable in self.data or self._parent is None: return self.data
+        _context =self._parent.getConext(variable)
+        return _context  if _context is not None else self.data
+
+    def get(self,name):
+        names=name.split('.')
+        value = self.getConext(names[0]) 
+        for n in names:
+            if n not in value: return None
+            value=value[n]
+        return value
+
+    def set(self,name,value):
+        names=name.split('.')        
+        level = len(names)-1
+        list = self.getConext(names[0]) 
+        for i,e in enumerate(names):
+            if i == level:
+                list[e]=value
+            else:                    
+                list=list[e] 
+
+    def init(self,name,value):
+        self.data[name]=value                     
+
+class Contextable():
+    def __init__(self):
+      self._context  = None
+
+    @property
+    def context(self):
+        return self._context
+    @context.setter
+    def context(self,value):
+        self._context=value
+
+class Managerable():
+    def __init__(self):
+      self._mgr  = None
+
+    @property
+    def mgr(self):
+        return self._mgr
+    @mgr.setter
+    def mgr(self,value):
+        self._mgr=value 
+
+
 class Singleton(type):
     _instances = {}
     def __call__(cls, *args, **kwargs):
@@ -164,45 +221,25 @@ class Constant(Operand):
     def __repr__(self):
         return str(self.name)  
 
-class Variable(Operand):
-    def __init__(self,name,operands=[]):
-      super(Variable,self).__init__(name) 
-      self._names = name.split('.')
-      self._context  = None
 
-    @property
-    def context(self):
-        return self._context
-    @context.setter
-    def context(self,value):
-        self._context=value
+
+class Variable(Operand,Contextable):
+    def __init__(self,name,operands=[]):
+      Operand.__init__(self,name,operands) 
+      self._names = name.split('.')
 
     @property
     def value(self):
-        _value = self._context
-        if _value == None: return None
-        for n in self._names:
-            if n not in _value: return None
-            _value=_value[n]
-        return _value
+        return self._context.get(self.name)
 
     @value.setter
     def value(self,value):
-        _value = self._context
-        length = len(self._names)
-        i=1
-        for n in self._names:
-            if i == length:
-                _value[n]=value
-            else:                    
-                _value=_value[n]
-            i+=1
+        self._context.set(self.name,value)
 
     def __str__(self):
         return self._name
     def __repr__(self):
         return self._name      
-
 class KeyValue(Operand):
     def __init__(self,name,operands=[]):
         super(KeyValue,self).__init__(name,operands)
@@ -210,18 +247,44 @@ class KeyValue(Operand):
     @property
     def value(self): 
         return self._operands[0].value
-
-class Function(Operand):
+class Array(Operand):
     def __init__(self,name,operands=[]):
-      super(Function,self).__init__(name,operands)
-      self._mgr  = None
+      super(Array,self).__init__(name,operands)
 
     @property
-    def mgr(self):
-        return self._mgr
-    @mgr.setter
-    def mgr(self,value):
-        self._mgr=value 
+    def value(self):
+        list= []
+        for p in self._operands:
+            list.append(p.value)
+        return list 
+class Object(Operand):
+    def __init__(self,name,operands=[]):
+      super(Object,self).__init__(name,operands)
+
+    @property
+    def value(self):
+        dic= {}
+        for p in self._operands:
+            dic[p.name]=p.value
+        return dic
+
+class Foreach(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):
+        variable= self._operands[0]
+        body= self._operands[1]
+        childContext=self.context.newContext()
+        self.mgr.setContext(body,childContext)
+        for p in variable.value:
+            childContext.init(self.name,p)
+            body.value
+
+class Function(Operand,Managerable):
+    def __init__(self,name,operands=[]):
+      Operand.__init__(self,name,operands)
 
     @property
     def value(self): 
@@ -242,7 +305,6 @@ class Function(Operand):
             function=self._mgr.getFunction(self.name)
             for p in self._operands:args.append(p.value)
         return function(*args)    
-
 class If(Operand):
     def __init__(self,name,operands=[]):
       super(If,self).__init__(name,operands)      
@@ -257,7 +319,6 @@ class If(Operand):
     # TODO
     def debug(self,token:Token,level): 
         pass          
-
 class While(Operand):
     def __init__(self,name,operands=[]):
       super(While,self).__init__(name,operands)      
@@ -270,29 +331,6 @@ class While(Operand):
     # TODO
     def debug(self,token:Token,level): 
         pass        
-
-class Array(Operand):
-    def __init__(self,name,operands=[]):
-      super(Array,self).__init__(name,operands)
-
-    @property
-    def value(self):
-        list= []
-        for p in self._operands:
-            list.append(p.value)
-        return list 
-
-class Object(Operand):
-    def __init__(self,name,operands=[]):
-      super(Object,self).__init__(name,operands)
-
-    @property
-    def value(self):
-        dic= {}
-        for p in self._operands:
-            dic[p.name]=p.value
-        return dic
-
 class Operator(Operand):
     def __init__(self,name,operands=[]):
       super(Operator,self).__init__(name,operands)
@@ -317,7 +355,6 @@ class NegativeDecorator(Operator):
     @property
     def value(self): 
         return self._operands[0].value * -1
-
 class NotDecorator(Operator):
     def __init__(self,name,operands=[]):
       super(NotDecorator,self).__init__(name,operands)
@@ -325,7 +362,6 @@ class NotDecorator(Operator):
     @property
     def value(self): 
         return not self._operands[0].value 
-
 class IndexDecorator(Operator):
     def __init__(self,name,operands=[] ):
       super(IndexDecorator,self).__init__(name,operands)        
@@ -404,7 +440,6 @@ class And(Operator):
     # TODO
     def debug(self,token:Token,level): 
         pass 
-
 class Or(Operator):
     @property
     def value(self):
@@ -413,8 +448,6 @@ class Or(Operator):
     # TODO
     def debug(self,token:Token,level): 
         pass 
-
-
 class Not(Operator):
     @property
     def value(self):
@@ -498,7 +531,6 @@ class Block(Operand):
     def debug(self,token:Token,level): 
         pass         
    
-
 class Exp(metaclass=Singleton):
     def __init__(self):
        self.reAlphanumeric = re.compile('[a-zA-Z0-9_.]+$') 
@@ -558,7 +590,7 @@ class Exp(metaclass=Singleton):
         self.addOperator('|=','assignment',AssigmentBitOr,1)
         self.addOperator('^=','assignment',AssigmentBitXor,1)
         self.addOperator('<<=','assignment',AssigmentLeftShift,1)
-        self.addOperator('>>=','assignment',AssigmentRightShift,1)
+        self.addOperator('>>=','assignment',AssigmentRightShift,1)        
 
     def generalFunctions(self): 
         self.addFunction('nvl',lambda a,b: a if a!=None and a!="" else b )
@@ -751,19 +783,19 @@ class Exp(metaclass=Singleton):
         except Exception as error:
             raise ExpressionError('expression: '+expression+' error: '+str(error))
 
-    def eval(self,operand:Operand,context:dict=None)-> any :  
+    def eval(self,operand:Operand,context:dict={})-> any :  
         if context is not None:
-            self.setContext(operand,context)
+            self.setContext(operand,Context(context))
         return operand.value
 
-    def debug(self,operand:Operand,token:Token,context:dict=None):
+    def debug(self,operand:Operand,token:Token,context:dict={}):
         if context is not None:
-            self.setContext(operand,context)
+            self.setContext(operand,Context(context))
         operand.debug(token,0)
 
-    def solve(self,expression:str,context:dict=None)-> any :        
+    def solve(self,expression:str,context:dict={})-> any :
         operand=self.parse(expression)
-        return self.eval(operand,context) 
+        return self.eval(operand,context)
 
     def toNode(self,operand:Operand)-> Node:        
         if len(operand.operands)==0:return Node(n=operand.name,t=type(operand).__name__)
@@ -780,13 +812,13 @@ class Exp(metaclass=Singleton):
         return search    
 
         
-    def setContext(self,expression:Operand,context:dict):
-        if type(expression).__name__ ==  'Variable':expression.context = context
-        elif type(expression).__name__ ==  'Function':expression.mgr = self
-        if len(expression.operands)>0 :       
-            for p in expression.operands:
-                if type(p).__name__ ==  'Variable':p.context = context
-                elif type(expression).__name__ ==  'Function':expression.mgr = self
+    def setContext(self,operand:Operand,context:Context):
+        if issubclass(operand.__class__,Contextable):operand.context = context 
+        if issubclass(operand.__class__,Managerable):operand.mgr = self
+        if len(operand.operands)>0 :       
+            for p in operand.operands:
+                if issubclass(p.__class__,Contextable):p.context = context
+                if issubclass(p.__class__,Managerable):p.mgr = self 
                 if len(p.operands)>0:
                     self.setContext(p,context)
 
@@ -847,8 +879,7 @@ class Exp(metaclass=Singleton):
         for p in self._functions[key]:
             info.append({'types':p['types']})
         return info;
-  
-      
+ 
 class Parser():
     def __init__(self,mgr,expression):
        self.mgr = mgr 
@@ -944,7 +975,7 @@ class Parser():
                 operand = self.getIfBlock()
             elif value=='while' and self.current == '(': 
                 self.index+=1
-                operand = self.getWhileBlock()
+                operand = self.getWhileBlock()            
             elif not self.end and self.current == '(':
                 self.index+=1
                 operand= self.getFunction(value)
@@ -1105,6 +1136,8 @@ class Parser():
 
         return If('if',[condition,block,elseblock]) 
 
+  
+
     def getWhileBlock(self):
         condition= self.getExpression(_break=')')
         if  self.current == '{':
@@ -1115,17 +1148,29 @@ class Parser():
 
         return While('while',[condition,block])   
 
-    def getFunction(self,name):
-        args=  self.getArgs(end=')')
+    def getFunction(self,name):        
         if '.' in name:
             names = name.split('.')
             key = names.pop()
             variableName= '.'.join(names)
             variable = Variable(variableName)
-            args.insert(0,variable)
-            return Function('.'+key,args)
+
+            if key == 'foreach':
+                return self.getForeach(variable)
+            else: 
+                args=  self.getArgs(end=')')
+                args.insert(0,variable)
+                return Function('.'+key,args)
         else:
+            args=  self.getArgs(end=')')
             return Function(name,args)
+
+    def getForeach(self,variable):
+        name= self.getValue()
+        if self.current==':':self.index+=1
+        else:raise ExpressionError('foreach without body')
+        body= self.getExpression(_break=')')
+        return Foreach(name,[variable,body])        
 
     def getIndexOperand(self,name):
         idx= self.getExpression(_break=']')

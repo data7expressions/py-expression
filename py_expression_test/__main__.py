@@ -122,6 +122,21 @@ class TestExpression(unittest.TestCase):
         result= expression.eval(context)
         self.assertEqual(context['rectangle']['x'],50)
 
+    def test_lambdaFunctions(self):
+            
+        context = {"a":[1,2,3],"b":0}
+        exp.solve('a.foreach(p:b=b+p)',context)
+        self.assertEqual(context['b'],6) 
+
+
+
+# context = {"a":"1","b":2,"c":{"a":4,"b":5}}
+# exp.solve('a=8',context)
+# print(context['a'])
+
+context = {"a":[1,2,3],"b":0}
+exp.solve('a.foreach(p: b=b+p)',context)
+print(context['b'])
 
 unittest.main()
 
