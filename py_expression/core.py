@@ -252,7 +252,11 @@ class If(Operand):
         if self.operands[0].value:
            self.operands[1].value
         elif len(self.operands) > 2 and self.operands[2] is not None:       
-            self.operands[2].value 
+            self.operands[2].value
+
+    # TODO
+    def debug(self,token:Token,level): 
+        pass          
 
 class While(Operand):
     def __init__(self,name,operands=[]):
@@ -262,6 +266,10 @@ class While(Operand):
     def value(self): 
         while self.operands[0].value:
            self.operands[1].value
+
+    # TODO
+    def debug(self,token:Token,level): 
+        pass        
 
 class Array(Operand):
     def __init__(self,name,operands=[]):
@@ -392,11 +400,21 @@ class And(Operator):
     def value(self):
         if not self._operands[0].value : return False
         return self._operands[1].value
+
+    # TODO
+    def debug(self,token:Token,level): 
+        pass 
+
 class Or(Operator):
     @property
     def value(self):
         if self._operands[0].value : return True
         return self._operands[1].value
+    # TODO
+    def debug(self,token:Token,level): 
+        pass 
+
+
 class Not(Operator):
     @property
     def value(self):
@@ -475,8 +493,11 @@ class Block(Operand):
     def value(self):        
         for p in self._operands:
             p.value
-   
 
+    # TODO
+    def debug(self,token:Token,level): 
+        pass         
+   
 
 class Exp(metaclass=Singleton):
     def __init__(self):
@@ -827,8 +848,7 @@ class Exp(metaclass=Singleton):
             info.append({'types':p['types']})
         return info;
   
-            
-       
+      
 class Parser():
     def __init__(self,mgr,expression):
        self.mgr = mgr 
