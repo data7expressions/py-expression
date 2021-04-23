@@ -16,8 +16,40 @@ class Singleton(type):
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
 
-
 class ExpressionError(Exception):pass
+
+class Node(BaseModel):
+    n: str
+    t: str
+    c: Optional[List['Node']]
+Node.update_forward_refs()
+
+class DebugToken(BaseModel):
+    path: List[int]
+    expression: str
+    value: str
+    valueType: str
+    context: dict
+
+class Token():
+    def __init__(self):
+        self._value = None
+        self._path = []
+
+    @property
+    def value(self): 
+        return self._value
+    @value.setter
+    def value(self,value):
+        self._value =value  
+
+    @property
+    def path(self): 
+        return self._path
+    @path.setter
+    def path(self,value):
+        self._path =value         
+      
 
 class Operand():
     def __init__(self,name,operands=[]): 
@@ -45,8 +77,7 @@ class Operand():
 
     @property
     def operands(self):
-        return self._operands
-
+        return self._operands 
 
     def __add__(self, other):return Exp().newOperator('+',[other,self]) 
     def __sub__(self, other):return Exp().newOperator('-',[other,self])    
@@ -82,6 +113,28 @@ class Operand():
     def __imod__(self, other):return Exp().newOperator('%=',[other,self])
     def __ipow__(self, other):return Exp().newOperator('**=',[other,self])
 
+
+    def debug(self,token:Token,level): 
+        if len(token.path) <= level:
+            if len(self.operands)== 0:
+                token.value= self.value 
+            else:
+                token.path.append(0)
+                self.operands[0].debug(token,level+1)   
+        else:
+            idx = token.path[level]
+            # si es el anteultimo nodo 
+            if len(token.path) -1 == level:           
+                if len(self.operands) > idx+1:
+                   token.path[level] = idx+1
+                   self.operands[idx+1].debug(token,level+1)
+                else:
+                   token.path.pop() 
+                   token.value= self.value       
+            else:
+                self.operands[idx].debug(token,level+1)
+        
+  
     def eval(self,context:dict=None):
         return Exp().eval(self,context)
     def vars(self):
@@ -423,18 +476,7 @@ class Block(Operand):
         for p in self._operands:
             p.value
    
-class Node(BaseModel):
-    n: str
-    t: str
-    c: Optional[List['Node']]
-Node.update_forward_refs()
 
-class OperandDebug(BaseModel):
-    path: str
-    expression: str
-    valueSerialized: str
-    valueType: str
-    context: dict
 
 class Exp(metaclass=Singleton):
     def __init__(self):
@@ -679,6 +721,11 @@ class Exp(metaclass=Singleton):
             self.setContext(operand,context)
         return operand.value
 
+    def debug(self,operand:Operand,token:Token,context:dict=None):
+        if context is not None:
+            self.setContext(operand,context)
+        operand.debug(token,0)
+
     def solve(self,string:str,context:dict=None)-> any :        
         expression=self.parse(string)
         return self.eval(expression,context) 
@@ -690,8 +737,12 @@ class Exp(metaclass=Singleton):
             children.append(self.toNode(p))
         return Node(n=operand.name,t=type(operand).__name__,c=children)     
 
-    def debug(self,breakpoint:OperandDebug=None)-> OperandDebug:
-        pass 
+    def getInternalOperand(self,operand:Operand,path):
+        search = operand
+        for p in path:
+            search = search.operands[p]
+        return search    
+
         
     def setContext(self,expression:Operand,context:dict):
         if type(expression).__name__ ==  'Variable':expression.context = context
@@ -928,7 +979,6 @@ class Parser():
             function= self.getOperand()
             function.operands.insert(0,operand)
             if '.' not in function.name :function.name = '.'+function.name
-            # function.isChild = True
             operand=function
 
         if isNegative:operand=NegativeDecorator('-',[operand])

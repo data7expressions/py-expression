@@ -1,5 +1,5 @@
 import unittest
-from py_expression.core import Exp
+from py_expression.core import Exp,Token
 from enum import Enum
 
 exp = Exp()
@@ -122,10 +122,34 @@ class TestExpression(unittest.TestCase):
         result= expression.eval(context)
         self.assertEqual(context['rectangle']['x'],50)
 
-# operand=exp.parse('output=1;if(1==2){output=2}else{output=3}')
-# node= exp.toNode(operand)
-# print(node)
+
+operand=exp.parse('(a+1)*(a-1)')
+context = {'a':3}
+token= Token()
+exp.debug(operand,token,context)
+print(token.path)
+print(token.value)
+exp.debug(operand,token,context)
+print(token.path)
+print(token.value)
+exp.debug(operand,token,context)
+print(token.path)
+print(token.value)
+exp.debug(operand,token,context)
+print(token.path)
+print(token.value)
+exp.debug(operand,token,context)
+print(token.path)
+print(token.value)
+exp.debug(operand,token,context)
+print(token.path)
+print(token.value)
+exp.debug(operand,token,context)
+print(token.path)
+print(token.value)
+
 
 # op = exp.parse('"expression".count("e")>= a+1')
 # print(op.functions())
-unittest.main()
+# unittest.main()
+
