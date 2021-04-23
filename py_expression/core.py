@@ -705,18 +705,32 @@ class Exp(metaclass=Singleton):
         for p in self._functions[key]:
             if type in p['types']:
                 return p['imp']
-        return None
-   
-    def parse(self,string)->Operand:
+        return None    
+    
+    def minify(self,expression:str)->str:
+        isString=False
+        quotes=None
+        result =[]
+        buffer = list(expression)
+        for p in buffer:
+            if isString and p == quotes: isString=False 
+            elif not isString and (p == '\'' or p=='"'):
+                isString=True
+                quotes=p
+            if (p != ' ' and p!='\n' and p!='\r' and p!='\t' ) or isString:
+               result.append(p)
+        return result
+    
+    def parse(self,expression)->Operand:
         try:            
-            parser = Parser(self,string)
-            expression= parser.parse() 
+            parser = Parser(self,self.minify(expression))
+            operand= parser.parse() 
             del parser
-            return expression  
+            return operand  
         except Exception as error:
-            raise ExpressionError('expression: '+string+' error: '+str(error))
+            raise ExpressionError('expression: '+expression+' error: '+str(error))
 
-    def eval(self,operand:Operand,context:dict=None):
+    def eval(self,operand:Operand,context:dict=None)-> any :  
         if context is not None:
             self.setContext(operand,context)
         return operand.value
@@ -726,9 +740,9 @@ class Exp(metaclass=Singleton):
             self.setContext(operand,context)
         operand.debug(token,0)
 
-    def solve(self,string:str,context:dict=None)-> any :        
-        expression=self.parse(string)
-        return self.eval(expression,context) 
+    def solve(self,expression:str,context:dict=None)-> any :        
+        operand=self.parse(expression)
+        return self.eval(operand,context) 
 
     def toNode(self,operand:Operand)-> Node:        
         if len(operand.operands)==0:return Node(n=operand.name,t=type(operand).__name__)
@@ -737,9 +751,10 @@ class Exp(metaclass=Singleton):
             children.append(self.toNode(p))
         return Node(n=operand.name,t=type(operand).__name__,c=children)     
 
-    def getInternalOperand(self,operand:Operand,path):
+    def getOperandByPath(self,operand:Operand,path)->Operand:
         search = operand
         for p in path:
+            if len(search.operands) <= p:return None
             search = search.operands[p]
         return search    
 
@@ -815,27 +830,12 @@ class Exp(metaclass=Singleton):
             
        
 class Parser():
-    def __init__(self,mgr,string):
+    def __init__(self,mgr,expression):
        self.mgr = mgr 
-       self.chars = self.clear(string)
-       self.length=len(self.chars)
+       self.buffer = list(expression)
+       self.length=len(self.buffer)
        self.index=0
-
-    @staticmethod
-    def clear(string):
-        isString=False
-        quotes=None
-        result =[]
-        chars = list(string)
-        for p in chars:
-            if isString and p == quotes: isString=False 
-            elif not isString and (p == '\'' or p=='"'):
-                isString=True
-                quotes=p
-            if (p != ' ' and p!='\n' and p!='\r' and p!='\t' ) or isString:
-               result.append(p)
-        return result
-
+    
     def parse(self):
         operands=[]
         while not self.end:
@@ -848,13 +848,13 @@ class Parser():
 
     @property
     def previous(self):
-        return self.chars[self.index-1] 
+        return self.buffer[self.index-1] 
     @property
     def current(self):
-        return self.chars[self.index]    
+        return self.buffer[self.index]    
     @property
     def next(self):
-        return self.chars[self.index+1]
+        return self.buffer[self.index+1]
     @property
     def end(self):
         return self.index >= self.length   
@@ -997,8 +997,8 @@ class Parser():
                 self.index+=1
         else:
             index = self.index
-            while not self.end and self.mgr.reAlphanumeric.match(self.chars[index]):
-                buff.append(self.chars[index])
+            while not self.end and self.mgr.reAlphanumeric.match(self.buffer[index]):
+                buff.append(self.buffer[index])
                 index+=1        
         return ''.join(buff)
 
@@ -1006,7 +1006,7 @@ class Parser():
         if self.end:return None 
         op=None
         if self.index+2 < self.length:
-            triple = self.current+self.next+self.chars[self.index+2]
+            triple = self.current+self.next+self.buffer[self.index+2]
             if triple in self.mgr.tripleOperators :op=triple
             # if triple in ['**=','//=','<<=','>>=']:op=triple
         if op is None and  self.index+1 < self.length:
