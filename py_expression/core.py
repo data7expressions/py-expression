@@ -2,11 +2,11 @@ import re
 import math
 import time as t
 from datetime import date,datetime,time,timedelta
-import pytz
+# import pytz
 from os import path,getcwd
 from enum import Enum
-from typing import List, Optional
-from pydantic import BaseModel
+# from typing import List, Optional
+# from pydantic import BaseModel
 # from .base import *
 
 class Context():
@@ -65,7 +65,6 @@ class Managerable():
     def mgr(self,value):
         self._mgr=value 
 
-
 class Singleton(type):
     _instances = {}
     def __call__(cls, *args, **kwargs):
@@ -75,18 +74,18 @@ class Singleton(type):
 
 class ExpressionError(Exception):pass
 
-class Node(BaseModel):
-    n: str
-    t: str
-    c: Optional[List['Node']]
-Node.update_forward_refs()
+# class Node(BaseModel):
+#     n: str
+#     t: str
+#     c: Optional[List['Node']]
+# Node.update_forward_refs()
 
-class DebugToken(BaseModel):
-    path: List[int]
-    expression: str
-    value: str
-    valueType: str
-    context: dict
+# class DebugToken(BaseModel):
+#     path: List[int]
+#     expression: str
+#     value: str
+#     valueType: str
+#     context: dict
 
 class Token():
     def __init__(self):
@@ -790,7 +789,7 @@ class Exp(metaclass=Singleton):
         self.addFunction('fromtimestamp',date.fromtimestamp)
         self.addFunction('time',time)
         self.addFunction('timedelta',timedelta)
-        self.addFunction('timezone',pytz.timezone) 
+        # self.addFunction('timezone',pytz.timezone) 
 
     def stringFunctions(self):
         # https://docs.python.org/2.5/lib/string-methods.html
@@ -933,12 +932,12 @@ class Exp(metaclass=Singleton):
         operand=self.parse(expression)
         return self.eval(operand,context)
 
-    def toNode(self,operand:Operand)-> Node:        
-        if len(operand.operands)==0:return Node(n=operand.name,t=type(operand).__name__)
+    def toNode(self,operand:Operand)-> dict:        
+        if len(operand.operands)==0:return {'n':operand.name,'t':type(operand).__name__}
         children = []                
         for p in operand.operands:
             children.append(self.toNode(p))
-        return Node(n=operand.name,t=type(operand).__name__,c=children)     
+        return {'n':operand.name,'t':type(operand).__name__,'c':children}     
 
     def getOperandByPath(self,operand:Operand,path)->Operand:
         search = operand
