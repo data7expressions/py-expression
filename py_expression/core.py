@@ -265,7 +265,7 @@ class Object(Operand):
             dic[p.name]=p.value
         return dic
 
-class Foreach(Operand,Contextable,Managerable):
+class ArrayForeach(Operand,Contextable,Managerable):
     def __init__(self,name,operands=[]):
         Operand.__init__(self,name,operands)
 
@@ -278,8 +278,7 @@ class Foreach(Operand,Contextable,Managerable):
         for p in variable.value:
             childContext.init(self.name,p)
             body.value
-
-class Map(Operand,Contextable,Managerable):
+class ArrayMap(Operand,Contextable,Managerable):
     def __init__(self,name,operands=[]):
         Operand.__init__(self,name,operands)
 
@@ -294,19 +293,7 @@ class Map(Operand,Contextable,Managerable):
             childContext.init(self.name,p)
             result.append(body.value)
         return result
-
-class Reverse(Operand,Contextable,Managerable):
-    def __init__(self,name,operands=[]):
-        Operand.__init__(self,name,operands)
-
-    @property
-    def value(self):
-        variable= self._operands[0]
-        value = variable.value
-        value.reverse()
-        return value       
-
-class First(Operand,Contextable,Managerable):
+class ArrayFirst(Operand,Contextable,Managerable):
     def __init__(self,name,operands=[]):
         Operand.__init__(self,name,operands)
 
@@ -320,8 +307,7 @@ class First(Operand,Contextable,Managerable):
             childContext.init(self.name,p)
             if body.value : return p
         return None
-
-class Last(Operand,Contextable,Managerable):
+class ArrayLast(Operand,Contextable,Managerable):
     def __init__(self,name,operands=[]):
         Operand.__init__(self,name,operands)
 
@@ -337,8 +323,7 @@ class Last(Operand,Contextable,Managerable):
             childContext.init(self.name,p)
             if body.value : return p
         return None 
-
-class Filter(Operand,Contextable,Managerable):
+class ArrayFilter(Operand,Contextable,Managerable):
     def __init__(self,name,operands=[]):
         Operand.__init__(self,name,operands)
 
@@ -353,6 +338,85 @@ class Filter(Operand,Contextable,Managerable):
             childContext.init(self.name,p)
             if body.value: result.append(p)
         return result        
+class ArrayReverse(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):
+        if len(self._operands)==1:
+            variable= self._operands[0]
+            value = variable.value
+            value.reverse()
+            return value
+        else:
+            result=[]
+            variable= self._operands[0]
+            method= self._operands[1]
+            childContext=self.context.newContext()
+            self.mgr.setContext(method,childContext)
+            for p in variable.value:
+                childContext.init(self.name,p)
+                result.append({"ord":method.value,"p":p})
+            result.sort((lambda p: p["ord"]))
+            result.reverse()    
+            return map(lambda p: p['p'],result)
+class ArraySort(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):
+        if len(self._operands)==1:
+            variable= self._operands[0]
+            value = variable.value
+            value.reverse()
+            return value
+        else:
+            result=[]
+            variable= self._operands[0]
+            method= self._operands[1]
+            childContext=self.context.newContext()
+            self.mgr.setContext(method,childContext)
+            for p in variable.value:
+                childContext.init(self.name,p)
+                result.append({"ord":method.value,"p":p})
+            result.sort((lambda p: p["ord"]))
+            return map(lambda p: p['p'],result)
+class ArrayPush(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):        
+        variable= self._operands[0]
+        elemnent= self._operands[1]
+        value = variable.value
+        value.append(elemnent)
+        return value
+class ArrayPop(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):        
+        variable= self._operands[0]
+        index =None
+        if len(self._operands)>1:
+            index= self._operands[1].value
+        else:
+            index = len(self._operands) -1        
+        return variable.value.pop(index)
+
+class ArrayRemove(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):        
+        variable= self._operands[0]
+        element= self._operands[1]
+        variable.value.remove(element.value)    
 
 class Function(Operand,Managerable):
     def __init__(self,name,operands=[]):
@@ -1267,18 +1331,18 @@ class Parser():
         if self.current==':':self.index+=1
         else:raise ExpressionError('foreach without body')
         body= self.getExpression(_break=')')
-        return Foreach(name,[variable,body]) 
+        return ArrayForeach(name,[variable,body]) 
 
     def getMap(self,variable):
         name= self.getValue()
         if self.current==':':self.index+=1
         else:raise ExpressionError('map without body')
         body= self.getExpression(_break=')')
-        return Map(name,[variable,body])   
+        return ArrayMap(name,[variable,body])   
 
     def getReverse(self,variable): 
         if self.current == ')': self.index+=1       
-        return Reverse('',[variable]) 
+        return ArrayReverse('',[variable]) 
         # if self.current==':':self.index+=1
         # else:raise ExpressionError('reverse without body')
         # body= self.getExpression(_break=')')
@@ -1289,21 +1353,21 @@ class Parser():
         if self.current==':':self.index+=1
         else:raise ExpressionError('first without body')
         body= self.getExpression(_break=')')
-        return First(name,[variable,body])  
+        return ArrayFirst(name,[variable,body])  
 
     def getLast(self,variable):
         name= self.getValue()
         if self.current==':':self.index+=1
         else:raise ExpressionError('last without body')
         body= self.getExpression(_break=')')
-        return Last(name,[variable,body])                   
+        return ArrayLast(name,[variable,body])                   
 
     def getFilter(self,variable):
         name= self.getValue()
         if self.current==':':self.index+=1
         else:raise ExpressionError('filter without body')
         body= self.getExpression(_break=')')
-        return Filter(name,[variable,body])  
+        return ArrayFilter(name,[variable,body])  
 
     def getIndexOperand(self,name):
         idx= self.getExpression(_break=']')
