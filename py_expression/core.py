@@ -106,7 +106,6 @@ class Token():
     @path.setter
     def path(self,value):
         self._path =value         
-      
 
 class Operand():
     def __init__(self,name,operands=[]): 
@@ -221,8 +220,6 @@ class Constant(Operand):
     def __repr__(self):
         return str(self.name)  
 
-
-
 class Variable(Operand,Contextable):
     def __init__(self,name,operands=[]):
       Operand.__init__(self,name,operands) 
@@ -281,6 +278,81 @@ class Foreach(Operand,Contextable,Managerable):
         for p in variable.value:
             childContext.init(self.name,p)
             body.value
+
+class Map(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):
+        result=[]
+        variable= self._operands[0]
+        body= self._operands[1]
+        childContext=self.context.newContext()
+        self.mgr.setContext(body,childContext)
+        for p in variable.value:
+            childContext.init(self.name,p)
+            result.append(body.value)
+        return result
+
+class Reverse(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):
+        variable= self._operands[0]
+        value = variable.value
+        value.reverse()
+        return value       
+
+class First(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):
+        variable= self._operands[0]
+        body= self._operands[1]
+        childContext=self.context.newContext()
+        self.mgr.setContext(body,childContext)
+        for p in variable.value:
+            childContext.init(self.name,p)
+            if body.value : return p
+        return None
+
+class Last(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):
+        variable= self._operands[0]
+        body= self._operands[1]
+        childContext=self.context.newContext()
+        self.mgr.setContext(body,childContext)
+        value = variable.value
+        value.reverse()
+        for p in value:
+            childContext.init(self.name,p)
+            if body.value : return p
+        return None 
+
+class Filter(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):
+        result=[]
+        variable= self._operands[0]
+        body= self._operands[1]
+        childContext=self.context.newContext()
+        self.mgr.setContext(body,childContext)
+        for p in variable.value:
+            childContext.init(self.name,p)
+            if body.value: result.append(p)
+        return result        
 
 class Function(Operand,Managerable):
     def __init__(self,name,operands=[]):
@@ -978,7 +1050,16 @@ class Parser():
                 operand = self.getWhileBlock()            
             elif not self.end and self.current == '(':
                 self.index+=1
-                operand= self.getFunction(value)
+                if '.' in value:
+                    names = value.split('.')
+                    name = names.pop()
+                    variableName= '.'.join(names)
+                    variable = Variable(variableName)
+                    operand= self.getChildFunction(name,variable)
+                else:
+                    args=  self.getArgs(end=')')
+                    operand= Function(value,args)                
+
             elif not self.end and self.current == '[':
                 self.index+=1    
                 operand = self.getIndexOperand(value)              
@@ -1027,10 +1108,14 @@ class Parser():
 
         if not self.end and  self.current=='.':
             self.index+=1
-            function= self.getOperand()
-            function.operands.insert(0,operand)
-            if '.' not in function.name :function.name = '.'+function.name
-            operand=function
+            name=  self.getValue()
+            if self.current == '(': self.index+=1
+            operand =self.getChildFunction(name,operand)
+
+            # function= self.getOperand()
+            # function.operands.insert(0,operand)
+            # if '.' not in function.name :function.name = '.'+function.name
+            # operand=function
 
         if isNegative:operand=NegativeDecorator('-',[operand])
         if isNot:operand=NotDecorator('!',[operand])
@@ -1136,8 +1221,6 @@ class Parser():
 
         return If('if',[condition,block,elseblock]) 
 
-  
-
     def getWhileBlock(self):
         condition= self.getExpression(_break=')')
         if  self.current == '{':
@@ -1148,29 +1231,79 @@ class Parser():
 
         return While('while',[condition,block])   
 
-    def getFunction(self,name):        
-        if '.' in name:
-            names = name.split('.')
-            key = names.pop()
-            variableName= '.'.join(names)
-            variable = Variable(variableName)
-
-            if key == 'foreach':
-                return self.getForeach(variable)
-            else: 
-                args=  self.getArgs(end=')')
-                args.insert(0,variable)
-                return Function('.'+key,args)
-        else:
+    def getChildFunction(self,name,parent):
+        if name == 'foreach': return self.getForeach(parent)
+        elif name == 'map': return self.getMap(parent)
+        elif name == 'reverse': return self.getReverse(parent)
+        elif name == 'first': return self.getFirst(parent)
+        elif name == 'last': return self.getLast(parent)
+        elif name == 'filter': return self.getFilter(parent)
+        else: 
             args=  self.getArgs(end=')')
-            return Function(name,args)
+            args.insert(0,parent)
+            return Function('.'+name,args)
+
+        # if '.' in name:
+        #     names = name.split('.')
+        #     key = names.pop()
+        #     variableName= '.'.join(names)
+        #     variable = Variable(variableName)
+        #     if key == 'foreach': return self.getForeach(variable)
+        #     elif key == 'map': return self.getMap(variable)
+        #     elif key == 'reverse': return self.getReverse(variable)
+        #     elif key == 'first': return self.getFirst(variable)
+        #     elif key == 'last': return self.getLast(variable)
+        #     elif key == 'filter': return self.getFilter(variable)
+        #     else: 
+        #         args=  self.getArgs(end=')')
+        #         args.insert(0,variable)
+        #         return Function('.'+key,args)
+        # else:
+        #     args=  self.getArgs(end=')')
+        #     return Function(name,args)
 
     def getForeach(self,variable):
         name= self.getValue()
         if self.current==':':self.index+=1
         else:raise ExpressionError('foreach without body')
         body= self.getExpression(_break=')')
-        return Foreach(name,[variable,body])        
+        return Foreach(name,[variable,body]) 
+
+    def getMap(self,variable):
+        name= self.getValue()
+        if self.current==':':self.index+=1
+        else:raise ExpressionError('map without body')
+        body= self.getExpression(_break=')')
+        return Map(name,[variable,body])   
+
+    def getReverse(self,variable): 
+        if self.current == ')': self.index+=1       
+        return Reverse('',[variable]) 
+        # if self.current==':':self.index+=1
+        # else:raise ExpressionError('reverse without body')
+        # body= self.getExpression(_break=')')
+        # return Reverse(name,[variable,body])   
+
+    def getFirst(self,variable):
+        name= self.getValue()
+        if self.current==':':self.index+=1
+        else:raise ExpressionError('first without body')
+        body= self.getExpression(_break=')')
+        return First(name,[variable,body])  
+
+    def getLast(self,variable):
+        name= self.getValue()
+        if self.current==':':self.index+=1
+        else:raise ExpressionError('last without body')
+        body= self.getExpression(_break=')')
+        return Last(name,[variable,body])                   
+
+    def getFilter(self,variable):
+        name= self.getValue()
+        if self.current==':':self.index+=1
+        else:raise ExpressionError('filter without body')
+        body= self.getExpression(_break=')')
+        return Filter(name,[variable,body])  
 
     def getIndexOperand(self,name):
         idx= self.getExpression(_break=']')

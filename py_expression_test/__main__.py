@@ -85,15 +85,13 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(exp.solve('Color.GREEN'),2)  
 
     def test_info(self):
-
         op = exp.parse('"expression".count("e")>= a+1')
         self.assertEqual(op.vars(),{'a': 'any'})
         self.assertEqual(op.constants(),{'expression': 'str', 'e': 'str', 1: 'int'})
         self.assertEqual(op.operators(),{'>=': 'comparison', '+': 'arithmetic'})
         self.assertEqual(op.functions(),{'.count': {'isChild': True}} )    
 
-    def test_multine(self):
-    
+    def test_multine(self):    
         text='a=4; '\
              'b=a+2; '\
             ' output=a*b; ' 
@@ -102,8 +100,7 @@ class TestExpression(unittest.TestCase):
         expression.eval(context)
         self.assertEqual(context['output'],24)
 
-    def test_blockControl(self):
-        
+    def test_blockControl(self):        
         context = {}
         exp.solve('output=1;if(1==2){output=2}else {output=3}',context)
         self.assertEqual(context['output'],3)
@@ -112,8 +109,7 @@ class TestExpression(unittest.TestCase):
         exp.solve('i=0;while(i<=6){output=i*2;i=i+1;}',context)
         self.assertEqual(context['output'],12)   
 
-    def test_initializeLines(self):
-            
+    def test_initializeLines(self):            
         text = 'rectangle = {"x":50,"y":50,"width":80,"height":60}; '\
                'sleepSecs = 1;'\
                'source=nvl(source,"data/source.jpg");'
@@ -122,11 +118,23 @@ class TestExpression(unittest.TestCase):
         result= expression.eval(context)
         self.assertEqual(context['rectangle']['x'],50)
 
-    def test_lambdaFunctions(self):
-            
+    def test_lambdaFunctions(self):            
         context = {"a":[1,2,3],"b":0}
         exp.solve('a.foreach(p:b=b+p)',context)
         self.assertEqual(context['b'],6) 
+        context = {"a":[1,2,3,4,5],"b":0}
+        exp.solve('a.filter(p: p<5).foreach(p: b=b+p)',context)
+        self.assertEqual(context['b'],10) 
+        context = {"a":[1,2,3,4,5],"b":0}
+        self.assertEqual(exp.solve('a.first(p: p%2==0)',context),2) 
+        context = {"a":[1,2,3,4,5],"b":0}
+        self.assertEqual(exp.solve('a.last(p: p%2==0)',context),4) 
+        context = {"a":[1,2,3,4,5],"b":0}
+        self.assertEqual(exp.solve('a.filter(p: p>1 && p<5).map(p: p*2)',context),[4,6,8])
+        context = {"a":[1,2,3,4,5],"b":0}
+        self.assertEqual(exp.solve('a.filter(p: p>1 && p<5).reverse()',context),[4,3,2])
+        # context = {"a":[1,2,3,4,5],"b":0}
+        # self.assertEqual(exp.solve('a.filter(p: p>1 && p<5).map(p: p*2).reverse()',context),[8,6,4])
 
 
 
@@ -134,9 +142,16 @@ class TestExpression(unittest.TestCase):
 # exp.solve('a=8',context)
 # print(context['a'])
 
-context = {"a":[1,2,3],"b":0}
-exp.solve('a.foreach(p: b=b+p)',context)
-print(context['b'])
+# context = {"a":[1,2,3,4,5],"b":0}
+# exp.solve('a.filter(p:p<5).foreach(p: b=b+p)',context)
+# print(context['b'])
+
+# context = {"a":[1,2,3,4,5],"b":0}
+# print(exp.solve('a.filter(p: p>1 && p<5).map(p: p*2)',context))
+
+# TODO: esta expression falla , hay que solucionarlo
+# context = {"a":[1,2,3,4,5],"b":0}
+# print(exp.solve('a.filter(p: p>1 && p<5).map(p: p*2).reverse()',context))
 
 unittest.main()
 
