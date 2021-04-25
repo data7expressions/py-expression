@@ -2,6 +2,12 @@
 Py-expression is an extensible expression evaluator and parser.
 Besides the operators, functions, variables, objects and arrays that are supported; it is possible to extend it with your own functions, operators, etc. 
 
+
+
+
+
+
+
 # Features
 
 - Parse and evaluate 
@@ -94,6 +100,9 @@ op3 = (op1+op2)*(op1-op2) >= (op1*2)
 
 resutl1= op3.eval({"a":1,"b":2})
 resutl2= op3.eval({"a":5,"b":9})
+
+print(resutl1)
+print(resutl2)
 ```
 
 # Project Examples
@@ -118,7 +127,7 @@ In this project, the expression library and an opencv library that adds enums an
 
 ## Operators
 
-### Arithmetic Operators
+### i
 
 ```python
 context = {"a":9,"b":4,"c":{"a":4,"b":5},"d":None}
@@ -221,6 +230,7 @@ context = {"a":[1,2,3],"b":2}
 | 'a[0]'                | 1
 | 'a[b]'                | 3
 | 'a[b-1]'              | 2
+
 
 ## Strings
 
