@@ -5,8 +5,6 @@ from datetime import date,datetime,time,timedelta
 # import pytz
 from os import path,getcwd
 from enum import Enum
-# from typing import List, Optional
-# from pydantic import BaseModel
 # from .base import *
 
 class Context():
@@ -73,19 +71,6 @@ class Singleton(type):
         return cls._instances[cls]
 
 class ExpressionError(Exception):pass
-
-# class Node(BaseModel):
-#     n: str
-#     t: str
-#     c: Optional[List['Node']]
-# Node.update_forward_refs()
-
-# class DebugToken(BaseModel):
-#     path: List[int]
-#     expression: str
-#     value: str
-#     valueType: str
-#     context: dict
 
 class Token():
     def __init__(self):
