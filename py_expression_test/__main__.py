@@ -1,5 +1,5 @@
 import unittest
-from py_expression.core import Exp
+from py_expression.core import Exp,Token
 from enum import Enum
 
 exp = Exp()
@@ -85,15 +85,13 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(exp.solve('Color.GREEN'),2)  
 
     def test_info(self):
-
         op = exp.parse('"expression".count("e")>= a+1')
         self.assertEqual(op.vars(),{'a': 'any'})
         self.assertEqual(op.constants(),{'expression': 'str', 'e': 'str', 1: 'int'})
         self.assertEqual(op.operators(),{'>=': 'comparison', '+': 'arithmetic'})
-        self.assertEqual(op.functions(),{'count': {'isChild': True}} )    
+        self.assertEqual(op.functions(),{'.count': {'isChild': True}} )    
 
-    def test_multine(self):
-    
+    def test_multine(self):    
         text='a=4; '\
              'b=a+2; '\
             ' output=a*b; ' 
@@ -102,21 +100,88 @@ class TestExpression(unittest.TestCase):
         expression.eval(context)
         self.assertEqual(context['output'],24)
 
-    def test_blockControl(self):
-        
+    def test_blockControl(self):        
         context = {}
         exp.solve('output=1;if(1==2){output=2}else {output=3}',context)
         self.assertEqual(context['output'],3)
         exp.solve('output=1;if(1==1){output=2;}else {output=3;}',context)
         self.assertEqual(context['output'],2)
         exp.solve('i=0;while(i<=6){output=i*2;i=i+1;}',context)
-        self.assertEqual(context['output'],12)    
+        self.assertEqual(context['output'],12)   
+
+    def test_initializeLines(self):            
+        text = 'rectangle = {"x":50,"y":50,"width":80,"height":60}; '\
+               'sleepSecs = 1;'\
+               'source=nvl(source,"data/source.jpg");'
+        expression = exp.parse(text)
+        context = {}
+        result= expression.eval(context)
+        self.assertEqual(context['rectangle']['x'],50)
+
+    def test_lambdaFunctions(self):            
+        context = {"a":[1,2,3],"b":0}
+        exp.solve('a.foreach(p:b=b+p)',context)
+        self.assertEqual(context['b'],6) 
+        context = {"a":[1,2,3,4,5],"b":0}
+        exp.solve('a.filter(p: p<5).foreach(p: b=b+p)',context)
+        self.assertEqual(context['b'],10) 
+        context = {"a":[1,2,3,4,5],"b":0}
+        self.assertEqual(exp.solve('a.first(p: p%2==0)',context),2) 
+        context = {"a":[1,2,3,4,5],"b":0}
+        self.assertEqual(exp.solve('a.last(p: p%2==0)',context),4) 
+        context = {"a":[1,2,3,4,5],"b":0}
+        self.assertEqual(exp.solve('a.filter(p: p>1 && p<5).map(p: p*2)',context),[4,6,8])
+        context = {"a":[1,2,3,4,5],"b":0}
+        self.assertEqual(exp.solve('a.filter(p: p>1 && p<5).reverse()',context),[4,3,2])
+        # context = {"a":[1,2,3,4,5],"b":0}
+        # self.assertEqual(exp.solve('a.filter(p: p>1 && p<5).map(p: p*2).reverse()',context),[8,6,4])
 
 
-# text='a=1;\nb=2\r\n' 
-# expression = exp.parse(text)
-# context = {}
-# result= expression.eval(context)
-# print(context['output']) 
+
+# context = {"a":"1","b":2,"c":{"a":4,"b":5}}
+# exp.solve('a=8',context)
+# print(context['a'])
+
+# context = {"a":[1,2,3,4,5],"b":0}
+# exp.solve('a.filter(p:p<5).foreach(p: b=b+p)',context)
+# print(context['b'])
+
+# context = {"a":[1,2,3,4,5],"b":0}
+# print(exp.solve('a.filter(p: p>1 && p<5).map(p: p*2)',context))
+
+# TODO: esta expression falla , hay que solucionarlo
+# context = {"a":[1,2,3,4,5],"b":0}
+# print(exp.solve('a.filter(p: p>1 && p<5).map(p: p*2).reverse()',context))
 
 unittest.main()
+
+# operand=exp.parse('(a+1)*(a-1)')
+# context = {'a':3}
+# token= Token()
+# exp.debug(operand,token,context)
+# print(token.path)
+# print(token.value)
+# exp.debug(operand,token,context)
+# print(token.path)
+# print(token.value)
+# exp.debug(operand,token,context)
+# print(token.path)
+# print(token.value)
+# exp.debug(operand,token,context)
+# print(token.path)
+# print(token.value)
+# exp.debug(operand,token,context)
+# print(token.path)
+# print(token.value)
+# exp.debug(operand,token,context)
+# print(token.path)
+# print(token.value)
+# exp.debug(operand,token,context)
+# print(token.path)
+# print(token.value)
+
+
+# op = exp.parse('"expression".count("e")>= a+1')
+# print(op.functions())
+# unittest.main()
+

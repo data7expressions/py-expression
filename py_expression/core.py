@@ -2,52 +2,179 @@ import re
 import math
 import time as t
 from datetime import date,datetime,time,timedelta
-import pytz
+# import pytz
 from os import path,getcwd
 from enum import Enum
-from .base import *
+# from .base import *
+
+class Context():
+    def __init__(self,data:dict={},parent:'Context'=None):
+        self.data = data
+        self._parent= parent
+
+    def newContext(self):        
+        return Context({},self)
+
+    def getConext(self,variable):
+        if variable in self.data or self._parent is None: return self.data
+        _context =self._parent.getConext(variable)
+        return _context  if _context is not None else self.data
+
+    def get(self,name):
+        names=name.split('.')
+        value = self.getConext(names[0]) 
+        for n in names:
+            if n not in value: return None
+            value=value[n]
+        return value
+
+    def set(self,name,value):
+        names=name.split('.')        
+        level = len(names)-1
+        list = self.getConext(names[0]) 
+        for i,e in enumerate(names):
+            if i == level:
+                list[e]=value
+            else:                    
+                list=list[e] 
+
+    def init(self,name,value):
+        self.data[name]=value                     
+
+class Contextable():
+    def __init__(self):
+      self._context  = None
+
+    @property
+    def context(self):
+        return self._context
+    @context.setter
+    def context(self,value):
+        self._context=value
+
+class Managerable():
+    def __init__(self):
+      self._mgr  = None
+
+    @property
+    def mgr(self):
+        return self._mgr
+    @mgr.setter
+    def mgr(self,value):
+        self._mgr=value 
+
+class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
 
 class ExpressionError(Exception):pass
 
-class Operand():
+class Token():
+    def __init__(self):
+        self._value = None
+        self._path = []
+
     @property
     def value(self): 
-        pass
+        return self._value
+    @value.setter
+    def value(self,value):
+        self._value =value  
 
-    def __add__(self, other):return Addition([other,self]) 
-    def __sub__(self, other):return Subtraction([other,self])    
-    def __mul__(self, other):return Multiplication([other,self])
-    # def __pow__(self, other):return Exponentiation([other,self]) 
-    def __truediv__(self, other):return Division([other,self]) 
-    # def __floordiv__(self, other):return FloorDivision([other,self]) 
-    def __mod__(self, other):return Mod([other,self])
+    @property
+    def path(self): 
+        return self._path
+    @path.setter
+    def path(self,value):
+        self._path =value         
 
-    def __lshift__(self, other):return LeftShift([other,self])
-    def __rshift__(self, other):return RightShift([other,self])
-    def __and__(self, other):return BitAnd([other,self])
-    def __or__(self, other):return BitOr([other,self])
-    def __xor__(self, other):return BitXor([other,self])
-    def __invert__(self, other):return BitNot([other,self])
+class Operand():
+    def __init__(self,name,operands=[]): 
+        self._name = name         
+        self._operands  = operands
+        self._parent = None 
 
-    def __lt__(self, other):return LessThan([other,self])
-    def __le__(self, other):return LessThanOrEqual([other,self])
-    def __eq__(self, other):return Equal([other,self])
-    def __ne__(self, other):return NotEqual([other,self])
-    def __gt__(self, other):return GreaterThan([other,self])
-    def __ge__(self, other):return GreaterThanOrEqual([other,self])
+    @property
+    def name(self):
+        return self._name
+    @name.setter
+    def name(self,value):
+        self._name =value    
 
-    def __not__(self):return Not([self])
-    def __and2__(self, other):return And([other,self])
-    def __or2__(self, other):return Or([other,self])
+    @property
+    def parent(self):
+        return self._parent 
+    @parent.setter
+    def parent(self,value):
+        self._parent =value       
 
-    def __isub__(self, other):return AssigmentSubtraction([other,self])
-    def __iadd__(self, other):return AssigmentAddition([other,self])
-    def __imul__(self, other):return AssigmentMultiplication([other,self])
-    def __idiv__(self, other):return AssigmentDivision([other,self])
-    def __ifloordiv__(self, other):return AssigmentFloorDivision([other,self])
-    def __imod__(self, other):return AssigmentMod([other,self])
-    def __ipow__(self, other):return AssigmentExponentiation([other,self])
+    @property
+    def value(self): 
+        pass   
 
+    @property
+    def operands(self):
+        return self._operands 
+
+    def __add__(self, other):return Exp().newOperator('+',[other,self]) 
+    def __sub__(self, other):return Exp().newOperator('-',[other,self])    
+    def __mul__(self, other):return Exp().newOperator('*',[other,self])
+    def __pow__(self, other):return Exp().newOperator('**',[other,self]) 
+    def __truediv__(self, other):return Exp().newOperator('/',[other,self]) 
+    def __floordiv__(self, other):return Exp().newOperator('//',[other,self]) 
+    def __mod__(self, other):return Exp().newOperator('%',[other,self])
+
+    def __lshift__(self, other):return Exp().newOperator('<<',[other,self])
+    def __rshift__(self, other):return Exp().newOperator('>>',[other,self])
+    def __and__(self, other):return Exp().newOperator('&',[other,self])
+    def __or__(self, other):return Exp().newOperator('|',[other,self])
+    def __xor__(self, other):return Exp().newOperator('^',[other,self])
+    def __invert__(self, other):return Exp().newOperator('~',[other,self])
+
+    def __lt__(self, other):return Exp().newOperator('<',[other,self])
+    def __le__(self, other):return Exp().newOperator('<=',[other,self])
+    def __eq__(self, other):return Exp().newOperator('==',[other,self])
+    def __ne__(self, other):return Exp().newOperator('!=',[other,self])
+    def __gt__(self, other):return Exp().newOperator('>',[other,self])
+    def __ge__(self, other):return Exp().newOperator('>=',[other,self])
+
+    def __not__(self):return Exp().newOperator('!',[self])
+    def __and2__(self, other):return Exp().newOperator('&&',[other,self])
+    def __or2__(self, other):return Exp().newOperator('||',[other,self])
+
+    def __isub__(self, other):return Exp().newOperator('-=',[other,self])
+    def __iadd__(self, other):return Exp().newOperator('+=',[other,self])
+    def __imul__(self, other):return Exp().newOperator('*=',[other,self])
+    def __idiv__(self, other):return Exp().newOperator('/=',[other,self])
+    def __ifloordiv__(self, other):return Exp().newOperator('//=',[other,self])
+    def __imod__(self, other):return Exp().newOperator('%=',[other,self])
+    def __ipow__(self, other):return Exp().newOperator('**=',[other,self])
+
+
+    def debug(self,token:Token,level): 
+        if len(token.path) <= level:
+            if len(self.operands)== 0:
+                token.value= self.value 
+            else:
+                token.path.append(0)
+                self.operands[0].debug(token,level+1)   
+        else:
+            idx = token.path[level]
+            # si es el anteultimo nodo 
+            if len(token.path) -1 == level:           
+                if len(self.operands) > idx+1:
+                   token.path[level] = idx+1
+                   self.operands[idx+1].debug(token,level+1)
+                else:
+                   token.path.pop() 
+                   token.value= self.value       
+            else:
+                self.operands[idx].debug(token,level+1)
+        
+  
     def eval(self,context:dict=None):
         return Exp().eval(self,context)
     def vars(self):
@@ -60,148 +187,50 @@ class Operand():
         return Exp().getFunctions(self)
 
 class Constant(Operand):
-    def __init__(self,value,type ):
-      self._value  = value
-      self._type  = type
+    def __init__(self,name,operands=[]):
+      super(Constant,self).__init__(name)  
+    #   self._value  = name
+      self._type  = type(name).__name__
 
     @property
     def value(self): 
-        return self._value
+        return self.name
     @property
     def type(self): 
         return self._type     
 
     def __str__(self):
-        return str(self._value)
+        return str(self.name)
     def __repr__(self):
-        return str(self._value)  
-class Variable(Operand):
-    def __init__(self,name ):
-      self._name  = name
+        return str(self.name)  
+
+class Variable(Operand,Contextable):
+    def __init__(self,name,operands=[]):
+      Operand.__init__(self,name,operands) 
       self._names = name.split('.')
-      self._context  = None
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def context(self):
-        return self._context
-    @context.setter
-    def context(self,value):
-        self._context=value
 
     @property
     def value(self):
-        _value = self._context
-        for n in self._names:
-            _value=_value[n]
-        return _value
+        return self._context.get(self.name)
 
     @value.setter
     def value(self,value):
-        _value = self._context
-        length = len(self._names)
-        i=1
-        for n in self._names:
-            if i == length:
-                _value[n]=value
-            else:                    
-                _value=_value[n]
-            i+=1
+        self._context.set(self.name,value)
 
     def __str__(self):
         return self._name
     def __repr__(self):
         return self._name      
 class KeyValue(Operand):
-    def __init__(self,name,value:Operand):
-      super(KeyValue,self).__init__([value])
-      self._name  = name
+    def __init__(self,name,operands=[]):
+        super(KeyValue,self).__init__(name,operands)
 
-    @property
-    def name(self):
-        return self._name  
     @property
     def value(self): 
         return self._operands[0].value
-
-class Operation(Operand):
-    def __init__(self,operands ):
-      self._operands  = operands   
-
-    @property
-    def operands(self):
-        return self._operands
-
-    @property
-    def value(self):
-        pass
-class Function(Operation):
-    def __init__(self,mgr,name,args,isChild=False):
-      super(Function,self).__init__(args)
-      self.mgr  = mgr
-      self.name  = name
-      self._isChild  = isChild
-
-    @property
-    def isChild(self):
-        return self._isChild
-    @isChild.setter
-    def isChild(self,value):
-        self._isChild=value
-    @property
-    def value(self): 
-        args=[]
-        if self._isChild:
-            parent = self._operands.pop(0)
-            value = parent.value
-            _type = type(value).__name__
-            if isinstance(value,object) and hasattr(value, self.name):
-                function=getattr(value, self.name)
-                for p in self._operands:args.append(p.value)
-            else:    
-                function=self.mgr.getFunction(self.name,_type)            
-                for p in self._operands:args.append(p.value)
-                args.insert(0,value)            
-        else:
-            function=self.mgr.getFunction(self.name)
-            for p in self._operands:args.append(p.value)
-        return function(*args)    
-
-class If(Operation):
-    def __init__(self,condition,block,elseblock):
-      operands = [condition,block]
-      if elseblock != None: operands.append(elseblock)  
-      super(If,self).__init__(operands)      
-      self.condition  = condition
-      self.block  = block
-      self.elseblock  = elseblock
-
-    @property
-    def value(self): 
-        if self.condition.value:
-           self.block.value
-        elif self.elseblock != None:
-           self.elseblock.value  
-
-class While(Operation):
-    def __init__(self,condition,block):
-      operands = [condition,block]
-      super(While,self).__init__(operands)      
-      self.condition  = condition
-      self.block  = block
-
-    @property
-    def value(self): 
-        while self.condition.value:
-           self.block.value
-
-
-class Array(Operation):
-    def __init__(self,elements=[]):
-      super(Array,self).__init__(elements)
+class Array(Operand):
+    def __init__(self,name,operands=[]):
+      super(Array,self).__init__(name,operands)
 
     @property
     def value(self):
@@ -209,34 +238,222 @@ class Array(Operation):
         for p in self._operands:
             list.append(p.value)
         return list 
-class Object(Operation):
-    def __init__(self,attributes=[]):
-      super(Object,self).__init__(attributes)
+class Object(Operand):
+    def __init__(self,name,operands=[]):
+      super(Object,self).__init__(name,operands)
 
     @property
     def value(self):
         dic= {}
         for p in self._operands:
             dic[p.name]=p.value
-        return dic 
-class Operator(Operation):
-    def __init__(self,operands ):
-      super(Operator,self).__init__(operands)
-      self._name=""
-      self._category=""
+        return dic
+
+class ArrayForeach(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
 
     @property
-    def name(self):
-        return self._name
-    @name.setter
-    def name(self,value):
-        self._name=value 
+    def value(self):
+        variable= self._operands[0]
+        body= self._operands[1]
+        childContext=self.context.newContext()
+        self.mgr.setContext(body,childContext)
+        for p in variable.value:
+            childContext.init(self.name,p)
+            body.value
+class ArrayMap(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
     @property
-    def category(self):
-        return self._category
-    @category.setter
-    def category(self,value):
-        self._category=value        
+    def value(self):
+        result=[]
+        variable= self._operands[0]
+        body= self._operands[1]
+        childContext=self.context.newContext()
+        self.mgr.setContext(body,childContext)
+        for p in variable.value:
+            childContext.init(self.name,p)
+            result.append(body.value)
+        return result
+class ArrayFirst(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):
+        variable= self._operands[0]
+        body= self._operands[1]
+        childContext=self.context.newContext()
+        self.mgr.setContext(body,childContext)
+        for p in variable.value:
+            childContext.init(self.name,p)
+            if body.value : return p
+        return None
+class ArrayLast(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):
+        variable= self._operands[0]
+        body= self._operands[1]
+        childContext=self.context.newContext()
+        self.mgr.setContext(body,childContext)
+        value = variable.value
+        value.reverse()
+        for p in value:
+            childContext.init(self.name,p)
+            if body.value : return p
+        return None 
+class ArrayFilter(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):
+        result=[]
+        variable= self._operands[0]
+        body= self._operands[1]
+        childContext=self.context.newContext()
+        self.mgr.setContext(body,childContext)
+        for p in variable.value:
+            childContext.init(self.name,p)
+            if body.value: result.append(p)
+        return result        
+class ArrayReverse(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):
+        if len(self._operands)==1:
+            variable= self._operands[0]
+            value = variable.value
+            value.reverse()
+            return value
+        else:
+            result=[]
+            variable= self._operands[0]
+            method= self._operands[1]
+            childContext=self.context.newContext()
+            self.mgr.setContext(method,childContext)
+            for p in variable.value:
+                childContext.init(self.name,p)
+                result.append({"ord":method.value,"p":p})
+            result.sort((lambda p: p["ord"]))
+            result.reverse()    
+            return map(lambda p: p['p'],result)
+class ArraySort(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):
+        if len(self._operands)==1:
+            variable= self._operands[0]
+            value = variable.value
+            value.reverse()
+            return value
+        else:
+            result=[]
+            variable= self._operands[0]
+            method= self._operands[1]
+            childContext=self.context.newContext()
+            self.mgr.setContext(method,childContext)
+            for p in variable.value:
+                childContext.init(self.name,p)
+                result.append({"ord":method.value,"p":p})
+            result.sort((lambda p: p["ord"]))
+            return map(lambda p: p['p'],result)
+class ArrayPush(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):        
+        variable= self._operands[0]
+        elemnent= self._operands[1]
+        value = variable.value
+        value.append(elemnent)
+        return value
+class ArrayPop(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):        
+        variable= self._operands[0]
+        index =None
+        if len(self._operands)>1:
+            index= self._operands[1].value
+        else:
+            index = len(self._operands) -1        
+        return variable.value.pop(index)
+
+class ArrayRemove(Operand,Contextable,Managerable):
+    def __init__(self,name,operands=[]):
+        Operand.__init__(self,name,operands)
+
+    @property
+    def value(self):        
+        variable= self._operands[0]
+        element= self._operands[1]
+        variable.value.remove(element.value)    
+
+class Function(Operand,Managerable):
+    def __init__(self,name,operands=[]):
+      Operand.__init__(self,name,operands)
+
+    @property
+    def value(self): 
+        args=[]
+        if '.' in self.name:
+            name = self.name.replace('.','')
+            parent = self._operands.pop(0)
+            value = parent.value
+            _type = type(value).__name__
+            if isinstance(value,object) and hasattr(value, name):
+                function=getattr(value, name)
+                for p in self._operands:args.append(p.value)
+            else:    
+                function=self._mgr.getFunction(name,_type)            
+                for p in self._operands:args.append(p.value)
+                args.insert(0,value)            
+        else:
+            function=self._mgr.getFunction(self.name)
+            for p in self._operands:args.append(p.value)
+        return function(*args)    
+class If(Operand):
+    def __init__(self,name,operands=[]):
+      super(If,self).__init__(name,operands)      
+
+    @property
+    def value(self):         
+        if self.operands[0].value:
+           self.operands[1].value
+        elif len(self.operands) > 2 and self.operands[2] is not None:       
+            self.operands[2].value
+
+    # TODO
+    def debug(self,token:Token,level): 
+        pass          
+class While(Operand):
+    def __init__(self,name,operands=[]):
+      super(While,self).__init__(name,operands)      
+
+    @property
+    def value(self): 
+        while self.operands[0].value:
+           self.operands[1].value
+
+    # TODO
+    def debug(self,token:Token,level): 
+        pass        
+class Operator(Operand):
+    def __init__(self,name,operands=[]):
+      super(Operator,self).__init__(name,operands)
 
     @property
     def value(self):
@@ -252,26 +469,27 @@ class Operator(Operation):
         pass 
 
 class NegativeDecorator(Operator):
-    def __init__(self,operand:Operand ):
-        super(NegativeDecorator,self).__init__([operand])
+    def __init__(self,name,operands=[] ):
+        super(NegativeDecorator,self).__init__(name,operands)
 
     @property
     def value(self): 
         return self._operands[0].value * -1
 class NotDecorator(Operator):
-    def __init__(self,operand:Operand ):
-      super(NotDecorator,self).__init__([operand])
+    def __init__(self,name,operands=[]):
+      super(NotDecorator,self).__init__(name,operands)
 
     @property
     def value(self): 
         return not self._operands[0].value 
 class IndexDecorator(Operator):
-    def __init__(self,operand:Operand,idx:Operand ):
-      super(IndexDecorator,self).__init__([operand,idx])        
+    def __init__(self,name,operands=[] ):
+      super(IndexDecorator,self).__init__(name,operands)        
 
     @property
     def value(self): 
         return self._operands[0].value[self._operands[1].value]
+
 class Addition(Operator):
     def solve(self,a,b):
         return a+b 
@@ -338,11 +556,18 @@ class And(Operator):
     def value(self):
         if not self._operands[0].value : return False
         return self._operands[1].value
+
+    # TODO
+    def debug(self,token:Token,level): 
+        pass 
 class Or(Operator):
     @property
     def value(self):
         if self._operands[0].value : return True
         return self._operands[1].value
+    # TODO
+    def debug(self,token:Token,level): 
+        pass 
 class Not(Operator):
     @property
     def value(self):
@@ -413,15 +638,19 @@ class AssigmentRightShift(Operator):
     def value(self):
         self._operands[0].value >>= self._operands[1].value
         return self._operands[0].value
-class Block(Operation):
+class Block(Operand):
     def __init__(self,elements=[]):
-      super(Block,self).__init__(elements)
+      super(Block,self).__init__('block',elements)
 
     @property
     def value(self):        
         for p in self._operands:
             p.value
- 
+
+    # TODO
+    def debug(self,token:Token,level): 
+        pass         
+   
 class Exp(metaclass=Singleton):
     def __init__(self):
        self.reAlphanumeric = re.compile('[a-zA-Z0-9_.]+$') 
@@ -481,7 +710,7 @@ class Exp(metaclass=Singleton):
         self.addOperator('|=','assignment',AssigmentBitOr,1)
         self.addOperator('^=','assignment',AssigmentBitXor,1)
         self.addOperator('<<=','assignment',AssigmentLeftShift,1)
-        self.addOperator('>>=','assignment',AssigmentRightShift,1)
+        self.addOperator('>>=','assignment',AssigmentRightShift,1)        
 
     def generalFunctions(self): 
         self.addFunction('nvl',lambda a,b: a if a!=None and a!="" else b )
@@ -545,7 +774,7 @@ class Exp(metaclass=Singleton):
         self.addFunction('fromtimestamp',date.fromtimestamp)
         self.addFunction('time',time)
         self.addFunction('timedelta',timedelta)
-        self.addFunction('timezone',pytz.timezone) 
+        # self.addFunction('timezone',pytz.timezone) 
 
     def stringFunctions(self):
         # https://docs.python.org/2.5/lib/string-methods.html
@@ -616,10 +845,7 @@ class Exp(metaclass=Singleton):
     def newOperator(self,key,operands):
         try: 
             operator = self._operators[key];               
-            op= operator["imp"](operands)
-            op.name = key
-            op.category = operator["category"]
-            return op
+            return operator["imp"](key,operands)
         except:
             raise ExpressionError('error with operator: '+str(key))  
     def priority(self,key):
@@ -652,106 +878,14 @@ class Exp(metaclass=Singleton):
         for p in self._functions[key]:
             if type in p['types']:
                 return p['imp']
-        return None
-   
-    def parse(self,string)->Operand:
-        try:            
-            parser = Parser(self,string)
-            expression= parser.parse() 
-            del parser
-            return expression  
-        except Exception as error:
-            raise ExpressionError('expression: '+string+' error: '+str(error))
-
-    def eval(self,operand:Operand,context:dict=None):
-        if context != None:
-            self.setContext(operand,context)
-        return operand.value
-
-    def solve(self,string:str,context:dict=None):        
-        expression=self.parse(string)
-        return self.eval(expression,context) 
-
-    def getVars(self,expression):
-        list = {}
-        if type(expression).__name__ ==  'Variable':
-            list[expression.name] = "any"
-        if hasattr(expression, 'operands'):
-            for p in expression.operands:
-                if type(p).__name__ ==  'Variable':
-                    list[p.name] = "any"
-                elif hasattr(p, 'operands'):
-                    subList= self.getVars(p)
-                    list = {**list, **subList}
-        return list        
-    def getConstants(self,expression):
-        list = {}
-        if type(expression).__name__ ==  'Constant':
-            list[expression.value] = expression.type
-        if hasattr(expression, 'operands'):
-            for p in expression.operands:
-                if type(p).__name__ ==  'Constant':
-                    list[p.value] = p.type
-                elif hasattr(p, 'operands'):
-                    subList= self.getConstants(p)
-                    list = {**list, **subList}
-        return list
-    def getOperators(self,expression):
-        list = {}
-        if isinstance(expression,Operator):
-            list[expression.name] = expression.category
-        if hasattr(expression, 'operands'):
-            for p in expression.operands:
-                if isinstance(p,Operator):
-                    list[p.name] = p.category
-                elif hasattr(p, 'operands'):
-                    subList= self.getOperators(p)
-                    list = {**list, **subList}
-        return list
-    def getFunctions(self,expression):
-        list = {}
-        if type(expression).__name__ ==  'Function':
-            list[expression.name] = {"isChild":expression.isChild}
-        if hasattr(expression, 'operands'):
-            for p in expression.operands:
-                if type(p).__name__ ==  'Function':
-                    list[p.name] =  {"isChild":p.isChild}
-                elif hasattr(p, 'operands'):
-                    subList= self.getFunctions(p)
-                    list = {**list, **subList}
-        return list
-
-    def functionInfo(self,key):
-        if key not in self._functions: return None
-        info=[]
-        for p in self._functions[key]:
-            info.append({'types':p['types']})
-        return info;
-        
-    def setContext(self,expression,context):
-        if type(expression).__name__ ==  'Variable':
-            expression.context = context
-        if hasattr(expression, 'operands'):
-            for p in expression.operands:
-                if type(p).__name__ ==  'Variable':
-                    p.context = context
-                elif hasattr(p, 'operands'):
-                    self.setContext(p,context) 
-       
-class Parser():
-    def __init__(self,mgr,string):
-       self.mgr = mgr 
-       self.chars = self.clear(string)
-       self.length=len(self.chars)
-       self.index=0
-
-    @staticmethod
-    def clear(string):
+        return None    
+    
+    def minify(self,expression:str)->str:
         isString=False
         quotes=None
         result =[]
-        chars = list(string)
-        for p in chars:
+        buffer = list(expression)
+        for p in buffer:
             if isString and p == quotes: isString=False 
             elif not isString and (p == '\'' or p=='"'):
                 isString=True
@@ -759,7 +893,120 @@ class Parser():
             if (p != ' ' and p!='\n' and p!='\r' and p!='\t' ) or isString:
                result.append(p)
         return result
+    
+    def parse(self,expression)->Operand:
+        try:            
+            parser = Parser(self,self.minify(expression))
+            operand= parser.parse() 
+            del parser
+            return operand  
+        except Exception as error:
+            raise ExpressionError('expression: '+expression+' error: '+str(error))
 
+    def eval(self,operand:Operand,context:dict={})-> any :  
+        if context is not None:
+            self.setContext(operand,Context(context))
+        return operand.value
+
+    def debug(self,operand:Operand,token:Token,context:dict={}):
+        if context is not None:
+            self.setContext(operand,Context(context))
+        operand.debug(token,0)
+
+    def solve(self,expression:str,context:dict={})-> any :
+        operand=self.parse(expression)
+        return self.eval(operand,context)
+
+    def toNode(self,operand:Operand)-> dict:        
+        if len(operand.operands)==0:return {'n':operand.name,'t':type(operand).__name__}
+        children = []                
+        for p in operand.operands:
+            children.append(self.toNode(p))
+        return {'n':operand.name,'t':type(operand).__name__,'c':children}     
+
+    def getOperandByPath(self,operand:Operand,path)->Operand:
+        search = operand
+        for p in path:
+            if len(search.operands) <= p:return None
+            search = search.operands[p]
+        return search    
+
+        
+    def setContext(self,operand:Operand,context:Context):
+        if issubclass(operand.__class__,Contextable):operand.context = context 
+        if issubclass(operand.__class__,Managerable):operand.mgr = self
+        if len(operand.operands)>0 :       
+            for p in operand.operands:
+                if issubclass(p.__class__,Contextable):p.context = context
+                if issubclass(p.__class__,Managerable):p.mgr = self 
+                if len(p.operands)>0:
+                    self.setContext(p,context)
+
+    def setParent(self,expression:Operand,parent:Operand=None):
+        expression.parent = parent
+        if  len(expression.operands)>0: 
+            for p in expression.operands:
+                self.setParent(p,expression)        
+
+
+    def getVars(self,expression:Operand)->dict:
+        list = {}
+        if type(expression).__name__ ==  'Variable':
+            list[expression.name] = "any"
+        for p in expression.operands:
+            if type(p).__name__ ==  'Variable':
+                list[p.name] = "any"
+            elif len(p.operands)>0:
+                subList= self.getVars(p)
+                list = {**list, **subList}
+        return list        
+    def getConstants(self,expression:Operand)->dict:
+        list = {}
+        if type(expression).__name__ ==  'Constant':
+            list[expression.value] = expression.type
+        for p in expression.operands:
+            if type(p).__name__ ==  'Constant':
+                list[p.value] = p.type
+            elif len(p.operands)>0:
+                subList= self.getConstants(p)
+                list = {**list, **subList}
+        return list
+    def getOperators(self,expression:Operand)->dict:
+        list = {}
+        if isinstance(expression,Operator):
+            operator = self._operators[expression.name]; 
+            list[expression.name] = operator['category']
+        for p in expression.operands:
+            if isinstance(p,Operator):
+                operator = self._operators[p.name]; 
+                list[p.name] =  operator['category']
+            elif len(p.operands)>0:
+                subList= self.getOperators(p)
+                list = {**list, **subList}
+        return list
+    def getFunctions(self,expression:Operand)->dict:
+        list = {}
+        if type(expression).__name__ ==  'Function':list[expression.name] = {"isChild": '.' in expression.name}
+        for p in expression.operands:
+            if type(p).__name__ ==  'Function':list[p.name] =  {"isChild": '.' in p.name}
+            elif len(p.operands)>0:
+                subList= self.getFunctions(p)
+                list = {**list, **subList}
+        return list
+    def functionInfo(self,key):
+        if key not in self._functions: return None
+        info=[]
+        for p in self._functions[key]:
+            info.append({'types':p['types']})
+        return info;
+ 
+class Parser():
+    def __init__(self,mgr,expression):
+       self.mgr = mgr 
+       self.buffer = list(expression)
+       self.length=len(self.buffer)
+       self.index=0
+    
     def parse(self):
         operands=[]
         while not self.end:
@@ -772,13 +1019,13 @@ class Parser():
 
     @property
     def previous(self):
-        return self.chars[self.index-1] 
+        return self.buffer[self.index-1] 
     @property
     def current(self):
-        return self.chars[self.index]    
+        return self.buffer[self.index]    
     @property
     def next(self):
-        return self.chars[self.index+1]
+        return self.buffer[self.index+1]
     @property
     def end(self):
         return self.index >= self.length   
@@ -811,16 +1058,15 @@ class Parser():
                 break
         if not isbreak: expression=self.mgr.newOperator(operator,[operand1,operand2])
         # if all the operands are constant, reduce the expression a constant 
-        if expression != None and hasattr(expression, 'operands'):
+        if expression is not None and len(expression.operands)>0:    
             allConstants=True              
             for p in expression.operands:
                 if type(p).__name__ !=  'Constant':
                     allConstants=False
                     break
             if  allConstants:
-                value = expression.value
-                _type = type(value).__name__
-                return Constant(value,_type)
+                value = expression.value                
+                return Constant(value)
         return expression             
 
     def getOperand(self):        
@@ -849,10 +1095,19 @@ class Parser():
                 operand = self.getIfBlock()
             elif value=='while' and self.current == '(': 
                 self.index+=1
-                operand = self.getWhileBlock()
+                operand = self.getWhileBlock()            
             elif not self.end and self.current == '(':
                 self.index+=1
-                operand= self.getFunction(value)
+                if '.' in value:
+                    names = value.split('.')
+                    name = names.pop()
+                    variableName= '.'.join(names)
+                    variable = Variable(variableName)
+                    operand= self.getChildFunction(name,variable)
+                else:
+                    args=  self.getArgs(end=')')
+                    operand= Function(value,args)                
+
             elif not self.end and self.current == '[':
                 self.index+=1    
                 operand = self.getIndexOperand(value)              
@@ -865,7 +1120,7 @@ class Parser():
                     isBitNot= False     
                 else:
                     value =int(value)
-                operand = Constant(value,'int')
+                operand = Constant(value)
             elif self.mgr.reFloat.match(value):
                 if isNegative:
                     value = float(value)* -1
@@ -875,11 +1130,11 @@ class Parser():
                     isBitNot= False      
                 else:
                     value =float(value)
-                operand = Constant(value,'float')
+                operand = Constant(value)
             elif value=='true':                
-                operand = Constant(True,type(True))
+                operand = Constant(True)
             elif value=='false':                
-                operand = Constant(False,type(False))
+                operand = Constant(False)
             elif self.mgr.isEnum(value):                
                 operand= self.getEnum(value)
             else:
@@ -887,7 +1142,7 @@ class Parser():
         elif char == '\'' or char == '"':
             self.index+=1
             result=  self.getString(char)
-            operand= Constant(result,'str')
+            operand= Constant(result)
         elif char == '(':
             self.index+=1
             operand=  self.getExpression(_break=')') 
@@ -897,18 +1152,22 @@ class Parser():
         elif char == '[':
             self.index+=1
             elements=  self.getArgs(end=']')
-            operand = Array(elements)
+            operand = Array('array',elements)
 
         if not self.end and  self.current=='.':
             self.index+=1
-            function= self.getOperand()
-            function.operands.insert(0,operand)
-            function.isChild = True
-            operand=function
+            name=  self.getValue()
+            if self.current == '(': self.index+=1
+            operand =self.getChildFunction(name,operand)
 
-        if isNegative:operand=NegativeDecorator(operand)
-        if isNot:operand=NotDecorator(operand)
-        if isBitNot:operand=BitNot(operand)  
+            # function= self.getOperand()
+            # function.operands.insert(0,operand)
+            # if '.' not in function.name :function.name = '.'+function.name
+            # operand=function
+
+        if isNegative:operand=NegativeDecorator('-',[operand])
+        if isNot:operand=NotDecorator('!',[operand])
+        if isBitNot:operand=BitNot('~',[operand])  
         return operand
 
     def priority(self,op):
@@ -922,8 +1181,8 @@ class Parser():
                 self.index+=1
         else:
             index = self.index
-            while not self.end and self.mgr.reAlphanumeric.match(self.chars[index]):
-                buff.append(self.chars[index])
+            while not self.end and self.mgr.reAlphanumeric.match(self.buffer[index]):
+                buff.append(self.buffer[index])
                 index+=1        
         return ''.join(buff)
 
@@ -931,7 +1190,7 @@ class Parser():
         if self.end:return None 
         op=None
         if self.index+2 < self.length:
-            triple = self.current+self.next+self.chars[self.index+2]
+            triple = self.current+self.next+self.buffer[self.index+2]
             if triple in self.mgr.tripleOperators :op=triple
             # if triple in ['**=','//=','<<=','>>=']:op=triple
         if op is None and  self.index+1 < self.length:
@@ -957,30 +1216,35 @@ class Parser():
         args= []
         while True:
             arg= self.getExpression(_break=','+end)
-            if arg != None:args.append(arg)
+            if arg is not None:args.append(arg)
             if self.previous==end: break
         return args
 
     def getObject(self):
         attributes= []
         while True:
-            name= self.getValue()
+            name=None
+            if self.current== '"' or  self.current == "'":
+                char= self.current
+                self.index+=1
+                name= self.getString(char)
+            else:    
+                name= self.getValue()
             if self.current==':':self.index+=1
             else:raise ExpressionError('attribute '+name+' without value')
             value= self.getExpression(_break=',}')
-            attribute = KeyValue(name,value)
+            attribute = KeyValue(name,[value])
             attributes.append(attribute)
             if self.previous=='}':
-                self.index+=1 
                 break
         
-        return Object(attributes) 
+        return Object('object',attributes) 
 
     def getBlock(self):
         lines= []
         while True:
             line= self.getExpression(_break=';}')
-            if line != None :lines.append(line)
+            if line is not None :lines.append(line)
             if self.previous=='}':
                 break        
         return Block(lines)     
@@ -1003,7 +1267,7 @@ class Parser():
             else:
                 elseblock= self.getExpression(_break=';') 
 
-        return If(condition,block,elseblock) 
+        return If('if',[condition,block,elseblock]) 
 
     def getWhileBlock(self):
         condition= self.getExpression(_break=')')
@@ -1013,24 +1277,86 @@ class Parser():
         else:
             block= self.getExpression(_break=';') 
 
-        return While(condition,block)   
+        return While('while',[condition,block])   
 
-    def getFunction(self,name):
-        args=  self.getArgs(end=')')
-        if '.' in name:
-            names = name.split('.')
-            key = names.pop()
-            variableName= '.'.join(names)
-            variable = Variable(variableName)
-            args.insert(0,variable)
-            return Function(self.mgr,key,args,True)
-        else:
-            return Function(self.mgr,name,args)
+    def getChildFunction(self,name,parent):
+        if name == 'foreach': return self.getForeach(parent)
+        elif name == 'map': return self.getMap(parent)
+        elif name == 'reverse': return self.getReverse(parent)
+        elif name == 'first': return self.getFirst(parent)
+        elif name == 'last': return self.getLast(parent)
+        elif name == 'filter': return self.getFilter(parent)
+        else: 
+            args=  self.getArgs(end=')')
+            args.insert(0,parent)
+            return Function('.'+name,args)
+
+        # if '.' in name:
+        #     names = name.split('.')
+        #     key = names.pop()
+        #     variableName= '.'.join(names)
+        #     variable = Variable(variableName)
+        #     if key == 'foreach': return self.getForeach(variable)
+        #     elif key == 'map': return self.getMap(variable)
+        #     elif key == 'reverse': return self.getReverse(variable)
+        #     elif key == 'first': return self.getFirst(variable)
+        #     elif key == 'last': return self.getLast(variable)
+        #     elif key == 'filter': return self.getFilter(variable)
+        #     else: 
+        #         args=  self.getArgs(end=')')
+        #         args.insert(0,variable)
+        #         return Function('.'+key,args)
+        # else:
+        #     args=  self.getArgs(end=')')
+        #     return Function(name,args)
+
+    def getForeach(self,variable):
+        name= self.getValue()
+        if self.current==':':self.index+=1
+        else:raise ExpressionError('foreach without body')
+        body= self.getExpression(_break=')')
+        return ArrayForeach(name,[variable,body]) 
+
+    def getMap(self,variable):
+        name= self.getValue()
+        if self.current==':':self.index+=1
+        else:raise ExpressionError('map without body')
+        body= self.getExpression(_break=')')
+        return ArrayMap(name,[variable,body])   
+
+    def getReverse(self,variable): 
+        if self.current == ')': self.index+=1       
+        return ArrayReverse('',[variable]) 
+        # if self.current==':':self.index+=1
+        # else:raise ExpressionError('reverse without body')
+        # body= self.getExpression(_break=')')
+        # return Reverse(name,[variable,body])   
+
+    def getFirst(self,variable):
+        name= self.getValue()
+        if self.current==':':self.index+=1
+        else:raise ExpressionError('first without body')
+        body= self.getExpression(_break=')')
+        return ArrayFirst(name,[variable,body])  
+
+    def getLast(self,variable):
+        name= self.getValue()
+        if self.current==':':self.index+=1
+        else:raise ExpressionError('last without body')
+        body= self.getExpression(_break=')')
+        return ArrayLast(name,[variable,body])                   
+
+    def getFilter(self,variable):
+        name= self.getValue()
+        if self.current==':':self.index+=1
+        else:raise ExpressionError('filter without body')
+        body= self.getExpression(_break=')')
+        return ArrayFilter(name,[variable,body])  
 
     def getIndexOperand(self,name):
         idx= self.getExpression(_break=']')
         operand= Variable(name)
-        return IndexDecorator(operand,idx) 
+        return IndexDecorator('[]',[operand,idx]) 
 
     def getEnum(self,value):
         if '.' in value and self.mgr.isEnum(value):
@@ -1038,17 +1364,17 @@ class Parser():
             enumName = names[0]
             enumOption = names[1] 
             enumValue= self.mgr.getEnumValue(enumName,enumOption)
-            enumType = type(enumValue).__name__
-            return Constant(enumValue,enumType)
+            # enumType = type(enumValue).__name__
+            return Constant(enumValue)
         else:
             values= self.mgr.getEnum(value)
             attributes= []
             for name in values:
                 _value = values[name]
-                _valueType = type(_value).__name__
-                attribute = KeyValue(name,Constant(_value,_valueType))
+                # _valueType = type(_value).__name__
+                attribute = KeyValue(name,[Constant(_value)])
                 attributes.append(attribute)
-            return Object(attributes)
+            return Object('object',attributes)
    
 
                             
