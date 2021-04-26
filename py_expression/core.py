@@ -873,7 +873,14 @@ class Exp(metaclass=Singleton):
     def addFunction(self,name,source,types=['any']):
         if name not in self._functions.keys():
             self._functions[name]= []
-        self._functions[name].append({'types':types,'imp':source})         
+
+        metadata= {
+            'name': source.__name__,
+            'doc':source.__doc__
+        }
+        self._functions[name].append({'types':types,'imp':source,'metadata':metadata})  
+
+
     def getFunction(self,key,type='any'):
         for p in self._functions[key]:
             if type in p['types']:
