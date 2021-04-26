@@ -391,7 +391,6 @@ class ArrayPop(Operand,Contextable,Managerable):
         else:
             index = len(self._operands) -1        
         return variable.value.pop(index)
-
 class ArrayRemove(Operand,Contextable,Managerable):
     def __init__(self,name,operands=[]):
         Operand.__init__(self,name,operands)
@@ -424,7 +423,19 @@ class Function(Operand,Managerable):
         else:
             function=self._mgr.getFunction(self.name)
             for p in self._operands:args.append(p.value)
-        return function(*args)    
+        return function(*args)
+class Block(Operand):
+    def __init__(self,name,elements=[]):
+      super(Block,self).__init__(name,elements)
+
+    @property
+    def value(self):        
+        for p in self._operands:
+            p.value
+
+    # TODO
+    def debug(self,token:Token,level): 
+        pass              
 class If(Operand):
     def __init__(self,name,operands=[]):
       super(If,self).__init__(name,operands)      
@@ -638,18 +649,7 @@ class AssigmentRightShift(Operator):
     def value(self):
         self._operands[0].value >>= self._operands[1].value
         return self._operands[0].value
-class Block(Operand):
-    def __init__(self,elements=[]):
-      super(Block,self).__init__('block',elements)
-
-    @property
-    def value(self):        
-        for p in self._operands:
-            p.value
-
-    # TODO
-    def debug(self,token:Token,level): 
-        pass         
+       
    
 class Exp(metaclass=Singleton):
     def __init__(self):
@@ -917,13 +917,21 @@ class Exp(metaclass=Singleton):
         operand=self.parse(expression)
         return self.eval(operand,context)
 
-    def toNode(self,operand:Operand)-> dict:        
+    def serialize(self,operand:Operand)-> dict:        
         if len(operand.operands)==0:return {'n':operand.name,'t':type(operand).__name__}
         children = []                
         for p in operand.operands:
-            children.append(self.toNode(p))
+            children.append(self.serialize(p))
         return {'n':operand.name,'t':type(operand).__name__,'c':children}     
 
+    def deserialize(self,serialized:dict)-> Operand:
+        children = []
+        if 'c' in serialized:
+            for p in serialized['c']:
+                children.append(self.deserialize(p))
+        return  eval(serialized['t'])(serialized['n'],children) 
+
+ 
     def getOperandByPath(self,operand:Operand,path)->Operand:
         search = operand
         for p in path:
@@ -1015,7 +1023,7 @@ class Parser():
             operands.append(operand)
         if len(operands)==1 :
             return operands[0]
-        return Block(operands) 
+        return Block('block',operands) 
 
     @property
     def previous(self):
@@ -1247,7 +1255,7 @@ class Parser():
             if line is not None :lines.append(line)
             if self.previous=='}':
                 break        
-        return Block(lines)     
+        return Block('block',lines)     
 
     def getIfBlock(self):
         condition= self.getExpression(_break=')')

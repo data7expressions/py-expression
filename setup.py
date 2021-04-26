@@ -7,12 +7,12 @@ with open('README.md') as f:
 setup(
   name = 'py-expression',
   packages = ['py_expression'],
-  version = '1.3.2',
+  version = '1.3.3',
   description = 'parser and solve expressions',
   long_description=long_description,
   long_description_content_type='text/markdown',  # This is important!
   url = 'https://github.com/FlavioLionelRita/py-expression', # use the URL to the github repo
-  download_url = 'https://github.com/FlavioLionelRita/py-expression/tarball/1.3.2',
+  download_url = 'https://github.com/FlavioLionelRita/py-expression/tarball/1.3.3',
   keywords = ['parser', 'expression'],
   classifiers = [],
   author = 'Flavio Lionel Rita',
