@@ -1,11 +1,13 @@
 import re
 import math
-import time as t
+# import time as t
 from datetime import date,datetime,time,timedelta
 # import pytz
 from os import path,getcwd
-from enum import Enum
+from enum import Enum 
 # from .base import *
+from .functions import *
+
 
 class Context():
     def __init__(self,data:dict={},parent:'Context'=None):
@@ -649,7 +651,8 @@ class AssigmentRightShift(Operator):
     def value(self):
         self._operands[0].value >>= self._operands[1].value
         return self._operands[0].value
-       
+
+     
    
 class Exp(metaclass=Singleton):
     def __init__(self):
@@ -663,9 +666,9 @@ class Exp(metaclass=Singleton):
        self._functions={}
        self.initOperators()
        self.generalFunctions()
+       self.stringFunctions()
        self.mathFunctions()
        self.datetimeFunctions()
-       self.stringFunctions()
        self.ioFunctions()
        self.initEnums()
        self.refresh()
@@ -712,11 +715,47 @@ class Exp(metaclass=Singleton):
         self.addOperator('<<=','assignment',AssigmentLeftShift,1)
         self.addOperator('>>=','assignment',AssigmentRightShift,1)        
 
-    def generalFunctions(self): 
-        self.addFunction('nvl',lambda a,b: a if a!=None and a!="" else b )
-        self.addFunction('isEmpty',lambda a: a==None or a =="")
-        self.addFunction('sleep',t.sleep)        
-      
+    def generalFunctions(self):
+        self.addFunction('nvl',General.nvl )
+        self.addFunction('isEmpty',General.isEmpty)
+        self.addFunction('sleep',General.sleep)        
+
+    def stringFunctions(self):
+        self.addFunction('capitalize',String.capitalize,['str'])
+        self.addFunction('count',String.count,['str'])
+        self.addFunction('encode',String.encode,['str'])
+        self.addFunction('endswith',String.endswith,['str'])
+        self.addFunction('find',String.find,['str'])
+        self.addFunction('index',String.index,['str'])
+        self.addFunction('isalnum',String.isalnum,['str'])
+        self.addFunction('isalpha',String.isalpha,['str'])
+        self.addFunction('isdigit',String.isdigit,['str'])
+        self.addFunction('islower',String.islower,['str'])
+        self.addFunction('isspace',String.isspace,['str'])
+        self.addFunction('istitle',String.istitle,['str'])
+        self.addFunction('isupper',String.isupper,['str'])
+        self.addFunction('join',String.join,['str'])
+        self.addFunction('ljust',String.ljust,['str'])
+        self.addFunction('lower',String.lower,['str'])
+        self.addFunction('lstrip',String.lstrip,['str'])
+        self.addFunction('partition',String.partition,['str'])
+        self.addFunction('replace',String.replace,['str'])
+        self.addFunction('rfind',String.rfind,['str'])
+        self.addFunction('rindex',String.rindex,['str'])
+        self.addFunction('rjust',String.rjust,['str'])
+        self.addFunction('rpartition',String.rpartition,['str'])
+        self.addFunction('rsplit',String.rsplit,['str'])
+        self.addFunction('rstrip',String.lstrip,['str'])
+        self.addFunction('split',String.split,['str'])
+        self.addFunction('splitlines',String.splitlines,['str'])
+        self.addFunction('startswith',String.startswith,['str'])
+        self.addFunction('strip',String.lstrip,['str'])
+        self.addFunction('swapcase',String.swapcase,['str'])
+        self.addFunction('title',String.title,['str'])
+        # self.addFunction('translate',String.translate,['str'])
+        self.addFunction('upper',String.upper,['str'])
+        self.addFunction('zfill',String.zfill,['str'])   
+
     def mathFunctions(self):
         self.addFunction('ceil',math.ceil)
         self.addFunction('copysign',math.copysign) 
@@ -758,8 +797,8 @@ class Exp(metaclass=Singleton):
         self.addFunction('erfc',math.erfc)
         self.addFunction('gamma',math.gamma)
         self.addFunction('lgamma',math.lgamma)
-        self.addFunction('pi',math.pi)
-        self.addFunction('e',math.e)
+        # self.addFunction('pi',math.pi)
+        # self.addFunction('e',math.e)
     
     def datetimeFunctions(self):
         # https://stackabuse.com/how-to-format-dates-in-python/
@@ -776,44 +815,7 @@ class Exp(metaclass=Singleton):
         self.addFunction('timedelta',timedelta)
         # self.addFunction('timezone',pytz.timezone) 
 
-    def stringFunctions(self):
-        # https://docs.python.org/2.5/lib/string-methods.html
-
-        self.addFunction('capitalize',str.capitalize,['str'])
-        self.addFunction('count',str.count,['str'])
-        self.addFunction('encode',str.encode,['str'])
-        self.addFunction('endswith',str.endswith,['str'])
-        self.addFunction('find',str.find,['str'])
-        self.addFunction('index',str.index,['str'])
-        self.addFunction('isalnum',str.isalnum,['str'])
-        self.addFunction('isalpha',str.isalpha,['str'])
-        self.addFunction('isdigit',str.isdigit,['str'])
-        self.addFunction('islower',str.islower,['str'])
-        self.addFunction('isspace',str.isspace,['str'])
-        self.addFunction('istitle',str.istitle,['str'])
-        self.addFunction('isupper',str.isupper,['str'])
-        self.addFunction('join',str.join,['str'])
-        self.addFunction('ljust',str.ljust,['str'])
-        self.addFunction('lower',str.lower,['str'])
-        self.addFunction('lstrip',str.lstrip,['str'])
-        self.addFunction('partition',str.partition,['str'])
-        self.addFunction('replace',str.replace,['str'])
-        self.addFunction('rfind',str.rfind,['str'])
-        self.addFunction('rindex',str.rindex,['str'])
-        self.addFunction('rjust',str.rjust,['str'])
-        self.addFunction('rpartition',str.rpartition,['str'])
-        self.addFunction('rsplit',str.rsplit,['str'])
-        self.addFunction('rstrip',str.lstrip,['str'])
-        self.addFunction('split',str.split,['str'])
-        self.addFunction('splitlines',str.splitlines,['str'])
-        self.addFunction('startswith',str.startswith,['str'])
-        self.addFunction('strip',str.lstrip,['str'])
-        self.addFunction('swapcase',str.swapcase,['str'])
-        self.addFunction('title',str.title,['str'])
-        self.addFunction('translate',str.translate,['str'])
-        self.addFunction('upper',str.upper,['str'])
-        self.addFunction('zfill',str.zfill,['str'])   
-
+    
     def ioFunctions(self): 
         class Volume():
             def __init__(self,_path):        
@@ -874,11 +876,93 @@ class Exp(metaclass=Singleton):
         if name not in self._functions.keys():
             self._functions[name]= []
 
-        metadata= {
-            'name': source.__name__,
-            'doc':source.__doc__
-        }
-        self._functions[name].append({'types':types,'imp':source,'metadata':metadata})  
+        self._functions[name].append({'types':types,'imp':source})  
+
+        # metadata= {
+        #     'name': source.__name__,
+        #     'doc':source.__doc__,
+        #     'args': []
+        # }
+        # print(source.__name__)
+        # print(source.__doc__)
+
+        # a =dir(source)
+        # print(a)
+        
+
+        # for p in  source.__annotations__:
+        #     if p == 'return':
+        #         metadata['return'] = {'name':p,'type':source.__annotations__[p] }
+        #     else:
+        #         arg={'name':p,'type':source.__annotations__[p] }
+        #         metadata['args'].append(arg)
+
+        # self._functions[name].append({'types':types,'imp':source,'metadata':metadata})  
+
+        
+        # sig = inspect.signature(source)
+        # print('module_level_function{}'.format(sig))
+
+        # print('\nParameter details:')
+        # for name, param in sig.parameters.items():
+        #     if param.kind == inspect.Parameter.POSITIONAL_ONLY:
+        #         print('  {} (positional-only)'.format(name))
+        #     elif param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
+        #         if param.default != inspect.Parameter.empty:
+        #             print('  {}={!r}'.format(name, param.default))
+        #         else:
+        #             print('  {}'.format(name))
+        #     elif param.kind == inspect.Parameter.VAR_POSITIONAL:
+        #         print('  *{}'.format(name))
+        #     elif param.kind == inspect.Parameter.KEYWORD_ONLY:
+        #         if param.default != inspect.Parameter.empty:
+        #             print('  {}={!r} (keyword-only)'.format(
+        #                 name, param.default))
+        #         else:
+        #             print('  {} (keyword-only)'.format(name))
+        #     elif param.kind == inspect.Parameter.VAR_KEYWORD:
+        #         print('  **{}'.format(name))
+
+        # if inspect.isfunction(source):
+        #     func_obj = source
+        # elif inspect.ismethod(source):
+        #     func_obj = source.im_func
+        # elif inspect.ismethoddescriptor(source):
+        #     m= inspect.getmembers(source)
+        #     for p in m:
+        #         print(p)
+               
+        # else:
+        #     raise TypeError('arg is not a Python function')
+
+        # for p in  source.__annotations__:
+        #     if p == 'return':
+        #         metadata['return'] = {'name':p,'type':source.__annotations__[p] }
+        #     else:
+        #         arg={'name':p,'type':source.__annotations__[p] }
+        #         metadata['args'].append(arg)
+
+        # self._functions[name].append({'types':types,'imp':source,'metadata':metadata})  
+        # args, varargs, varkw = inspect.getargs(func_obj)
+        # return args, varargs, varkw, func_obj.func_defaults
+
+
+        # for p in  source.__annotations__:
+        #     if p == 'return':
+        #         metadata['return'] = {'name':p,'type':source.__annotations__[p] }
+        #     else:
+        #         arg={'name':p,'type':source.__annotations__[p] }
+        #         metadata['args'].append(arg)
+                   
+        #     print(p)
+        # signature= inspect.signature(source)
+        # for p in signature.parameters:
+        #     parameter = signature.parameters[p]
+        #     parameter.name
+        #     arg = {'name':parameter.name,'type':parameter.annotation }
+        #     metadata['args'].append(arg) 
+
+        
 
 
     def getFunction(self,key,type='any'):
