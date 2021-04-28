@@ -1,12 +1,9 @@
 import re
-import math
-# import time as t
-from datetime import date,datetime,time,timedelta
-# import pytz
 from os import path,getcwd
 from enum import Enum 
 # from .base import *
 from .functions import *
+import inspect
 
 
 class Context():
@@ -652,7 +649,9 @@ class AssigmentRightShift(Operator):
         self._operands[0].value >>= self._operands[1].value
         return self._operands[0].value
 
-     
+
+
+
    
 class Exp(metaclass=Singleton):
     def __init__(self):
@@ -757,76 +756,63 @@ class Exp(metaclass=Singleton):
         self.addFunction('zfill',String.zfill,['str'])   
 
     def mathFunctions(self):
-        self.addFunction('ceil',math.ceil)
-        self.addFunction('copysign',math.copysign) 
-        self.addFunction('factorial',math.factorial) 
-        self.addFunction('floor',math.floor) 
-        self.addFunction('fmod',math.fmod) 
-        self.addFunction('frexp',math.frexp) 
-        self.addFunction('fsum',math.fsum) 
-        self.addFunction('isfinite',math.isfinite) 
-        self.addFunction('isnan',math.isnan) 
-        self.addFunction('ldexp',math.ldexp) 
-        self.addFunction('modf',math.modf) 
-        self.addFunction('trunc',math.trunc) 
-        self.addFunction('exp',math.exp) 
-        self.addFunction('expm1',math.expm1) 
-        self.addFunction('log',math.log) 
-        self.addFunction('log1p',math.log1p) 
-        self.addFunction('log2',math.log2) 
-        self.addFunction('log10',math.log10) 
-        self.addFunction('pow',math.pow) 
-        self.addFunction('sqrt',math.sqrt) 
-        self.addFunction('acos',math.acos) 
-        self.addFunction('asin',math.asin) 
-        self.addFunction('atan',math.atan) 
-        self.addFunction('atan2',math.atan2) 
-        self.addFunction('cos',math.cos) 
-        self.addFunction('hypot',math.hypot) 
-        self.addFunction('sin',math.sin) 
-        self.addFunction('tan',math.tan) 
-        self.addFunction('degrees',math.degrees)
-        self.addFunction('radians',math.radians)
-        self.addFunction('acosh',math.acosh)
-        self.addFunction('asinh',math.asinh)
-        self.addFunction('atanh',math.atanh)
-        self.addFunction('cosh',math.cosh)
-        self.addFunction('sinh',math.sinh)
-        self.addFunction('tanh',math.tanh)
-        self.addFunction('erf',math.erf)
-        self.addFunction('erfc',math.erfc)
-        self.addFunction('gamma',math.gamma)
-        self.addFunction('lgamma',math.lgamma)
-        # self.addFunction('pi',math.pi)
-        # self.addFunction('e',math.e)
+        self.addFunction('ceil',Math.ceil)
+        self.addFunction('copysign',Math.copysign) 
+        self.addFunction('factorial',Math.factorial) 
+        self.addFunction('floor',Math.floor) 
+        self.addFunction('fmod',Math.fmod) 
+        self.addFunction('frexp',Math.frexp) 
+        self.addFunction('fsum',Math.fsum) 
+        self.addFunction('isfinite',Math.isfinite) 
+        self.addFunction('isnan',Math.isnan) 
+        self.addFunction('ldexp',Math.ldexp) 
+        self.addFunction('modf',Math.modf) 
+        self.addFunction('trunc',Math.trunc) 
+        self.addFunction('exp',Math.exp) 
+        self.addFunction('expm1',Math.expm1) 
+        self.addFunction('log',Math.log) 
+        self.addFunction('log1p',Math.log1p) 
+        self.addFunction('log2',Math.log2) 
+        self.addFunction('log10',Math.log10) 
+        self.addFunction('pow',Math.pow) 
+        self.addFunction('sqrt',Math.sqrt) 
+        self.addFunction('acos',Math.acos) 
+        self.addFunction('asin',Math.asin) 
+        self.addFunction('atan',Math.atan) 
+        self.addFunction('atan2',Math.atan2) 
+        self.addFunction('cos',Math.cos) 
+        self.addFunction('hypot',Math.hypot) 
+        self.addFunction('sin',Math.sin) 
+        self.addFunction('tan',Math.tan) 
+        self.addFunction('degrees',Math.degrees)
+        self.addFunction('radians',Math.radians)
+        self.addFunction('acosh',Math.acosh)
+        self.addFunction('asinh',Math.asinh)
+        self.addFunction('atanh',Math.atanh)
+        self.addFunction('cosh',Math.cosh)
+        self.addFunction('sinh',Math.sinh)
+        self.addFunction('tanh',Math.tanh)
+        self.addFunction('erf',Math.erf)
+        self.addFunction('erfc',Math.erfc)
+        self.addFunction('gamma',Math.gamma)
+        self.addFunction('lgamma',Math.lgamma)
+        self.addFunction('pi',Math.pi)
+        self.addFunction('e',Math.e)
     
     def datetimeFunctions(self):
-        # https://stackabuse.com/how-to-format-dates-in-python/
-        # https://www.programiz.com/python-programming/datetime
-
-        self.addFunction('strftime',datetime.strftime,['datetime'])
-        self.addFunction('strptime',datetime.strptime)        
-        self.addFunction('datetime',datetime)
-        self.addFunction('today',date.today)
-        self.addFunction('now',datetime.now)
-        self.addFunction('date',date)
-        self.addFunction('fromtimestamp',date.fromtimestamp)
-        self.addFunction('time',time)
-        self.addFunction('timedelta',timedelta)
-        # self.addFunction('timezone',pytz.timezone) 
-
+        self.addFunction('strftime',Date.strftime,['datetime'])
+        self.addFunction('strptime',Date.strptime)        
+        self.addFunction('datetime',Date.datetime)
+        self.addFunction('today',Date.today)
+        self.addFunction('now',Date.now)
+        self.addFunction('date',Date.date)
+        self.addFunction('fromtimestamp',Date.fromtimestamp)
+        self.addFunction('time',Date.time)
     
     def ioFunctions(self): 
-        class Volume():
-            def __init__(self,_path):        
-                self._root = _path if path.isabs(_path) else path.join(getcwd(),_path) 
-            def fullpath(self,_path):
-                return path.join(self._root,_path)
-        def createVolume(_path):return Volume(_path)
-
-        self.addFunction('Volume',createVolume)
-        self.addFunction('pathRoot',getcwd)
-        self.addFunction('pathJoin',path.join)
+        self.addFunction('Volume',IO.Volume)
+        self.addFunction('pathRoot',IO.pathRoot)
+        self.addFunction('pathJoin',IO.pathJoin)
 
     def initEnums(self): 
         self.addEnum('DayOfWeek',{"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":0})        
@@ -876,15 +862,52 @@ class Exp(metaclass=Singleton):
         if name not in self._functions.keys():
             self._functions[name]= []
 
-        self._functions[name].append({'types':types,'imp':source})  
+        # self._functions[name].append({'types':types,'imp':source})  
+       
+        signature= inspect.signature(source)
+        args=[]
+        for parameter in signature.parameters.values():
+            arg = {'name':parameter.name
+                  ,'type': inspect.formatannotation(parameter.annotation)
+                  ,'default':parameter.default 
+                  }
+            args.append(arg) 
 
-        # metadata= {
-        #     'name': source.__name__,
-        #     'doc':source.__doc__,
-        #     'args': []
-        # }
-        # print(source.__name__)
-        # print(source.__doc__)
+        metadata= {
+            'name': source.__name__,
+            'doc':source.__doc__,
+            'args': args,
+            'return':inspect.formatannotation(signature.return_annotation)
+        }
+        
+        # TODO: resolver estos tipos como
+        # inspect._empty : null
+        # <built-in function any> ; any
+
+        self._functions[name].append({'types':types,'imp':source,'metadata':metadata}) 
+
+        # sig = inspect.signature(source)
+        # print('module_level_function{}'.format(sig))
+
+        # print('\nParameter details:')
+        # for name, param in sig.parameters.items():
+        #     if param.kind == inspect.Parameter.POSITIONAL_ONLY:
+        #         print('  {} (positional-only)'.format(name))
+        #     elif param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
+        #         if param.default != inspect.Parameter.empty:
+        #             print('  {}={!r}'.format(name, param.default))
+        #         else:
+        #             print('  {}'.format(name))
+        #     elif param.kind == inspect.Parameter.VAR_POSITIONAL:
+        #         print('  *{}'.format(name))
+        #     elif param.kind == inspect.Parameter.KEYWORD_ONLY:
+        #         if param.default != inspect.Parameter.empty:
+        #             print('  {}={!r} (keyword-only)'.format(
+        #                 name, param.default))
+        #         else:
+        #             print('  {} (keyword-only)'.format(name))
+        #     elif param.kind == inspect.Parameter.VAR_KEYWORD:
+        #         print('  **{}'.format(name))
 
         # a =dir(source)
         # print(a)
