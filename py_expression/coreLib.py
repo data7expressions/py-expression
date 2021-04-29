@@ -5,155 +5,76 @@ from os import path,getcwd
 from .base import *
 
 
-
-class Addition(Operator):
-    def solve(self,a,b):
+class Operators():
+    @staticmethod
+    def addition(a,b):
         return a+b 
-class Subtraction (Operator):
-    def solve(self,a,b):
+    @staticmethod
+    def subtraction(a,b):
         return a-b   
-class Multiplication(Operator):
-    def solve(self,a,b):
+    @staticmethod
+    def multiplication(a,b):
         return a*b 
-class Division (Operator):
-    def solve(self,a,b):
+    @staticmethod
+    def division(a,b):
         return a/b  
-class Exponentiation(Operator):
-    def solve(self,a,b):
+    @staticmethod
+    def exponentiation(a,b):
         return a**b 
-class FloorDivision (Operator):
-    def solve(self,a,b):
+    @staticmethod
+    def floorDivision(a,b):
         return a//b   
-class Mod (Operator):
-    def solve(self,a,b):
+    @staticmethod
+    def mod(a,b):
         return a%b 
-
-class BitAnd(Operator):
-    def solve(self,a,b):
+    @staticmethod
+    def bitAnd(a,b):
         return a & b 
-class BitOr(Operator):
-    def solve(self,a,b):
+    @staticmethod
+    def bitOr(a,b):
         return a | b
-class BitXor(Operator):
-    def solve(self,a,b):
+    @staticmethod
+    def bitXor(a,b):
         return a ^ b                  
-class BitNot(Operator):
-    @property
-    def value(self):
-        return ~ self._operands[0].value
-class LeftShift(Operator):
-    def solve(self,a,b):
+    @staticmethod
+    def bitNot(a):
+        return ~ a
+    @staticmethod
+    def leftShift(a,b):
         return a << b   
-class RightShift(Operator):
-    def solve(self,a,b):
+    @staticmethod
+    def rightShift(a,b):
         return a >> b   
 
-class Equal(Operator):
-    def solve(self,a,b):
+    @staticmethod
+    def equal(a,b):
         return a==b
-class NotEqual(Operator):
-    def solve(self,a,b):
+    @staticmethod
+    def notEqual(a,b):
         return a!=b          
-class GreaterThan(Operator):
-    def solve(self,a,b):
+    @staticmethod
+    def greaterThan(a,b):
         return a>b
-class LessThan(Operator):
-    def solve(self,a,b):
+    @staticmethod
+    def lessThan(a,b):
         return a<b 
-class GreaterThanOrEqual(Operator):
-    def solve(self,a,b):
+    @staticmethod
+    def greaterThanOrEqual(a,b):
         return a>=b
-class LessThanOrEqual(Operator):
-    def solve(self,a,b):
-        return a<=b                
+    @staticmethod
+    def lessThanOrEqual(a,b):
+        return a<=b               
 
-class And(Operator):
-    @property
-    def value(self):
-        if not self._operands[0].value : return False
-        return self._operands[1].value
+    @staticmethod
+    def _not(a):
+        return not a
 
-    # TODO
-    def debug(self,token:Token,level): 
-        pass 
-class Or(Operator):
-    @property
-    def value(self):
-        if self._operands[0].value : return True
-        return self._operands[1].value
-    # TODO
-    def debug(self,token:Token,level): 
-        pass 
-class Not(Operator):
-    @property
-    def value(self):
-        return not self._operands[0].value
+    @staticmethod
+    def item(list,index):
+        return list[index]
 
-class Assigment(Operator):
-    @property
-    def value(self):
-        self._operands[0].value = self._operands[1].value
-        return self._operands[0].value
-class AssigmentAddition(Operator):
-    @property
-    def value(self):
-        self._operands[0].value += self._operands[1].value
-        return self._operands[0].value
-class AssigmentSubtraction (Operator):
-    @property
-    def value(self):
-        self._operands[0].value -= self._operands[1].value
-        return self._operands[0].value  
-class AssigmentMultiplication(Operator):
-    @property
-    def value(self):
-        self._operands[0].value *= self._operands[1].value
-        return self._operands[0].value 
-class AssigmentDivision (Operator):
-    @property
-    def value(self):
-        self._operands[0].value /= self._operands[1].value
-        return self._operands[0].value  
-class AssigmentExponentiation(Operator):
-    @property
-    def value(self):
-        self._operands[0].value **= self._operands[1].value
-        return self._operands[0].value 
-class AssigmentFloorDivision (Operator):
-    @property
-    def value(self):
-        self._operands[0].value //= self._operands[1].value
-        return self._operands[0].value   
-class AssigmentMod (Operator):
-    @property
-    def value(self):
-        self._operands[0].value %= self._operands[1].value
-        return self._operands[0].value 
-class AssigmentBitAnd(Operator):
-    @property
-    def value(self):
-        self._operands[0].value &= self._operands[1].value
-        return self._operands[0].value 
-class AssigmentBitOr(Operator):
-    @property
-    def value(self):
-        self._operands[0].value |= self._operands[1].value
-        return self._operands[0].value
-class AssigmentBitXor(Operator):
-    @property
-    def value(self):
-        self._operands[0].value ^= self._operands[1].value
-        return self._operands[0].value
-class AssigmentLeftShift(Operator):
-    @property
-    def value(self):
-        self._operands[0].value <<= self._operands[1].value
-        return self._operands[0].value
-class AssigmentRightShift(Operator):
-    @property
-    def value(self):
-        self._operands[0].value >>= self._operands[1].value
-        return self._operands[0].value
+   
+
 
 
 class General():
@@ -849,45 +770,48 @@ class CoreLib(Library):
 
     def initOperators(self):       
 
-        self.addOperator('+','arithmetic',Addition,4)
-        self.addOperator('-','arithmetic',Subtraction,4)
-        self.addOperator('*','arithmetic',Multiplication,5)
-        self.addOperator('/','arithmetic',Division,5)
-        self.addOperator('**','arithmetic',Exponentiation,6)
-        self.addOperator('//','arithmetic',FloorDivision,6)
-        self.addOperator('%','arithmetic',Mod,7)
+        self.addOperator('+','arithmetic',Operators.addition,4)
+        self.addOperator('-','arithmetic',Operators.subtraction,4)
+        self.addOperator('*','arithmetic',Operators.multiplication,5)
+        self.addOperator('/','arithmetic',Operators.division,5)
+        self.addOperator('**','arithmetic',Operators.exponentiation,6)
+        self.addOperator('//','arithmetic',Operators.floorDivision,6)
+        self.addOperator('%','arithmetic',Operators.mod,7)
 
-        self.addOperator('&','bitwise',BitAnd)
-        self.addOperator('|','bitwise',BitOr)
-        self.addOperator('^','bitwise',BitXor)
-        self.addOperator('~','bitwise',BitNot)
-        self.addOperator('<<','bitwise',LeftShift)
-        self.addOperator('>>','bitwise',RightShift)
+        self.addOperator('&','bitwise',Operators.bitAnd,4)
+        self.addOperator('|','bitwise',Operators.bitOr,4)
+        self.addOperator('^','bitwise',Operators.bitXor,4)
+        self.addOperator('~','bitwise',Operators.bitNot,4)
+        self.addOperator('<<','bitwise',Operators.leftShift,4)
+        self.addOperator('>>','bitwise',Operators.rightShift,4)
 
-        self.addOperator('==','comparison',Equal,3)
-        self.addOperator('!=','comparison',NotEqual,3)
-        self.addOperator('>','comparison',GreaterThan,3)
-        self.addOperator('<','comparison',LessThan,3)
-        self.addOperator('>=','comparison',GreaterThanOrEqual,3)
-        self.addOperator('<=','comparison',LessThanOrEqual,3)
+        self.addOperator('==','comparison',Operators.equal,3)
+        self.addOperator('!=','comparison',Operators.notEqual,3)
+        self.addOperator('>','comparison',Operators.greaterThan,3)
+        self.addOperator('<','comparison',Operators.lessThan,3)
+        self.addOperator('>=','comparison',Operators.greaterThanOrEqual,3)
+        self.addOperator('<=','comparison',Operators.lessThanOrEqual,3)
 
-        self.addOperator('&&','logical',And,2)
-        self.addOperator('||','logical',Or,2)
-        self.addOperator('!','logical',Not)
+        # self.addOperator('&&','logical',And,2)
+        # self.addOperator('||','logical',Or,2)
+        self.addOperator('!','logical',Operators._not)
 
-        self.addOperator('=','assignment',Assigment,1)
-        self.addOperator('+=','assignment',AssigmentAddition,1)
-        self.addOperator('-=','assignment',AssigmentSubtraction,1)
-        self.addOperator('*=','assignment',AssigmentMultiplication,1)
-        self.addOperator('/=','assignment',AssigmentDivision,1)
-        self.addOperator('**=','assignment',AssigmentExponentiation,1)
-        self.addOperator('//=','assignment',AssigmentFloorDivision,1)
-        self.addOperator('%=','assignment',AssigmentMod,1)
-        self.addOperator('&=','assignment',AssigmentBitAnd,1)
-        self.addOperator('|=','assignment',AssigmentBitOr,1)
-        self.addOperator('^=','assignment',AssigmentBitXor,1)
-        self.addOperator('<<=','assignment',AssigmentLeftShift,1)
-        self.addOperator('>>=','assignment',AssigmentRightShift,1)        
+        self.addOperator('[]','list',Operators.item)
+        
+
+        # self.addOperator('=','assignment',Assigment,1)
+        # self.addOperator('+=','assignment',AssigmentAddition,1)
+        # self.addOperator('-=','assignment',AssigmentSubtraction,1)
+        # self.addOperator('*=','assignment',AssigmentMultiplication,1)
+        # self.addOperator('/=','assignment',AssigmentDivision,1)
+        # self.addOperator('**=','assignment',AssigmentExponentiation,1)
+        # self.addOperator('//=','assignment',AssigmentFloorDivision,1)
+        # self.addOperator('%=','assignment',AssigmentMod,1)
+        # self.addOperator('&=','assignment',AssigmentBitAnd,1)
+        # self.addOperator('|=','assignment',AssigmentBitOr,1)
+        # self.addOperator('^=','assignment',AssigmentBitXor,1)
+        # self.addOperator('<<=','assignment',AssigmentLeftShift,1)
+        # self.addOperator('>>=','assignment',AssigmentRightShift,1)        
 
     def generalFunctions(self):
         self.addFunction('nvl',General.nvl )

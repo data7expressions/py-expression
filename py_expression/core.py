@@ -4,33 +4,6 @@ from .base import *
 from .coreLib import CoreLib
 import inspect
 
-
-class NegativeDecorator(Operator):
-    def __init__(self,name,operands=[],mgr=None):
-        super(NegativeDecorator,self).__init__(name,operands,mgr)
-
-    @property
-    def value(self): 
-        return self._operands[0].value * -1
-class NotDecorator(Operator):
-    def __init__(self,name,operands=[],mgr=None):
-      super(NotDecorator,self).__init__(name,operands,mgr)
-
-    @property
-    def value(self): 
-        return not self._operands[0].value 
-class IndexDecorator(Operator):
-    def __init__(self,name,operands=[],mgr=None ):
-      super(IndexDecorator,self).__init__(name,operands,mgr)        
-
-    @property
-    def value(self): 
-        return self._operands[0].value[self._operands[1].value]
-class BitNot(Operator):
-    @property
-    def value(self):
-        return ~ self._operands[0].value 
-
 class ModelManager():
     def __init__(self,model):
         self._model=model
@@ -51,7 +24,10 @@ class ModelManager():
             self.addEnum(name,library.enums[name])
 
         for name in library.operators:
-            self.addOperator(name,library.operators[name])    
+            operator= library.operators[name]
+            for cardinality in operator:
+                source = operator[cardinality]
+                self.addOperator(name,library.operators[name])    
 
         for name in library.functions:
             function = library.functions[name]
@@ -69,18 +45,31 @@ class ModelManager():
     def getEnum(self,name): 
         return self._model.enums[name]
   
-    def addOperator(self,name:str,operator):        
+    def addOperator(self,libName:str,name:str,operator):
+        metadata = self.getMetadata(operator['source'])
+        metadata['lib'] =libName
+        metadata['category'] =operator['category']  
+        metadata['priority'] =operator['priority']
         self._model.operators[name]=operator
+
     def getOperator(self,name):
-        try:
-            return self._model.operators[name]
+        try:            
+            if name in self._model.operators:
+                metadata = self._model.operators[name]
+                if metadata['lib'] in self._libraries:
+                    return self._libraries[metadata['lib']].operators[name]['source']
+            return None        
         except:
             raise ModelError('error with operator: '+str(name))  
 
     def addFunction(self,libName:str,name:str,type:str,source):
         if name not in self._model.functions.keys():
             self._model.functions[name]= {}
-        self._model.functions[name][type] = self.getMetadata(libName,source) 
+
+        metadata = self.getMetadata(source)
+        metadata['lib'] =libName    
+        self._model.functions[name][type] = metadata
+
     def getFunction(self,name,type='na'):
         if name in self._model.functions:
             function = self._model.functions[name]
@@ -90,7 +79,7 @@ class ModelManager():
                     return self._libraries[metadata['lib']].functions[name][type]
         return None 
 
-    def getMetadata(self,libName,source):
+    def getMetadata(self,source):
         signature= inspect.signature(source)
         args=[]
         for parameter in signature.parameters.values():
@@ -104,7 +93,6 @@ class ModelManager():
         # inspect._empty : null
         # <built-in function any> ; any    
         return {
-            'lib':libName,
             'name': source.__name__,
             'doc':source.__doc__,
             'args': args,
@@ -224,12 +212,10 @@ class Exp(metaclass=Singleton):
 
         
     def setContext(self,operand:Operand,context:Context):
-        if issubclass(operand.__class__,Contextable):operand.context = context 
-        if issubclass(operand.__class__,Managerable):operand.mgr = self
+        if issubclass(operand.__class__,Contextable):operand.context = context         
         if len(operand.operands)>0 :       
             for p in operand.operands:
-                if issubclass(p.__class__,Contextable):p.context = context
-                if issubclass(p.__class__,Managerable):p.mgr = self 
+                if issubclass(p.__class__,Contextable):p.context = context                
                 if len(p.operands)>0:
                     self.setContext(p,context)
 
@@ -456,9 +442,9 @@ class Parser():
             # if '.' not in function.name :function.name = '.'+function.name
             # operand=function
 
-        if isNegative:operand=NegativeDecorator('-',[operand],self.mgr )
-        if isNot:operand=NotDecorator('!',[operand],self.mgr )
-        if isBitNot:operand=BitNot('~',[operand],self.mgr )  
+        if isNegative:operand=UnitaryOperator('-',[operand],self.mgr )
+        if isNot:operand=UnitaryOperator('!',[operand],self.mgr )
+        if isBitNot:operand=UnitaryOperator('~',[operand],self.mgr )  
         return operand
 
     def priority(self,op):
@@ -647,7 +633,7 @@ class Parser():
     def getIndexOperand(self,name):
         idx= self.getExpression(_break=']')
         operand= Variable(name)
-        return IndexDecorator('[]',[operand,idx],self.mgr ) 
+        return BinaryOperator('[]',[operand,idx],self.mgr) 
 
     def getEnum(self,value):
         if '.' in value and self.mgr.isEnum(value):

@@ -1,4 +1,5 @@
 from enum import Enum 
+import inspect
 
 class Singleton(type):
     _instances = {}
@@ -55,17 +56,6 @@ class Contextable():
     def context(self,value):
         self._context=value
 
-class Managerable():
-    def __init__(self):
-      self._mgr  = None
-
-    @property
-    def mgr(self):
-        return self._mgr
-    @mgr.setter
-    def mgr(self,value):
-        self._mgr=value 
-
 class Token():
     def __init__(self):
         self._value = None
@@ -89,7 +79,7 @@ class Operand():
     def __init__(self,name,operands=[],mgr=None): 
         self._name = name         
         self._operands  = operands
-        self._mgr = mgr 
+        self.mgr = mgr 
         self._parent = None        
 
     @property
@@ -114,39 +104,39 @@ class Operand():
     def operands(self):
         return self._operands 
 
-    def __add__(self, other):return self._mgr.newOperator('+',[other,self]) 
-    def __sub__(self, other):return self._mgr.newOperator('-',[other,self])    
-    def __mul__(self, other):return self._mgr.newOperator('*',[other,self])
-    def __pow__(self, other):return self._mgr.newOperator('**',[other,self]) 
-    def __truediv__(self, other):return self._mgr.newOperator('/',[other,self]) 
-    def __floordiv__(self, other):return self._mgr.newOperator('//',[other,self]) 
-    def __mod__(self, other):return self._mgr.newOperator('%',[other,self])
+    def __add__(self, other):return self.mgr.newOperator('+',[other,self]) 
+    def __sub__(self, other):return self.mgr.newOperator('-',[other,self])    
+    def __mul__(self, other):return self.mgr.newOperator('*',[other,self])
+    def __pow__(self, other):return self.mgr.newOperator('**',[other,self]) 
+    def __truediv__(self, other):return self.mgr.newOperator('/',[other,self]) 
+    def __floordiv__(self, other):return self.mgr.newOperator('//',[other,self]) 
+    def __mod__(self, other):return self.mgr.newOperator('%',[other,self])
 
-    def __lshift__(self, other):return self._mgr.newOperator('<<',[other,self])
-    def __rshift__(self, other):return self._mgr.newOperator('>>',[other,self])
-    def __and__(self, other):return self._mgr.newOperator('&',[other,self])
-    def __or__(self, other):return self._mgr.newOperator('|',[other,self])
-    def __xor__(self, other):return self._mgr.newOperator('^',[other,self])
-    def __invert__(self, other):return self._mgr.newOperator('~',[other,self])
+    def __lshift__(self, other):return self.mgr.newOperator('<<',[other,self])
+    def __rshift__(self, other):return self.mgr.newOperator('>>',[other,self])
+    def __and__(self, other):return self.mgr.newOperator('&',[other,self])
+    def __or__(self, other):return self.mgr.newOperator('|',[other,self])
+    def __xor__(self, other):return self.mgr.newOperator('^',[other,self])
+    def __invert__(self, other):return self.mgr.newOperator('~',[other,self])
 
-    def __lt__(self, other):return self._mgr.newOperator('<',[other,self])
-    def __le__(self, other):return self._mgr.newOperator('<=',[other,self])
-    def __eq__(self, other):return self._mgr.newOperator('==',[other,self])
-    def __ne__(self, other):return self._mgr.newOperator('!=',[other,self])
-    def __gt__(self, other):return self._mgr.newOperator('>',[other,self])
-    def __ge__(self, other):return self._mgr.newOperator('>=',[other,self])
+    def __lt__(self, other):return self.mgr.newOperator('<',[other,self])
+    def __le__(self, other):return self.mgr.newOperator('<=',[other,self])
+    def __eq__(self, other):return self.mgr.newOperator('==',[other,self])
+    def __ne__(self, other):return self.mgr.newOperator('!=',[other,self])
+    def __gt__(self, other):return self.mgr.newOperator('>',[other,self])
+    def __ge__(self, other):return self.mgr.newOperator('>=',[other,self])
 
-    def __not__(self):return self._mgr.newOperator('!',[self])
-    def __and2__(self, other):return self._mgr.newOperator('&&',[other,self])
-    def __or2__(self, other):return self._mgr.newOperator('||',[other,self])
+    def __not__(self):return self.mgr.newOperator('!',[self])
+    def __and2__(self, other):return self.mgr.newOperator('&&',[other,self])
+    def __or2__(self, other):return self.mgr.newOperator('||',[other,self])
 
-    def __isub__(self, other):return self._mgr.newOperator('-=',[other,self])
-    def __iadd__(self, other):return self._mgr.newOperator('+=',[other,self])
-    def __imul__(self, other):return self._mgr.newOperator('*=',[other,self])
-    def __idiv__(self, other):return self._mgr.newOperator('/=',[other,self])
-    def __ifloordiv__(self, other):return self._mgr.newOperator('//=',[other,self])
-    def __imod__(self, other):return self._mgr.newOperator('%=',[other,self])
-    def __ipow__(self, other):return self._mgr.newOperator('**=',[other,self])
+    def __isub__(self, other):return self.mgr.newOperator('-=',[other,self])
+    def __iadd__(self, other):return self.mgr.newOperator('+=',[other,self])
+    def __imul__(self, other):return self.mgr.newOperator('*=',[other,self])
+    def __idiv__(self, other):return self.mgr.newOperator('/=',[other,self])
+    def __ifloordiv__(self, other):return self.mgr.newOperator('//=',[other,self])
+    def __imod__(self, other):return self.mgr.newOperator('%=',[other,self])
+    def __ipow__(self, other):return self.mgr.newOperator('**=',[other,self])
 
 
     def debug(self,token:Token,level): 
@@ -171,15 +161,15 @@ class Operand():
         
   
     def eval(self,context:dict=None):
-        return self._mgr.eval(self,context)
+        return self.mgr.eval(self,context)
     def vars(self):
-        return self._mgr.getVars(self)
+        return self.mgr.getVars(self)
     def constants(self):
-        return self._mgr.getConstants(self) 
+        return self.mgr.getConstants(self) 
     def operators(self):
-        return self._mgr.getOperators(self)
+        return self.mgr.getOperators(self)
     def functions(self):
-        return self._mgr.getFunctions(self)
+        return self.mgr.getFunctions(self)
 
 class Constant(Operand):
     def __init__(self,name,operands=[],mgr=None):
@@ -244,7 +234,7 @@ class Object(Operand):
             dic[p.name]=p.value
         return dic
 
-class ArrayForeach(Operand,Contextable,Managerable):
+class ArrayForeach(Operand,Contextable):
     def __init__(self,name,operands=[],mgr=None):
         Operand.__init__(self,name,operands,mgr)
 
@@ -257,7 +247,7 @@ class ArrayForeach(Operand,Contextable,Managerable):
         for p in variable.value:
             childContext.init(self.name,p)
             body.value
-class ArrayMap(Operand,Contextable,Managerable):
+class ArrayMap(Operand,Contextable):
     def __init__(self,name,operands=[],mgr=None):
         Operand.__init__(self,name,operands,mgr)
 
@@ -272,7 +262,7 @@ class ArrayMap(Operand,Contextable,Managerable):
             childContext.init(self.name,p)
             result.append(body.value)
         return result
-class ArrayFirst(Operand,Contextable,Managerable):
+class ArrayFirst(Operand,Contextable):
     def __init__(self,name,operands=[],mgr=None):
         Operand.__init__(self,name,operands,mgr)
 
@@ -286,7 +276,7 @@ class ArrayFirst(Operand,Contextable,Managerable):
             childContext.init(self.name,p)
             if body.value : return p
         return None
-class ArrayLast(Operand,Contextable,Managerable):
+class ArrayLast(Operand,Contextable):
     def __init__(self,name,operands=[],mgr=None):
         Operand.__init__(self,name,operands,mgr)
 
@@ -302,7 +292,7 @@ class ArrayLast(Operand,Contextable,Managerable):
             childContext.init(self.name,p)
             if body.value : return p
         return None 
-class ArrayFilter(Operand,Contextable,Managerable):
+class ArrayFilter(Operand,Contextable):
     def __init__(self,name,operands=[],mgr=None):
         Operand.__init__(self,name,operands,mgr)
 
@@ -317,7 +307,7 @@ class ArrayFilter(Operand,Contextable,Managerable):
             childContext.init(self.name,p)
             if body.value: result.append(p)
         return result        
-class ArrayReverse(Operand,Contextable,Managerable):
+class ArrayReverse(Operand,Contextable):
     def __init__(self,name,operands=[],mgr=None):
         Operand.__init__(self,name,operands,mgr)
 
@@ -340,7 +330,7 @@ class ArrayReverse(Operand,Contextable,Managerable):
             result.sort((lambda p: p["ord"]))
             result.reverse()    
             return map(lambda p: p['p'],result)
-class ArraySort(Operand,Contextable,Managerable):
+class ArraySort(Operand,Contextable):
     def __init__(self,name,operands=[],mgr=None):
         Operand.__init__(self,name,operands,mgr)
 
@@ -362,7 +352,7 @@ class ArraySort(Operand,Contextable,Managerable):
                 result.append({"ord":method.value,"p":p})
             result.sort((lambda p: p["ord"]))
             return map(lambda p: p['p'],result)
-class ArrayPush(Operand,Contextable,Managerable):
+class ArrayPush(Operand,Contextable):
     def __init__(self,name,operands=[],mgr=None):
         Operand.__init__(self,name,operands,mgr)
 
@@ -373,7 +363,7 @@ class ArrayPush(Operand,Contextable,Managerable):
         value = variable.value
         value.append(elemnent)
         return value
-class ArrayPop(Operand,Contextable,Managerable):
+class ArrayPop(Operand,Contextable):
     def __init__(self,name,operands=[],mgr=None):
         Operand.__init__(self,name,operands,mgr)
 
@@ -386,7 +376,7 @@ class ArrayPop(Operand,Contextable,Managerable):
         else:
             index = len(self._operands) -1        
         return variable.value.pop(index)
-class ArrayRemove(Operand,Contextable,Managerable):
+class ArrayRemove(Operand,Contextable):
     def __init__(self,name,operands=[],mgr=None):
         Operand.__init__(self,name,operands,mgr)
 
@@ -396,7 +386,7 @@ class ArrayRemove(Operand,Contextable,Managerable):
         element= self._operands[1]
         variable.value.remove(element.value)    
 
-class Function(Operand,Managerable):
+class Function(Operand):
     def __init__(self,name,operands=[],mgr=None):
       Operand.__init__(self,name,operands,mgr)
 
@@ -412,11 +402,11 @@ class Function(Operand,Managerable):
                 function=getattr(value, name)
                 for p in self._operands:args.append(p.value)
             else:    
-                function=self._mgr.getFunction(name,_type)            
+                function=self.mgr.getFunction(name,_type)            
                 for p in self._operands:args.append(p.value)
                 args.insert(0,value)            
         else:
-            function=self._mgr.getFunction(self.name)
+            function=self.mgr.getFunction(self.name)
             for p in self._operands:args.append(p.value)
         return function(*args)
 class Block(Operand):
@@ -457,21 +447,80 @@ class While(Operand):
     # TODO
     def debug(self,token:Token,level): 
         pass        
+
 class Operator(Operand):
     def __init__(self,name,operands=[],mgr=None):
       super(Operator,self).__init__(name,operands,mgr)
 
     @property
     def value(self):
+        function = self.mgr.getOperator(self.name)
         val=self._operands[0].value
         l=len(self._operands)
         i=1
         while i<l:
-            val=self.solve(val,self._operands[i].value)
+            val=function(val,self._operands[i].value)
             i+=1
-        return val  
+        return val 
+    # @property
+    # def value(self):
+    #     val=self._operands[0].value
+    #     l=len(self._operands)
+    #     i=1
+    #     while i<l:
+    #         val=self.solve(val,self._operands[i].value)
+    #         i+=1
+    #     return val  
 
-    def solve(self,a,b):
+    # def solve(self,a,b):
+    #     pass 
+
+class UnitaryOperator(Operator):
+    @property
+    def value(self):
+        function = self.mgr.getOperator(self.name)
+        return function(self._operands[0].value)
+
+class BinaryOperator(Operator):
+    @property
+    def value(self):
+        function = self.mgr.getOperator(self.name)
+        return function(self._operands[0].value,self._operands[1].value)
+
+class TernaryOperator(Operator):
+    @property
+    def value(self):
+        function = self.mgr.getOperator(self.name)
+        return function(self._operands[0].value,self._operands[1].value,self._operands[2].value)
+
+class AssigmentOperator(Operator):
+    @property
+    def value(self):
+        if self.name == '=':
+            self._operands[0].value = self._operands[1].value
+            return self._operands[0].value
+        else:
+            _oper = self.name.replace('=','')
+            function = self.mgr.getOperator(_oper)
+            self._operands[0].value= function(self._operands[0].value,self._operands[1].value)
+            return self._operands[0].value       
+
+class And(Operator):
+    @property
+    def value(self):
+        if not self._operands[0].value : return False
+        return self._operands[1].value
+
+    # TODO
+    def debug(self,token:Token,level): 
+        pass 
+class Or(Operator):
+    @property
+    def value(self):
+        if self._operands[0].value : return True
+        return self._operands[1].value
+    # TODO
+    def debug(self,token:Token,level): 
         pass 
 
 class Model():
@@ -520,8 +569,18 @@ class Library():
         else:
             raise ModelError('enum not supported: '+key)    
 
-    def addOperator(self,name:str,category:str,source:Operator,priority:int=-1):        
-        self._operators[name]={"category":category,"priority":priority,"source":source}
+    def addOperator(self,name:str,category:str,source,priority:int=-1):
+
+        signature= inspect.signature(source)        
+        args= len(signature.parameters)
+        cardinality='multiple'
+        if args == 1:
+            cardinality= 'unitary'
+        elif args == 2:
+            cardinality= 'binary' 
+        elif args == 3:
+            cardinality= 'ternary'
+        self._operators[name][cardinality]={"category":category,"priority":priority,"source":source}
 
     def addFunction(self,name,source,type='na'):
         if name not in self._functions.keys():
