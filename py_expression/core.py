@@ -1,824 +1,134 @@
 import re
-from os import path,getcwd
-from enum import Enum 
-# from .base import *
-from .functions import *
+
+from .base import *
+from .coreLib import CoreLib
 import inspect
 
 
-class Context():
-    def __init__(self,data:dict={},parent:'Context'=None):
-        self.data = data
-        self._parent= parent
-
-    def newContext(self):        
-        return Context({},self)
-
-    def getConext(self,variable):
-        if variable in self.data or self._parent is None: return self.data
-        _context =self._parent.getConext(variable)
-        return _context  if _context is not None else self.data
-
-    def get(self,name):
-        names=name.split('.')
-        value = self.getConext(names[0]) 
-        for n in names:
-            if n not in value: return None
-            value=value[n]
-        return value
-
-    def set(self,name,value):
-        names=name.split('.')        
-        level = len(names)-1
-        list = self.getConext(names[0]) 
-        for i,e in enumerate(names):
-            if i == level:
-                list[e]=value
-            else:                    
-                list=list[e] 
-
-    def init(self,name,value):
-        self.data[name]=value                     
-
-class Contextable():
-    def __init__(self):
-      self._context  = None
-
-    @property
-    def context(self):
-        return self._context
-    @context.setter
-    def context(self,value):
-        self._context=value
-
-class Managerable():
-    def __init__(self):
-      self._mgr  = None
-
-    @property
-    def mgr(self):
-        return self._mgr
-    @mgr.setter
-    def mgr(self,value):
-        self._mgr=value 
-
-class Singleton(type):
-    _instances = {}
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
-
-class ExpressionError(Exception):pass
-
-class Token():
-    def __init__(self):
-        self._value = None
-        self._path = []
-
-    @property
-    def value(self): 
-        return self._value
-    @value.setter
-    def value(self,value):
-        self._value =value  
-
-    @property
-    def path(self): 
-        return self._path
-    @path.setter
-    def path(self,value):
-        self._path =value         
-
-class Operand():
-    def __init__(self,name,operands=[]): 
-        self._name = name         
-        self._operands  = operands
-        self._parent = None 
-
-    @property
-    def name(self):
-        return self._name
-    @name.setter
-    def name(self,value):
-        self._name =value    
-
-    @property
-    def parent(self):
-        return self._parent 
-    @parent.setter
-    def parent(self,value):
-        self._parent =value       
-
-    @property
-    def value(self): 
-        pass   
-
-    @property
-    def operands(self):
-        return self._operands 
-
-    def __add__(self, other):return Exp().newOperator('+',[other,self]) 
-    def __sub__(self, other):return Exp().newOperator('-',[other,self])    
-    def __mul__(self, other):return Exp().newOperator('*',[other,self])
-    def __pow__(self, other):return Exp().newOperator('**',[other,self]) 
-    def __truediv__(self, other):return Exp().newOperator('/',[other,self]) 
-    def __floordiv__(self, other):return Exp().newOperator('//',[other,self]) 
-    def __mod__(self, other):return Exp().newOperator('%',[other,self])
-
-    def __lshift__(self, other):return Exp().newOperator('<<',[other,self])
-    def __rshift__(self, other):return Exp().newOperator('>>',[other,self])
-    def __and__(self, other):return Exp().newOperator('&',[other,self])
-    def __or__(self, other):return Exp().newOperator('|',[other,self])
-    def __xor__(self, other):return Exp().newOperator('^',[other,self])
-    def __invert__(self, other):return Exp().newOperator('~',[other,self])
-
-    def __lt__(self, other):return Exp().newOperator('<',[other,self])
-    def __le__(self, other):return Exp().newOperator('<=',[other,self])
-    def __eq__(self, other):return Exp().newOperator('==',[other,self])
-    def __ne__(self, other):return Exp().newOperator('!=',[other,self])
-    def __gt__(self, other):return Exp().newOperator('>',[other,self])
-    def __ge__(self, other):return Exp().newOperator('>=',[other,self])
-
-    def __not__(self):return Exp().newOperator('!',[self])
-    def __and2__(self, other):return Exp().newOperator('&&',[other,self])
-    def __or2__(self, other):return Exp().newOperator('||',[other,self])
-
-    def __isub__(self, other):return Exp().newOperator('-=',[other,self])
-    def __iadd__(self, other):return Exp().newOperator('+=',[other,self])
-    def __imul__(self, other):return Exp().newOperator('*=',[other,self])
-    def __idiv__(self, other):return Exp().newOperator('/=',[other,self])
-    def __ifloordiv__(self, other):return Exp().newOperator('//=',[other,self])
-    def __imod__(self, other):return Exp().newOperator('%=',[other,self])
-    def __ipow__(self, other):return Exp().newOperator('**=',[other,self])
-
-
-    def debug(self,token:Token,level): 
-        if len(token.path) <= level:
-            if len(self.operands)== 0:
-                token.value= self.value 
-            else:
-                token.path.append(0)
-                self.operands[0].debug(token,level+1)   
-        else:
-            idx = token.path[level]
-            # si es el anteultimo nodo 
-            if len(token.path) -1 == level:           
-                if len(self.operands) > idx+1:
-                   token.path[level] = idx+1
-                   self.operands[idx+1].debug(token,level+1)
-                else:
-                   token.path.pop() 
-                   token.value= self.value       
-            else:
-                self.operands[idx].debug(token,level+1)
-        
-  
-    def eval(self,context:dict=None):
-        return Exp().eval(self,context)
-    def vars(self):
-        return Exp().getVars(self)
-    def constants(self):
-        return Exp().getConstants(self) 
-    def operators(self):
-        return Exp().getOperators(self)
-    def functions(self):
-        return Exp().getFunctions(self)
-
-class Constant(Operand):
-    def __init__(self,name,operands=[]):
-      super(Constant,self).__init__(name)  
-    #   self._value  = name
-      self._type  = type(name).__name__
-
-    @property
-    def value(self): 
-        return self.name
-    @property
-    def type(self): 
-        return self._type     
-
-    def __str__(self):
-        return str(self.name)
-    def __repr__(self):
-        return str(self.name)  
-
-class Variable(Operand,Contextable):
-    def __init__(self,name,operands=[]):
-      Operand.__init__(self,name,operands) 
-      self._names = name.split('.')
-
-    @property
-    def value(self):
-        return self._context.get(self.name)
-
-    @value.setter
-    def value(self,value):
-        self._context.set(self.name,value)
-
-    def __str__(self):
-        return self._name
-    def __repr__(self):
-        return self._name      
-class KeyValue(Operand):
-    def __init__(self,name,operands=[]):
-        super(KeyValue,self).__init__(name,operands)
-
-    @property
-    def value(self): 
-        return self._operands[0].value
-class Array(Operand):
-    def __init__(self,name,operands=[]):
-      super(Array,self).__init__(name,operands)
-
-    @property
-    def value(self):
-        list= []
-        for p in self._operands:
-            list.append(p.value)
-        return list 
-class Object(Operand):
-    def __init__(self,name,operands=[]):
-      super(Object,self).__init__(name,operands)
-
-    @property
-    def value(self):
-        dic= {}
-        for p in self._operands:
-            dic[p.name]=p.value
-        return dic
-
-class ArrayForeach(Operand,Contextable,Managerable):
-    def __init__(self,name,operands=[]):
-        Operand.__init__(self,name,operands)
-
-    @property
-    def value(self):
-        variable= self._operands[0]
-        body= self._operands[1]
-        childContext=self.context.newContext()
-        self.mgr.setContext(body,childContext)
-        for p in variable.value:
-            childContext.init(self.name,p)
-            body.value
-class ArrayMap(Operand,Contextable,Managerable):
-    def __init__(self,name,operands=[]):
-        Operand.__init__(self,name,operands)
-
-    @property
-    def value(self):
-        result=[]
-        variable= self._operands[0]
-        body= self._operands[1]
-        childContext=self.context.newContext()
-        self.mgr.setContext(body,childContext)
-        for p in variable.value:
-            childContext.init(self.name,p)
-            result.append(body.value)
-        return result
-class ArrayFirst(Operand,Contextable,Managerable):
-    def __init__(self,name,operands=[]):
-        Operand.__init__(self,name,operands)
-
-    @property
-    def value(self):
-        variable= self._operands[0]
-        body= self._operands[1]
-        childContext=self.context.newContext()
-        self.mgr.setContext(body,childContext)
-        for p in variable.value:
-            childContext.init(self.name,p)
-            if body.value : return p
-        return None
-class ArrayLast(Operand,Contextable,Managerable):
-    def __init__(self,name,operands=[]):
-        Operand.__init__(self,name,operands)
-
-    @property
-    def value(self):
-        variable= self._operands[0]
-        body= self._operands[1]
-        childContext=self.context.newContext()
-        self.mgr.setContext(body,childContext)
-        value = variable.value
-        value.reverse()
-        for p in value:
-            childContext.init(self.name,p)
-            if body.value : return p
-        return None 
-class ArrayFilter(Operand,Contextable,Managerable):
-    def __init__(self,name,operands=[]):
-        Operand.__init__(self,name,operands)
-
-    @property
-    def value(self):
-        result=[]
-        variable= self._operands[0]
-        body= self._operands[1]
-        childContext=self.context.newContext()
-        self.mgr.setContext(body,childContext)
-        for p in variable.value:
-            childContext.init(self.name,p)
-            if body.value: result.append(p)
-        return result        
-class ArrayReverse(Operand,Contextable,Managerable):
-    def __init__(self,name,operands=[]):
-        Operand.__init__(self,name,operands)
-
-    @property
-    def value(self):
-        if len(self._operands)==1:
-            variable= self._operands[0]
-            value = variable.value
-            value.reverse()
-            return value
-        else:
-            result=[]
-            variable= self._operands[0]
-            method= self._operands[1]
-            childContext=self.context.newContext()
-            self.mgr.setContext(method,childContext)
-            for p in variable.value:
-                childContext.init(self.name,p)
-                result.append({"ord":method.value,"p":p})
-            result.sort((lambda p: p["ord"]))
-            result.reverse()    
-            return map(lambda p: p['p'],result)
-class ArraySort(Operand,Contextable,Managerable):
-    def __init__(self,name,operands=[]):
-        Operand.__init__(self,name,operands)
-
-    @property
-    def value(self):
-        if len(self._operands)==1:
-            variable= self._operands[0]
-            value = variable.value
-            value.reverse()
-            return value
-        else:
-            result=[]
-            variable= self._operands[0]
-            method= self._operands[1]
-            childContext=self.context.newContext()
-            self.mgr.setContext(method,childContext)
-            for p in variable.value:
-                childContext.init(self.name,p)
-                result.append({"ord":method.value,"p":p})
-            result.sort((lambda p: p["ord"]))
-            return map(lambda p: p['p'],result)
-class ArrayPush(Operand,Contextable,Managerable):
-    def __init__(self,name,operands=[]):
-        Operand.__init__(self,name,operands)
-
-    @property
-    def value(self):        
-        variable= self._operands[0]
-        elemnent= self._operands[1]
-        value = variable.value
-        value.append(elemnent)
-        return value
-class ArrayPop(Operand,Contextable,Managerable):
-    def __init__(self,name,operands=[]):
-        Operand.__init__(self,name,operands)
-
-    @property
-    def value(self):        
-        variable= self._operands[0]
-        index =None
-        if len(self._operands)>1:
-            index= self._operands[1].value
-        else:
-            index = len(self._operands) -1        
-        return variable.value.pop(index)
-class ArrayRemove(Operand,Contextable,Managerable):
-    def __init__(self,name,operands=[]):
-        Operand.__init__(self,name,operands)
-
-    @property
-    def value(self):        
-        variable= self._operands[0]
-        element= self._operands[1]
-        variable.value.remove(element.value)    
-
-class Function(Operand,Managerable):
-    def __init__(self,name,operands=[]):
-      Operand.__init__(self,name,operands)
-
-    @property
-    def value(self): 
-        args=[]
-        if '.' in self.name:
-            name = self.name.replace('.','')
-            parent = self._operands.pop(0)
-            value = parent.value
-            _type = type(value).__name__
-            if isinstance(value,object) and hasattr(value, name):
-                function=getattr(value, name)
-                for p in self._operands:args.append(p.value)
-            else:    
-                function=self._mgr.getFunction(name,_type)            
-                for p in self._operands:args.append(p.value)
-                args.insert(0,value)            
-        else:
-            function=self._mgr.getFunction(self.name)
-            for p in self._operands:args.append(p.value)
-        return function(*args)
-class Block(Operand):
-    def __init__(self,name,elements=[]):
-      super(Block,self).__init__(name,elements)
-
-    @property
-    def value(self):        
-        for p in self._operands:
-            p.value
-
-    # TODO
-    def debug(self,token:Token,level): 
-        pass              
-class If(Operand):
-    def __init__(self,name,operands=[]):
-      super(If,self).__init__(name,operands)      
-
-    @property
-    def value(self):         
-        if self.operands[0].value:
-           self.operands[1].value
-        elif len(self.operands) > 2 and self.operands[2] is not None:       
-            self.operands[2].value
-
-    # TODO
-    def debug(self,token:Token,level): 
-        pass          
-class While(Operand):
-    def __init__(self,name,operands=[]):
-      super(While,self).__init__(name,operands)      
-
-    @property
-    def value(self): 
-        while self.operands[0].value:
-           self.operands[1].value
-
-    # TODO
-    def debug(self,token:Token,level): 
-        pass        
-class Operator(Operand):
-    def __init__(self,name,operands=[]):
-      super(Operator,self).__init__(name,operands)
-
-    @property
-    def value(self):
-        val=self._operands[0].value
-        l=len(self._operands)
-        i=1
-        while i<l:
-            val=self.solve(val,self._operands[i].value)
-            i+=1
-        return val  
-
-    def solve(self,a,b):
-        pass 
-
 class NegativeDecorator(Operator):
-    def __init__(self,name,operands=[] ):
-        super(NegativeDecorator,self).__init__(name,operands)
+    def __init__(self,name,operands=[],mgr=None):
+        super(NegativeDecorator,self).__init__(name,operands,mgr)
 
     @property
     def value(self): 
         return self._operands[0].value * -1
 class NotDecorator(Operator):
-    def __init__(self,name,operands=[]):
-      super(NotDecorator,self).__init__(name,operands)
+    def __init__(self,name,operands=[],mgr=None):
+      super(NotDecorator,self).__init__(name,operands,mgr)
 
     @property
     def value(self): 
         return not self._operands[0].value 
 class IndexDecorator(Operator):
-    def __init__(self,name,operands=[] ):
-      super(IndexDecorator,self).__init__(name,operands)        
+    def __init__(self,name,operands=[],mgr=None ):
+      super(IndexDecorator,self).__init__(name,operands,mgr)        
 
     @property
     def value(self): 
         return self._operands[0].value[self._operands[1].value]
-
-class Addition(Operator):
-    def solve(self,a,b):
-        return a+b 
-class Subtraction (Operator):
-    def solve(self,a,b):
-        return a-b   
-class Multiplication(Operator):
-    def solve(self,a,b):
-        return a*b 
-class Division (Operator):
-    def solve(self,a,b):
-        return a/b  
-class Exponentiation(Operator):
-    def solve(self,a,b):
-        return a**b 
-class FloorDivision (Operator):
-    def solve(self,a,b):
-        return a//b   
-class Mod (Operator):
-    def solve(self,a,b):
-        return a%b 
-
-class BitAnd(Operator):
-    def solve(self,a,b):
-        return a & b 
-class BitOr(Operator):
-    def solve(self,a,b):
-        return a | b
-class BitXor(Operator):
-    def solve(self,a,b):
-        return a ^ b                  
 class BitNot(Operator):
     @property
     def value(self):
-        return ~ self._operands[0].value
-class LeftShift(Operator):
-    def solve(self,a,b):
-        return a << b   
-class RightShift(Operator):
-    def solve(self,a,b):
-        return a >> b   
+        return ~ self._operands[0].value 
 
-class Equal(Operator):
-    def solve(self,a,b):
-        return a==b
-class NotEqual(Operator):
-    def solve(self,a,b):
-        return a!=b          
-class GreaterThan(Operator):
-    def solve(self,a,b):
-        return a>b
-class LessThan(Operator):
-    def solve(self,a,b):
-        return a<b 
-class GreaterThanOrEqual(Operator):
-    def solve(self,a,b):
-        return a>=b
-class LessThanOrEqual(Operator):
-    def solve(self,a,b):
-        return a<=b                
+class ModelManager():
+    def __init__(self,model):
+        self._model=model
+        self._libraries={}
 
-class And(Operator):
     @property
-    def value(self):
-        if not self._operands[0].value : return False
-        return self._operands[1].value
+    def model(self):
+        return self._model
 
-    # TODO
-    def debug(self,token:Token,level): 
-        pass 
-class Or(Operator):
     @property
-    def value(self):
-        if self._operands[0].value : return True
-        return self._operands[1].value
-    # TODO
-    def debug(self,token:Token,level): 
-        pass 
-class Not(Operator):
-    @property
-    def value(self):
-        return not self._operands[0].value
+    def libraries(self):
+        return self._libraries     
 
-class Assigment(Operator):
-    @property
-    def value(self):
-        self._operands[0].value = self._operands[1].value
-        return self._operands[0].value
-class AssigmentAddition(Operator):
-    @property
-    def value(self):
-        self._operands[0].value += self._operands[1].value
-        return self._operands[0].value
-class AssigmentSubtraction (Operator):
-    @property
-    def value(self):
-        self._operands[0].value -= self._operands[1].value
-        return self._operands[0].value  
-class AssigmentMultiplication(Operator):
-    @property
-    def value(self):
-        self._operands[0].value *= self._operands[1].value
-        return self._operands[0].value 
-class AssigmentDivision (Operator):
-    @property
-    def value(self):
-        self._operands[0].value /= self._operands[1].value
-        return self._operands[0].value  
-class AssigmentExponentiation(Operator):
-    @property
-    def value(self):
-        self._operands[0].value **= self._operands[1].value
-        return self._operands[0].value 
-class AssigmentFloorDivision (Operator):
-    @property
-    def value(self):
-        self._operands[0].value //= self._operands[1].value
-        return self._operands[0].value   
-class AssigmentMod (Operator):
-    @property
-    def value(self):
-        self._operands[0].value %= self._operands[1].value
-        return self._operands[0].value 
-class AssigmentBitAnd(Operator):
-    @property
-    def value(self):
-        self._operands[0].value &= self._operands[1].value
-        return self._operands[0].value 
-class AssigmentBitOr(Operator):
-    @property
-    def value(self):
-        self._operands[0].value |= self._operands[1].value
-        return self._operands[0].value
-class AssigmentBitXor(Operator):
-    @property
-    def value(self):
-        self._operands[0].value ^= self._operands[1].value
-        return self._operands[0].value
-class AssigmentLeftShift(Operator):
-    @property
-    def value(self):
-        self._operands[0].value <<= self._operands[1].value
-        return self._operands[0].value
-class AssigmentRightShift(Operator):
-    @property
-    def value(self):
-        self._operands[0].value >>= self._operands[1].value
-        return self._operands[0].value
+    def addLibrary(self,libName,library):
+        self._libraries[libName] =library
 
+        for name in library.enums:
+            self.addEnum(name,library.enums[name])
 
+        for name in library.operators:
+            self.addOperator(name,library.operators[name])    
 
+        for name in library.functions:
+            function = library.functions[name]
+            for type in function:
+                source = function[type]  
+                self.addFunction(libName,name,type,source)
 
-   
+    def addEnum(self,key,source):
+        self._model.enums[key]=source
+    def isEnum(self,name):    
+        names = name.split('.')
+        return names[0] in self._model.enums.keys()
+    def getEnumValue(self,name,option): 
+        return self._model.enums[name][option]
+    def getEnum(self,name): 
+        return self._model.enums[name]
+  
+    def addOperator(self,name:str,operator):        
+        self._model.operators[name]=operator
+    def getOperator(self,name):
+        try:
+            return self._model.operators[name]
+        except:
+            raise ModelError('error with operator: '+str(name))  
+
+    def addFunction(self,libName:str,name:str,type:str,source):
+        if name not in self._model.functions.keys():
+            self._model.functions[name]= {}
+        self._model.functions[name][type] = self.getMetadata(libName,source) 
+    def getFunction(self,name,type='na'):
+        if name in self._model.functions:
+            function = self._model.functions[name]
+            if type in function:
+                metadata = function[type]
+                if metadata['lib'] in self._libraries:
+                    return self._libraries[metadata['lib']].functions[name][type]
+        return None 
+
+    def getMetadata(self,libName,source):
+        signature= inspect.signature(source)
+        args=[]
+        for parameter in signature.parameters.values():
+            arg = {'name':parameter.name
+                  ,'type': inspect.formatannotation(parameter.annotation)
+                  ,'default':parameter.default 
+                  }
+            args.append(arg) 
+
+        # TODO: resolver estos tipos como
+        # inspect._empty : null
+        # <built-in function any> ; any    
+        return {
+            'lib':libName,
+            'name': source.__name__,
+            'doc':source.__doc__,
+            'args': args,
+            'return':inspect.formatannotation(signature.return_annotation)
+        }    
+
+# Facade   
 class Exp(metaclass=Singleton):
     def __init__(self):
        self.reAlphanumeric = re.compile('[a-zA-Z0-9_.]+$') 
        self.reInt = re.compile('[0-9]+$')
        self.reFloat = re.compile('(\d+(\.\d*)?|\.\d+)([eE]\d+)?')
-       self._operators={}
        self._tripleOperators = []
        self._doubleOperators = [] 
-       self._enums={} 
-       self._functions={}
-       self.initOperators()
-       self.generalFunctions()
-       self.stringFunctions()
-       self.mathFunctions()
-       self.datetimeFunctions()
-       self.ioFunctions()
-       self.initEnums()
-       self.refresh()
-           
-    def initOperators(self):       
+       self._modelManager = ModelManager(Model())
+       self.addLibrary('core',CoreLib())        
 
-        self.addOperator('+','arithmetic',Addition,4)
-        self.addOperator('-','arithmetic',Subtraction,4)
-        self.addOperator('*','arithmetic',Multiplication,5)
-        self.addOperator('/','arithmetic',Division,5)
-        self.addOperator('**','arithmetic',Exponentiation,6)
-        self.addOperator('//','arithmetic',FloorDivision,6)
-        self.addOperator('%','arithmetic',Mod,7)
 
-        self.addOperator('&','bitwise',BitAnd)
-        self.addOperator('|','bitwise',BitOr)
-        self.addOperator('^','bitwise',BitXor)
-        self.addOperator('~','bitwise',BitNot)
-        self.addOperator('<<','bitwise',LeftShift)
-        self.addOperator('>>','bitwise',RightShift)
-
-        self.addOperator('==','comparison',Equal,3)
-        self.addOperator('!=','comparison',NotEqual,3)
-        self.addOperator('>','comparison',GreaterThan,3)
-        self.addOperator('<','comparison',LessThan,3)
-        self.addOperator('>=','comparison',GreaterThanOrEqual,3)
-        self.addOperator('<=','comparison',LessThanOrEqual,3)
-
-        self.addOperator('&&','logical',And,2)
-        self.addOperator('||','logical',Or,2)
-        self.addOperator('!','logical',Not)
-
-        self.addOperator('=','assignment',Assigment,1)
-        self.addOperator('+=','assignment',AssigmentAddition,1)
-        self.addOperator('-=','assignment',AssigmentSubtraction,1)
-        self.addOperator('*=','assignment',AssigmentMultiplication,1)
-        self.addOperator('/=','assignment',AssigmentDivision,1)
-        self.addOperator('**=','assignment',AssigmentExponentiation,1)
-        self.addOperator('//=','assignment',AssigmentFloorDivision,1)
-        self.addOperator('%=','assignment',AssigmentMod,1)
-        self.addOperator('&=','assignment',AssigmentBitAnd,1)
-        self.addOperator('|=','assignment',AssigmentBitOr,1)
-        self.addOperator('^=','assignment',AssigmentBitXor,1)
-        self.addOperator('<<=','assignment',AssigmentLeftShift,1)
-        self.addOperator('>>=','assignment',AssigmentRightShift,1)        
-
-    def generalFunctions(self):
-        self.addFunction('nvl',General.nvl )
-        self.addFunction('isEmpty',General.isEmpty)
-        self.addFunction('sleep',General.sleep)        
-
-    def stringFunctions(self):
-        self.addFunction('capitalize',String.capitalize,['str'])
-        self.addFunction('count',String.count,['str'])
-        self.addFunction('encode',String.encode,['str'])
-        self.addFunction('endswith',String.endswith,['str'])
-        self.addFunction('find',String.find,['str'])
-        self.addFunction('index',String.index,['str'])
-        self.addFunction('isalnum',String.isalnum,['str'])
-        self.addFunction('isalpha',String.isalpha,['str'])
-        self.addFunction('isdigit',String.isdigit,['str'])
-        self.addFunction('islower',String.islower,['str'])
-        self.addFunction('isspace',String.isspace,['str'])
-        self.addFunction('istitle',String.istitle,['str'])
-        self.addFunction('isupper',String.isupper,['str'])
-        self.addFunction('join',String.join,['str'])
-        self.addFunction('ljust',String.ljust,['str'])
-        self.addFunction('lower',String.lower,['str'])
-        self.addFunction('lstrip',String.lstrip,['str'])
-        self.addFunction('partition',String.partition,['str'])
-        self.addFunction('replace',String.replace,['str'])
-        self.addFunction('rfind',String.rfind,['str'])
-        self.addFunction('rindex',String.rindex,['str'])
-        self.addFunction('rjust',String.rjust,['str'])
-        self.addFunction('rpartition',String.rpartition,['str'])
-        self.addFunction('rsplit',String.rsplit,['str'])
-        self.addFunction('rstrip',String.lstrip,['str'])
-        self.addFunction('split',String.split,['str'])
-        self.addFunction('splitlines',String.splitlines,['str'])
-        self.addFunction('startswith',String.startswith,['str'])
-        self.addFunction('strip',String.lstrip,['str'])
-        self.addFunction('swapcase',String.swapcase,['str'])
-        self.addFunction('title',String.title,['str'])
-        # self.addFunction('translate',String.translate,['str'])
-        self.addFunction('upper',String.upper,['str'])
-        self.addFunction('zfill',String.zfill,['str'])   
-
-    def mathFunctions(self):
-        self.addFunction('ceil',Math.ceil)
-        self.addFunction('copysign',Math.copysign) 
-        self.addFunction('factorial',Math.factorial) 
-        self.addFunction('floor',Math.floor) 
-        self.addFunction('fmod',Math.fmod) 
-        self.addFunction('frexp',Math.frexp) 
-        self.addFunction('fsum',Math.fsum) 
-        self.addFunction('isfinite',Math.isfinite) 
-        self.addFunction('isnan',Math.isnan) 
-        self.addFunction('ldexp',Math.ldexp) 
-        self.addFunction('modf',Math.modf) 
-        self.addFunction('trunc',Math.trunc) 
-        self.addFunction('exp',Math.exp) 
-        self.addFunction('expm1',Math.expm1) 
-        self.addFunction('log',Math.log) 
-        self.addFunction('log1p',Math.log1p) 
-        self.addFunction('log2',Math.log2) 
-        self.addFunction('log10',Math.log10) 
-        self.addFunction('pow',Math.pow) 
-        self.addFunction('sqrt',Math.sqrt) 
-        self.addFunction('acos',Math.acos) 
-        self.addFunction('asin',Math.asin) 
-        self.addFunction('atan',Math.atan) 
-        self.addFunction('atan2',Math.atan2) 
-        self.addFunction('cos',Math.cos) 
-        self.addFunction('hypot',Math.hypot) 
-        self.addFunction('sin',Math.sin) 
-        self.addFunction('tan',Math.tan) 
-        self.addFunction('degrees',Math.degrees)
-        self.addFunction('radians',Math.radians)
-        self.addFunction('acosh',Math.acosh)
-        self.addFunction('asinh',Math.asinh)
-        self.addFunction('atanh',Math.atanh)
-        self.addFunction('cosh',Math.cosh)
-        self.addFunction('sinh',Math.sinh)
-        self.addFunction('tanh',Math.tanh)
-        self.addFunction('erf',Math.erf)
-        self.addFunction('erfc',Math.erfc)
-        self.addFunction('gamma',Math.gamma)
-        self.addFunction('lgamma',Math.lgamma)
-        self.addFunction('pi',Math.pi)
-        self.addFunction('e',Math.e)
-    
-    def datetimeFunctions(self):
-        self.addFunction('strftime',Date.strftime,['datetime'])
-        self.addFunction('strptime',Date.strptime)        
-        self.addFunction('datetime',Date.datetime)
-        self.addFunction('today',Date.today)
-        self.addFunction('now',Date.now)
-        self.addFunction('date',Date.date)
-        self.addFunction('fromtimestamp',Date.fromtimestamp)
-        self.addFunction('time',Date.time)
-    
-    def ioFunctions(self): 
-        self.addFunction('Volume',IO.Volume)
-        self.addFunction('pathRoot',IO.pathRoot)
-        self.addFunction('pathJoin',IO.pathJoin)
-
-    def initEnums(self): 
-        self.addEnum('DayOfWeek',{"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":0})        
+    def addLibrary(self,name,library):
+        self._modelManager.addLibrary(name,library)
+        self.refresh() 
     
     def refresh(self):
-        for key in self._operators.keys():
+        for key in self._modelManager.model.operators.keys():
             if len(key)==2: self._doubleOperators.append(key)
             elif len(key)==3: self._tripleOperators.append(key)
     
@@ -830,169 +140,28 @@ class Exp(metaclass=Singleton):
     def tripleOperators(self):
         return self._tripleOperators   
 
-    def newOperator(self,key,operands):
+    def newOperator(self,name,operands):
         try: 
-            operator = self._operators[key];               
-            return operator["imp"](key,operands)
+            operator = self._modelManager.getOperator(name)             
+            return operator["source"](name,operands,self)
         except:
-            raise ExpressionError('error with operator: '+str(key))  
-    def priority(self,key):
-        return self._operators[key]["priority"] if key in self._operators else -1          
-    def addOperator(self,key:str,category:str,source:Operator,priority:int=-1):        
-        self._operators[key]={"category":category,"priority":priority,"imp":source}
-    def addEnum(self,key,source):
-        if(type(source).__name__ == 'dict'):
-            self._enums[key] =source
-        elif issubclass(source, Enum):
-            list ={}
-            enum = {name: value for name, value in vars(source).items() if name.isupper()}
-            for p in enum:
-                list[p]=enum[p].value
-            self._enums[key] =list
-        else:
-            raise ExpressionError('enum not supported: '+key)      
+            raise ExpressionError('error with operator: '+str(name)) 
+
+    def priority(self,name):
+        operator = self._modelManager.getOperator(name)
+        return operator["priority"] if operator is not None else -1 
+  
     def isEnum(self,name):    
-        names = name.split('.')
-        return names[0] in self._enums.keys()
+        return self._modelManager.isEnum(name) 
     def getEnumValue(self,name,option): 
-        return self._enums[name][option]
+        return self._modelManager.getEnumValue(name,option) 
     def getEnum(self,name): 
-        return self._enums[name]
-    def addFunction(self,name,source,types=['any']):
-        if name not in self._functions.keys():
-            self._functions[name]= []
+        return self._modelManager.getEnum(name) 
+    
+    def getFunction(self,name,type='na'):
+        return self._modelManager.getFunction(name,type)
 
-        # self._functions[name].append({'types':types,'imp':source})  
-       
-        signature= inspect.signature(source)
-        args=[]
-        for parameter in signature.parameters.values():
-            arg = {'name':parameter.name
-                  ,'type': inspect.formatannotation(parameter.annotation)
-                  ,'default':parameter.default 
-                  }
-            args.append(arg) 
-
-        metadata= {
-            'name': source.__name__,
-            'doc':source.__doc__,
-            'args': args,
-            'return':inspect.formatannotation(signature.return_annotation)
-        }
-        
-        # TODO: resolver estos tipos como
-        # inspect._empty : null
-        # <built-in function any> ; any
-
-        self._functions[name].append({'types':types,'imp':source,'metadata':metadata}) 
-
-        # sig = inspect.signature(source)
-        # print('module_level_function{}'.format(sig))
-
-        # print('\nParameter details:')
-        # for name, param in sig.parameters.items():
-        #     if param.kind == inspect.Parameter.POSITIONAL_ONLY:
-        #         print('  {} (positional-only)'.format(name))
-        #     elif param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
-        #         if param.default != inspect.Parameter.empty:
-        #             print('  {}={!r}'.format(name, param.default))
-        #         else:
-        #             print('  {}'.format(name))
-        #     elif param.kind == inspect.Parameter.VAR_POSITIONAL:
-        #         print('  *{}'.format(name))
-        #     elif param.kind == inspect.Parameter.KEYWORD_ONLY:
-        #         if param.default != inspect.Parameter.empty:
-        #             print('  {}={!r} (keyword-only)'.format(
-        #                 name, param.default))
-        #         else:
-        #             print('  {} (keyword-only)'.format(name))
-        #     elif param.kind == inspect.Parameter.VAR_KEYWORD:
-        #         print('  **{}'.format(name))
-
-        # a =dir(source)
-        # print(a)
-        
-
-        # for p in  source.__annotations__:
-        #     if p == 'return':
-        #         metadata['return'] = {'name':p,'type':source.__annotations__[p] }
-        #     else:
-        #         arg={'name':p,'type':source.__annotations__[p] }
-        #         metadata['args'].append(arg)
-
-        # self._functions[name].append({'types':types,'imp':source,'metadata':metadata})  
-
-        
-        # sig = inspect.signature(source)
-        # print('module_level_function{}'.format(sig))
-
-        # print('\nParameter details:')
-        # for name, param in sig.parameters.items():
-        #     if param.kind == inspect.Parameter.POSITIONAL_ONLY:
-        #         print('  {} (positional-only)'.format(name))
-        #     elif param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
-        #         if param.default != inspect.Parameter.empty:
-        #             print('  {}={!r}'.format(name, param.default))
-        #         else:
-        #             print('  {}'.format(name))
-        #     elif param.kind == inspect.Parameter.VAR_POSITIONAL:
-        #         print('  *{}'.format(name))
-        #     elif param.kind == inspect.Parameter.KEYWORD_ONLY:
-        #         if param.default != inspect.Parameter.empty:
-        #             print('  {}={!r} (keyword-only)'.format(
-        #                 name, param.default))
-        #         else:
-        #             print('  {} (keyword-only)'.format(name))
-        #     elif param.kind == inspect.Parameter.VAR_KEYWORD:
-        #         print('  **{}'.format(name))
-
-        # if inspect.isfunction(source):
-        #     func_obj = source
-        # elif inspect.ismethod(source):
-        #     func_obj = source.im_func
-        # elif inspect.ismethoddescriptor(source):
-        #     m= inspect.getmembers(source)
-        #     for p in m:
-        #         print(p)
-               
-        # else:
-        #     raise TypeError('arg is not a Python function')
-
-        # for p in  source.__annotations__:
-        #     if p == 'return':
-        #         metadata['return'] = {'name':p,'type':source.__annotations__[p] }
-        #     else:
-        #         arg={'name':p,'type':source.__annotations__[p] }
-        #         metadata['args'].append(arg)
-
-        # self._functions[name].append({'types':types,'imp':source,'metadata':metadata})  
-        # args, varargs, varkw = inspect.getargs(func_obj)
-        # return args, varargs, varkw, func_obj.func_defaults
-
-
-        # for p in  source.__annotations__:
-        #     if p == 'return':
-        #         metadata['return'] = {'name':p,'type':source.__annotations__[p] }
-        #     else:
-        #         arg={'name':p,'type':source.__annotations__[p] }
-        #         metadata['args'].append(arg)
-                   
-        #     print(p)
-        # signature= inspect.signature(source)
-        # for p in signature.parameters:
-        #     parameter = signature.parameters[p]
-        #     parameter.name
-        #     arg = {'name':parameter.name,'type':parameter.annotation }
-        #     metadata['args'].append(arg) 
-
-        
-
-
-    def getFunction(self,key,type='any'):
-        for p in self._functions[key]:
-            if type in p['types']:
-                return p['imp']
-        return None    
+      
     
     def minify(self,expression:str)->str:
         isString=False
@@ -1043,7 +212,7 @@ class Exp(metaclass=Singleton):
         if 'c' in serialized:
             for p in serialized['c']:
                 children.append(self.deserialize(p))
-        return  eval(serialized['t'])(serialized['n'],children) 
+        return  eval(serialized['t'])(serialized['n'],children,self) 
 
  
     def getOperandByPath(self,operand:Operand,path)->Operand:
@@ -1096,11 +265,11 @@ class Exp(metaclass=Singleton):
     def getOperators(self,expression:Operand)->dict:
         list = {}
         if isinstance(expression,Operator):
-            operator = self._operators[expression.name]; 
+            operator = self._modelManager.getOperator(expression.name)   #self._operators[expression.name]; 
             list[expression.name] = operator['category']
         for p in expression.operands:
             if isinstance(p,Operator):
-                operator = self._operators[p.name]; 
+                operator = self._modelManager.getOperator(p.name); 
                 list[p.name] =  operator['category']
             elif len(p.operands)>0:
                 subList= self.getOperators(p)
@@ -1137,7 +306,7 @@ class Parser():
             operands.append(operand)
         if len(operands)==1 :
             return operands[0]
-        return Block('block',operands) 
+        return Block('block',operands,self.mgr) 
 
     @property
     def previous(self):
@@ -1188,7 +357,7 @@ class Parser():
                     break
             if  allConstants:
                 value = expression.value                
-                return Constant(value)
+                return Constant(value,[],self.mgr)
         return expression             
 
     def getOperand(self):        
@@ -1242,7 +411,7 @@ class Parser():
                     isBitNot= False     
                 else:
                     value =int(value)
-                operand = Constant(value)
+                operand = Constant(value,[],self.mgr)
             elif self.mgr.reFloat.match(value):
                 if isNegative:
                     value = float(value)* -1
@@ -1252,11 +421,11 @@ class Parser():
                     isBitNot= False      
                 else:
                     value =float(value)
-                operand = Constant(value)
+                operand = Constant(value,[],self.mgr)
             elif value=='true':                
-                operand = Constant(True)
+                operand = Constant(True,[],self.mgr)
             elif value=='false':                
-                operand = Constant(False)
+                operand = Constant(False,[],self.mgr)
             elif self.mgr.isEnum(value):                
                 operand= self.getEnum(value)
             else:
@@ -1264,7 +433,7 @@ class Parser():
         elif char == '\'' or char == '"':
             self.index+=1
             result=  self.getString(char)
-            operand= Constant(result)
+            operand= Constant(result,[],self.mgr)
         elif char == '(':
             self.index+=1
             operand=  self.getExpression(_break=')') 
@@ -1287,9 +456,9 @@ class Parser():
             # if '.' not in function.name :function.name = '.'+function.name
             # operand=function
 
-        if isNegative:operand=NegativeDecorator('-',[operand])
-        if isNot:operand=NotDecorator('!',[operand])
-        if isBitNot:operand=BitNot('~',[operand])  
+        if isNegative:operand=NegativeDecorator('-',[operand],self.mgr )
+        if isNot:operand=NotDecorator('!',[operand],self.mgr )
+        if isBitNot:operand=BitNot('~',[operand],self.mgr )  
         return operand
 
     def priority(self,op):
@@ -1355,12 +524,12 @@ class Parser():
             if self.current==':':self.index+=1
             else:raise ExpressionError('attribute '+name+' without value')
             value= self.getExpression(_break=',}')
-            attribute = KeyValue(name,[value])
+            attribute = KeyValue(name,[value],self.mgr)
             attributes.append(attribute)
             if self.previous=='}':
                 break
         
-        return Object('object',attributes) 
+        return Object('object',attributes,self.mgr) 
 
     def getBlock(self):
         lines= []
@@ -1369,7 +538,7 @@ class Parser():
             if line is not None :lines.append(line)
             if self.previous=='}':
                 break        
-        return Block('block',lines)     
+        return Block('block',lines,self.mgr)     
 
     def getIfBlock(self):
         condition= self.getExpression(_break=')')
@@ -1389,7 +558,7 @@ class Parser():
             else:
                 elseblock= self.getExpression(_break=';') 
 
-        return If('if',[condition,block,elseblock]) 
+        return If('if',[condition,block,elseblock],self.mgr) 
 
     def getWhileBlock(self):
         condition= self.getExpression(_break=')')
@@ -1399,7 +568,7 @@ class Parser():
         else:
             block= self.getExpression(_break=';') 
 
-        return While('while',[condition,block])   
+        return While('while',[condition,block],self.mgr)   
 
     def getChildFunction(self,name,parent):
         if name == 'foreach': return self.getForeach(parent)
@@ -1437,18 +606,18 @@ class Parser():
         if self.current==':':self.index+=1
         else:raise ExpressionError('foreach without body')
         body= self.getExpression(_break=')')
-        return ArrayForeach(name,[variable,body]) 
+        return ArrayForeach(name,[variable,body],self.mgr) 
 
     def getMap(self,variable):
         name= self.getValue()
         if self.current==':':self.index+=1
         else:raise ExpressionError('map without body')
         body= self.getExpression(_break=')')
-        return ArrayMap(name,[variable,body])   
+        return ArrayMap(name,[variable,body],self.mgr)   
 
     def getReverse(self,variable): 
         if self.current == ')': self.index+=1       
-        return ArrayReverse('',[variable]) 
+        return ArrayReverse('',[variable],self.mgr) 
         # if self.current==':':self.index+=1
         # else:raise ExpressionError('reverse without body')
         # body= self.getExpression(_break=')')
@@ -1459,26 +628,26 @@ class Parser():
         if self.current==':':self.index+=1
         else:raise ExpressionError('first without body')
         body= self.getExpression(_break=')')
-        return ArrayFirst(name,[variable,body])  
+        return ArrayFirst(name,[variable,body],self.mgr)  
 
     def getLast(self,variable):
         name= self.getValue()
         if self.current==':':self.index+=1
         else:raise ExpressionError('last without body')
         body= self.getExpression(_break=')')
-        return ArrayLast(name,[variable,body])                   
+        return ArrayLast(name,[variable,body],self.mgr)                   
 
     def getFilter(self,variable):
         name= self.getValue()
         if self.current==':':self.index+=1
         else:raise ExpressionError('filter without body')
         body= self.getExpression(_break=')')
-        return ArrayFilter(name,[variable,body])  
+        return ArrayFilter(name,[variable,body],self.mgr)  
 
     def getIndexOperand(self,name):
         idx= self.getExpression(_break=']')
         operand= Variable(name)
-        return IndexDecorator('[]',[operand,idx]) 
+        return IndexDecorator('[]',[operand,idx],self.mgr ) 
 
     def getEnum(self,value):
         if '.' in value and self.mgr.isEnum(value):
@@ -1487,16 +656,16 @@ class Parser():
             enumOption = names[1] 
             enumValue= self.mgr.getEnumValue(enumName,enumOption)
             # enumType = type(enumValue).__name__
-            return Constant(enumValue)
+            return Constant(enumValue,[],self.mgr)
         else:
             values= self.mgr.getEnum(value)
             attributes= []
             for name in values:
                 _value = values[name]
                 # _valueType = type(_value).__name__
-                attribute = KeyValue(name,[Constant(_value)])
+                attribute = KeyValue(name,[Constant(_value)],[],self.mgr)
                 attributes.append(attribute)
-            return Object('object',attributes)
+            return Object('object',attributes,self.mgr)
    
 
                             

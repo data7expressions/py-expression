@@ -2,6 +2,159 @@ import time as t
 import math
 from datetime import date,datetime,time,timedelta
 from os import path,getcwd
+from .base import *
+
+
+
+class Addition(Operator):
+    def solve(self,a,b):
+        return a+b 
+class Subtraction (Operator):
+    def solve(self,a,b):
+        return a-b   
+class Multiplication(Operator):
+    def solve(self,a,b):
+        return a*b 
+class Division (Operator):
+    def solve(self,a,b):
+        return a/b  
+class Exponentiation(Operator):
+    def solve(self,a,b):
+        return a**b 
+class FloorDivision (Operator):
+    def solve(self,a,b):
+        return a//b   
+class Mod (Operator):
+    def solve(self,a,b):
+        return a%b 
+
+class BitAnd(Operator):
+    def solve(self,a,b):
+        return a & b 
+class BitOr(Operator):
+    def solve(self,a,b):
+        return a | b
+class BitXor(Operator):
+    def solve(self,a,b):
+        return a ^ b                  
+class BitNot(Operator):
+    @property
+    def value(self):
+        return ~ self._operands[0].value
+class LeftShift(Operator):
+    def solve(self,a,b):
+        return a << b   
+class RightShift(Operator):
+    def solve(self,a,b):
+        return a >> b   
+
+class Equal(Operator):
+    def solve(self,a,b):
+        return a==b
+class NotEqual(Operator):
+    def solve(self,a,b):
+        return a!=b          
+class GreaterThan(Operator):
+    def solve(self,a,b):
+        return a>b
+class LessThan(Operator):
+    def solve(self,a,b):
+        return a<b 
+class GreaterThanOrEqual(Operator):
+    def solve(self,a,b):
+        return a>=b
+class LessThanOrEqual(Operator):
+    def solve(self,a,b):
+        return a<=b                
+
+class And(Operator):
+    @property
+    def value(self):
+        if not self._operands[0].value : return False
+        return self._operands[1].value
+
+    # TODO
+    def debug(self,token:Token,level): 
+        pass 
+class Or(Operator):
+    @property
+    def value(self):
+        if self._operands[0].value : return True
+        return self._operands[1].value
+    # TODO
+    def debug(self,token:Token,level): 
+        pass 
+class Not(Operator):
+    @property
+    def value(self):
+        return not self._operands[0].value
+
+class Assigment(Operator):
+    @property
+    def value(self):
+        self._operands[0].value = self._operands[1].value
+        return self._operands[0].value
+class AssigmentAddition(Operator):
+    @property
+    def value(self):
+        self._operands[0].value += self._operands[1].value
+        return self._operands[0].value
+class AssigmentSubtraction (Operator):
+    @property
+    def value(self):
+        self._operands[0].value -= self._operands[1].value
+        return self._operands[0].value  
+class AssigmentMultiplication(Operator):
+    @property
+    def value(self):
+        self._operands[0].value *= self._operands[1].value
+        return self._operands[0].value 
+class AssigmentDivision (Operator):
+    @property
+    def value(self):
+        self._operands[0].value /= self._operands[1].value
+        return self._operands[0].value  
+class AssigmentExponentiation(Operator):
+    @property
+    def value(self):
+        self._operands[0].value **= self._operands[1].value
+        return self._operands[0].value 
+class AssigmentFloorDivision (Operator):
+    @property
+    def value(self):
+        self._operands[0].value //= self._operands[1].value
+        return self._operands[0].value   
+class AssigmentMod (Operator):
+    @property
+    def value(self):
+        self._operands[0].value %= self._operands[1].value
+        return self._operands[0].value 
+class AssigmentBitAnd(Operator):
+    @property
+    def value(self):
+        self._operands[0].value &= self._operands[1].value
+        return self._operands[0].value 
+class AssigmentBitOr(Operator):
+    @property
+    def value(self):
+        self._operands[0].value |= self._operands[1].value
+        return self._operands[0].value
+class AssigmentBitXor(Operator):
+    @property
+    def value(self):
+        self._operands[0].value ^= self._operands[1].value
+        return self._operands[0].value
+class AssigmentLeftShift(Operator):
+    @property
+    def value(self):
+        self._operands[0].value <<= self._operands[1].value
+        return self._operands[0].value
+class AssigmentRightShift(Operator):
+    @property
+    def value(self):
+        self._operands[0].value >>= self._operands[1].value
+        return self._operands[0].value
+
 
 class General():
     @staticmethod
@@ -590,7 +743,7 @@ class Math():
         return math.e
 
 class Date():
-     # https://stackabuse.com/how-to-format-dates-in-python/
+    # https://stackabuse.com/how-to-format-dates-in-python/
     # https://www.programiz.com/python-programming/datetime
     @staticmethod
     def strftime(self:date, fmt:str)->str:
@@ -647,8 +800,8 @@ class Date():
         """
         return time(hour,minute,second,microsecond,tzinfo) 
 
-#         self.addFunction('timedelta',timedelta)
-#         self.addFunction('timezone',pytz.timezone) 
+    #  self.addFunction('timedelta',timedelta)
+    #  self.addFunction('timezone',pytz.timezone) 
 
 class Volume():
             def __init__(self,_path):        
@@ -677,5 +830,163 @@ class IO():
         If a component is an absolute path, all previous components are thrown away and joining continues from the absolute path component.
         """     
         return path.join(paths)   
+
+
+
+class CoreLib(Library):
+    def __init__(self):
+       super(CoreLib,self).__init__()   
+       self.initEnums()
+       self.initOperators()
+       self.generalFunctions()
+       self.stringFunctions()
+       self.mathFunctions()
+       self.datetimeFunctions()
+       self.ioFunctions()
+
+    def initEnums(self): 
+        self.addEnum('DayOfWeek',{"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":0}) 
+
+    def initOperators(self):       
+
+        self.addOperator('+','arithmetic',Addition,4)
+        self.addOperator('-','arithmetic',Subtraction,4)
+        self.addOperator('*','arithmetic',Multiplication,5)
+        self.addOperator('/','arithmetic',Division,5)
+        self.addOperator('**','arithmetic',Exponentiation,6)
+        self.addOperator('//','arithmetic',FloorDivision,6)
+        self.addOperator('%','arithmetic',Mod,7)
+
+        self.addOperator('&','bitwise',BitAnd)
+        self.addOperator('|','bitwise',BitOr)
+        self.addOperator('^','bitwise',BitXor)
+        self.addOperator('~','bitwise',BitNot)
+        self.addOperator('<<','bitwise',LeftShift)
+        self.addOperator('>>','bitwise',RightShift)
+
+        self.addOperator('==','comparison',Equal,3)
+        self.addOperator('!=','comparison',NotEqual,3)
+        self.addOperator('>','comparison',GreaterThan,3)
+        self.addOperator('<','comparison',LessThan,3)
+        self.addOperator('>=','comparison',GreaterThanOrEqual,3)
+        self.addOperator('<=','comparison',LessThanOrEqual,3)
+
+        self.addOperator('&&','logical',And,2)
+        self.addOperator('||','logical',Or,2)
+        self.addOperator('!','logical',Not)
+
+        self.addOperator('=','assignment',Assigment,1)
+        self.addOperator('+=','assignment',AssigmentAddition,1)
+        self.addOperator('-=','assignment',AssigmentSubtraction,1)
+        self.addOperator('*=','assignment',AssigmentMultiplication,1)
+        self.addOperator('/=','assignment',AssigmentDivision,1)
+        self.addOperator('**=','assignment',AssigmentExponentiation,1)
+        self.addOperator('//=','assignment',AssigmentFloorDivision,1)
+        self.addOperator('%=','assignment',AssigmentMod,1)
+        self.addOperator('&=','assignment',AssigmentBitAnd,1)
+        self.addOperator('|=','assignment',AssigmentBitOr,1)
+        self.addOperator('^=','assignment',AssigmentBitXor,1)
+        self.addOperator('<<=','assignment',AssigmentLeftShift,1)
+        self.addOperator('>>=','assignment',AssigmentRightShift,1)        
+
+    def generalFunctions(self):
+        self.addFunction('nvl',General.nvl )
+        self.addFunction('isEmpty',General.isEmpty)
+        self.addFunction('sleep',General.sleep)        
+
+    def stringFunctions(self):
+        self.addFunction('capitalize',String.capitalize,'str')
+        self.addFunction('count',String.count,'str')
+        self.addFunction('encode',String.encode,'str')
+        self.addFunction('endswith',String.endswith,'str')
+        self.addFunction('find',String.find,'str')
+        self.addFunction('index',String.index,'str')
+        self.addFunction('isalnum',String.isalnum,'str')
+        self.addFunction('isalpha',String.isalpha,'str')
+        self.addFunction('isdigit',String.isdigit,'str')
+        self.addFunction('islower',String.islower,'str')
+        self.addFunction('isspace',String.isspace,'str')
+        self.addFunction('istitle',String.istitle,'str')
+        self.addFunction('isupper',String.isupper,'str')
+        self.addFunction('join',String.join,'str')
+        self.addFunction('ljust',String.ljust,'str')
+        self.addFunction('lower',String.lower,'str')
+        self.addFunction('lstrip',String.lstrip,'str')
+        self.addFunction('partition',String.partition,'str')
+        self.addFunction('replace',String.replace,'str')
+        self.addFunction('rfind',String.rfind,'str')
+        self.addFunction('rindex',String.rindex,'str')
+        self.addFunction('rjust',String.rjust,'str')
+        self.addFunction('rpartition',String.rpartition,'str')
+        self.addFunction('rsplit',String.rsplit,'str')
+        self.addFunction('rstrip',String.lstrip,'str')
+        self.addFunction('split',String.split,'str')
+        self.addFunction('splitlines',String.splitlines,'str')
+        self.addFunction('startswith',String.startswith,'str')
+        self.addFunction('strip',String.lstrip,'str')
+        self.addFunction('swapcase',String.swapcase,'str')
+        self.addFunction('title',String.title,'str')
+        # self.addFunction('translate',String.translate,'str')
+        self.addFunction('upper',String.upper,'str')
+        self.addFunction('zfill',String.zfill,'str')   
+
+    def mathFunctions(self):
+        self.addFunction('ceil',Math.ceil)
+        self.addFunction('copysign',Math.copysign) 
+        self.addFunction('factorial',Math.factorial) 
+        self.addFunction('floor',Math.floor) 
+        self.addFunction('fmod',Math.fmod) 
+        self.addFunction('frexp',Math.frexp) 
+        self.addFunction('fsum',Math.fsum) 
+        self.addFunction('isfinite',Math.isfinite) 
+        self.addFunction('isnan',Math.isnan) 
+        self.addFunction('ldexp',Math.ldexp) 
+        self.addFunction('modf',Math.modf) 
+        self.addFunction('trunc',Math.trunc) 
+        self.addFunction('exp',Math.exp) 
+        self.addFunction('expm1',Math.expm1) 
+        self.addFunction('log',Math.log) 
+        self.addFunction('log1p',Math.log1p) 
+        self.addFunction('log2',Math.log2) 
+        self.addFunction('log10',Math.log10) 
+        self.addFunction('pow',Math.pow) 
+        self.addFunction('sqrt',Math.sqrt) 
+        self.addFunction('acos',Math.acos) 
+        self.addFunction('asin',Math.asin) 
+        self.addFunction('atan',Math.atan) 
+        self.addFunction('atan2',Math.atan2) 
+        self.addFunction('cos',Math.cos) 
+        self.addFunction('hypot',Math.hypot) 
+        self.addFunction('sin',Math.sin) 
+        self.addFunction('tan',Math.tan) 
+        self.addFunction('degrees',Math.degrees)
+        self.addFunction('radians',Math.radians)
+        self.addFunction('acosh',Math.acosh)
+        self.addFunction('asinh',Math.asinh)
+        self.addFunction('atanh',Math.atanh)
+        self.addFunction('cosh',Math.cosh)
+        self.addFunction('sinh',Math.sinh)
+        self.addFunction('tanh',Math.tanh)
+        self.addFunction('erf',Math.erf)
+        self.addFunction('erfc',Math.erfc)
+        self.addFunction('gamma',Math.gamma)
+        self.addFunction('lgamma',Math.lgamma)
+        self.addFunction('pi',Math.pi)
+        self.addFunction('e',Math.e)
+    
+    def datetimeFunctions(self):
+        self.addFunction('strftime',Date.strftime,'datetime')
+        self.addFunction('strptime',Date.strptime)        
+        self.addFunction('datetime',Date.datetime)
+        self.addFunction('today',Date.today)
+        self.addFunction('now',Date.now)
+        self.addFunction('date',Date.date)
+        self.addFunction('fromtimestamp',Date.fromtimestamp)
+        self.addFunction('time',Date.time)
+    
+    def ioFunctions(self): 
+        self.addFunction('Volume',IO.Volume)
+        self.addFunction('pathRoot',IO.pathRoot)
+        self.addFunction('pathJoin',IO.pathJoin)
 
 

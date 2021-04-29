@@ -1,6 +1,9 @@
 import unittest
+from py_expression.base import *
 from py_expression.core import Exp,Token
 from enum import Enum
+
+
 
 exp = Exp()
 
@@ -65,23 +68,26 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(exp.solve('a.upper()',{"a":"aaa"}),"AAA") 
 
     def test_enums(self):
-        exp.addEnum('ColorConversion',{"BGR2GRAY":6
-                                  ,"BGR2HSV":40
-                                  ,"BGR2RGB":4
-                                  ,"GRAY2BGR":8
-                                  ,"HSV2BGR":54
-                                  ,"HSV2RGB":55
-                                  ,"RGB2GRAY":7
-                                  ,"RGB2HSV":41})
 
+        class TestEnumLib(Library):
+            def __init__(self):
+                super(TestEnumLib,self).__init__()   
+                self.initEnums()
+            
+            def initEnums(self):
+                self.addEnum('ColorConversion',{"BGR2GRAY":6,"BGR2HSV":40,"BGR2RGB":4,"GRAY2BGR":8,"HSV2BGR":54
+                                              ,"HSV2RGB":55,"RGB2GRAY":7,"RGB2HSV":41})
+
+                class Color(Enum):
+                    RED = 1
+                    GREEN = 2
+                    BLUE = 3 
+
+                self.addEnum('Color',Color) 
+
+        exp.addLibrary('testEnum',TestEnumLib())
+        
         self.assertEqual(exp.solve('ColorConversion.GRAY2BGR'),8)
-
-        class Color(Enum):
-            RED = 1
-            GREEN = 2
-            BLUE = 3        
-
-        exp.addEnum('Color',Color)
         self.assertEqual(exp.solve('Color.GREEN'),2)  
 
     def test_info(self):
@@ -149,18 +155,32 @@ class TestExpression(unittest.TestCase):
         # context = {"a":[1,2,3,4,5],"b":0}
         # self.assertEqual(exp.solve('a.filter(p: p>1 && p<5).map(p: p*2).reverse()',context),[8,6,4])
 
-    def test_serialize(self): 
-        operand =exp.parse(('i=0;'
-                 'while(i<=6){'
-                 '  output=i*2;'
-                 '  i=i+1;'
-                 '}'))
-        serialized = exp.serialize(operand)
-        self.assertEqual(serialized,{'n': 'block', 't': 'Block', 'c': [{'n': '=', 't': 'Assigment', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 0, 't': 'Constant'}]}, {'n': 'while', 't': 'While', 'c': [{'n': '<=', 't': 'LessThanOrEqual', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 6, 't': 'Constant'}]}, {'n': 'block', 't': 'Block', 'c': [{'n': '=', 't': 'Assigment', 'c': [{'n': 'output', 't': 'Variable'}, {'n': '*', 't': 'Multiplication', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 2, 't': 'Constant'}]}]}, {'n': '=', 't': 'Assigment', 'c': [{'n': 'i', 't': 'Variable'}, {'n': '+', 't': 'Addition', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 1, 't': 'Constant'}]}]}]}]}]})
-        operand2= exp.deserialize(serialized)
-        context = {}
-        exp.eval(operand2,context)
-        self.assertEqual(context['output'],12) 
+    # def test_serialize(self): 
+    #     operand =exp.parse(('i=0;'
+    #              'while(i<=6){'
+    #              '  output=i*2;'
+    #              '  i=i+1;'
+    #              '}'))
+    #     serialized = exp.serialize(operand)
+    #     self.assertEqual(serialized,{'n': 'block', 't': 'Block', 'c': [{'n': '=', 't': 'Assigment', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 0, 't': 'Constant'}]}, {'n': 'while', 't': 'While', 'c': [{'n': '<=', 't': 'LessThanOrEqual', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 6, 't': 'Constant'}]}, {'n': 'block', 't': 'Block', 'c': [{'n': '=', 't': 'Assigment', 'c': [{'n': 'output', 't': 'Variable'}, {'n': '*', 't': 'Multiplication', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 2, 't': 'Constant'}]}]}, {'n': '=', 't': 'Assigment', 'c': [{'n': 'i', 't': 'Variable'}, {'n': '+', 't': 'Addition', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 1, 't': 'Constant'}]}]}]}]}]})
+    #     operand2= exp.deserialize(serialized)
+    #     context = {}
+    #     exp.eval(operand2,context)
+    #     self.assertEqual(context['output'],12) 
+
+
+# result = exp.solve('nvl(a,b)',{"a":None,"b":2})
+# print(result)
+
+# text='a=4; '\
+#         'b=a+2; '\
+#     ' output=a*b; ' 
+# expression = exp.parse(text)
+# context = {}
+# expression.eval(context)
+# print(context['output'])
+unittest.main()
+
 
 # context = {"a":"1","b":2,"c":{"a":4,"b":5}}
 # exp.solve('a=8',context)
@@ -191,7 +211,7 @@ class TestExpression(unittest.TestCase):
 # exp.eval(operand2,context)
 # print(context['output'])
 
-unittest.main()
+
 
 # operand=exp.parse('(a+1)*(a-1)')
 # context = {'a':3}
