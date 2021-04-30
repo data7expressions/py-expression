@@ -71,7 +71,7 @@ class TestExpression(unittest.TestCase):
 
         class TestEnumLib(Library):
             def __init__(self):
-                super(TestEnumLib,self).__init__()   
+                super(TestEnumLib,self).__init__('testEnum')   
                 self.initEnums()
             
             def initEnums(self):
@@ -85,17 +85,12 @@ class TestExpression(unittest.TestCase):
 
                 self.addEnum('Color',Color) 
 
-        exp.addLibrary('testEnum',TestEnumLib())
+        exp.addLibrary(TestEnumLib())
         
         self.assertEqual(exp.solve('ColorConversion.GRAY2BGR'),8)
         self.assertEqual(exp.solve('Color.GREEN'),2)  
 
-    def test_info(self):
-        op = exp.parse('"expression".count("e")>= a+1')
-        self.assertEqual(op.vars(),{'a': 'any'})
-        self.assertEqual(op.constants(),{'expression': 'str', 'e': 'str', 1: 'int'})
-        self.assertEqual(op.operators(),{'>=': 'comparison', '+': 'arithmetic'})
-        self.assertEqual(op.functions(),{'.count': {'isChild': True}} )    
+    
 
     def test_multine(self):    
         text='a=4; '\
@@ -154,6 +149,13 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(exp.solve('a.filter(p: p>1 && p<5).reverse()',context),[4,3,2])
         # context = {"a":[1,2,3,4,5],"b":0}
         # self.assertEqual(exp.solve('a.filter(p: p>1 && p<5).map(p: p*2).reverse()',context),[8,6,4])
+
+    # def test_info(self):
+    #     op = exp.parse('"expression".count("e")>= a+1')
+    #     self.assertEqual(op.vars(),{'a': 'any'})
+    #     self.assertEqual(op.constants(),{'expression': 'str', 'e': 'str', 1: 'int'})
+    #     self.assertEqual(op.operators(),{'>=': 'comparison', '+': 'arithmetic'})
+    #     self.assertEqual(op.functions(),{'.count': {'isChild': True}} )  
 
     # def test_serialize(self): 
     #     operand =exp.parse(('i=0;'

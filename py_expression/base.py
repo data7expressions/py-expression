@@ -466,19 +466,19 @@ class Operator(Operand):
 class UnitaryOperator(Operator):
     @property
     def value(self):
-        function = self.mgr.getOperator(self.name,1)
+        function = self.mgr.getOperator(self.name,len(self._operands))
         return function(self._operands[0].value)
 
 class BinaryOperator(Operator):
     @property
     def value(self):
-        function = self.mgr.getOperator(self.name,2)
+        function = self.mgr.getOperator(self.name,len(self._operands))
         return function(self._operands[0].value,self._operands[1].value)
 
 class TernaryOperator(Operator):
     @property
     def value(self):
-        function = self.mgr.getOperator(self.name,3)
+        function = self.mgr.getOperator(self.name,len(self._operands))
         return function(self._operands[0].value,self._operands[1].value,self._operands[2].value)
 
 class AssigmentOperator(Operator):
@@ -489,7 +489,7 @@ class AssigmentOperator(Operator):
             return self._operands[0].value
         else:
             _oper = self.name.replace('=','')
-            function = self.mgr.getOperator(_oper)
+            function = self.mgr.getOperator(_oper,len(self._operands))
             self._operands[0].value= function(self._operands[0].value,self._operands[1].value)
             return self._operands[0].value       
 

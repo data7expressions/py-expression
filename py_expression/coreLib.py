@@ -5,75 +5,115 @@ from os import path,getcwd
 from .base import *
 
 
+
 class Operators():
     @staticmethod
-    def addition(a,b):
+    def addition(a:any,b:any)->any:
         return a+b 
     @staticmethod
-    def subtraction(a,b):
+    def subtraction(a:float,b:float)->float:
         return a-b   
     @staticmethod
-    def multiplication(a,b):
+    def multiplication(a:float,b:float)->float:
         return a*b 
     @staticmethod
-    def division(a,b):
+    def division(a:float,b:float)->float:
         return a/b  
     @staticmethod
-    def exponentiation(a,b):
+    def exponentiation(a:float,b:float)->float:
         return a**b 
     @staticmethod
-    def floorDivision(a,b):
+    def floorDivision(a:float,b:float)->float:
         return a//b   
     @staticmethod
-    def mod(a,b):
+    def mod(a:float,b:float)->float:
         return a%b 
     @staticmethod
-    def bitAnd(a,b):
+    def negative(a:float)->float:
+        return a *-1
+
+
+    @staticmethod
+    def bitAnd(a:float,b:float)->float:
         return a & b 
     @staticmethod
-    def bitOr(a,b):
+    def bitOr(a:float,b:float)->float:
         return a | b
     @staticmethod
-    def bitXor(a,b):
+    def bitXor(a:float,b:float)->float:
         return a ^ b                  
     @staticmethod
-    def bitNot(a):
+    def bitNot(a:float)->float:
         return ~ a
     @staticmethod
-    def leftShift(a,b):
+    def leftShift(a:float,b:float)->float:
         return a << b   
     @staticmethod
-    def rightShift(a,b):
+    def rightShift(a:float,b:float)->float:
         return a >> b   
 
     @staticmethod
-    def equal(a,b):
+    def equal(a:any,b:any)->bool:
         return a==b
     @staticmethod
-    def notEqual(a,b):
+    def notEqual(a:any,b:any)->bool:
         return a!=b          
     @staticmethod
-    def greaterThan(a,b):
+    def greaterThan(a:any,b:any)->bool:
         return a>b
     @staticmethod
-    def lessThan(a,b):
+    def lessThan(a:any,b:any)->bool:
         return a<b 
     @staticmethod
-    def greaterThanOrEqual(a,b):
+    def greaterThanOrEqual(a:any,b:any)->bool:
         return a>=b
     @staticmethod
-    def lessThanOrEqual(a,b):
+    def lessThanOrEqual(a:any,b:any)->bool:
         return a<=b               
 
     @staticmethod
-    def _not(a):
+    def _not(a:bool)->bool:
         return not a
+    @staticmethod
+    def _and(a:bool,b:bool)->bool:
+        return a and b
+    @staticmethod
+    def _or(a:bool,b:bool)->bool:
+        return a or b  
 
     @staticmethod
-    def item(list,index):
+    def assigment(a:any,b:any)->any: pass
+    @staticmethod
+    def assigmentAddition(a:float,b:float)->float: pass 
+    @staticmethod
+    def assigmentSubtraction(a:float,b:float)->float: pass 
+    @staticmethod
+    def assigmentMultiplication(a:float,b:float)->float: pass 
+    @staticmethod
+    def assigmentDivision(a:float,b:float)->float: pass 
+    @staticmethod
+    def assigmentExponentiation(a:float,b:float)->float: pass 
+    @staticmethod
+    def assigmentFloorDivision(a:float,b:float)->float: pass 
+    @staticmethod
+    def assigmentMod(a:float,b:float)->float: pass 
+    @staticmethod
+    def assigmentBitAnd(a:float,b:float)->float: pass 
+    @staticmethod
+    def assigmentBitOr(a:float,b:float)->float: pass 
+    @staticmethod
+    def assigmentBitXor(a:float,b:float)->float: pass 
+    @staticmethod
+    def assigmentLeftShift(a:float,b:float)->float: pass 
+    @staticmethod
+    def assigmentRightShift(a:float,b:float)->float: pass 
+
+    @staticmethod
+    def item(list:list[any],index:int):
         return list[index]
 
    
+
 
 
 
@@ -778,6 +818,8 @@ class CoreLib(Library):
         self.addOperator('//','arithmetic',Operators.floorDivision,6)
         self.addOperator('%','arithmetic',Operators.mod,7)
 
+        self.addOperator('-','arithmetic',Operators.negative,8)
+
         self.addOperator('&','bitwise',Operators.bitAnd,4)
         self.addOperator('|','bitwise',Operators.bitOr,4)
         self.addOperator('^','bitwise',Operators.bitXor,4)
@@ -792,26 +834,25 @@ class CoreLib(Library):
         self.addOperator('>=','comparison',Operators.greaterThanOrEqual,3)
         self.addOperator('<=','comparison',Operators.lessThanOrEqual,3)
 
-        # self.addOperator('&&','logical',And,2)
-        # self.addOperator('||','logical',Or,2)
+        self.addOperator('&&','logical',Operators._and,2)
+        self.addOperator('||','logical',Operators._or,2)
         self.addOperator('!','logical',Operators._not)
 
         self.addOperator('[]','list',Operators.item)
         
-
-        # self.addOperator('=','assignment',Assigment,1)
-        # self.addOperator('+=','assignment',AssigmentAddition,1)
-        # self.addOperator('-=','assignment',AssigmentSubtraction,1)
-        # self.addOperator('*=','assignment',AssigmentMultiplication,1)
-        # self.addOperator('/=','assignment',AssigmentDivision,1)
-        # self.addOperator('**=','assignment',AssigmentExponentiation,1)
-        # self.addOperator('//=','assignment',AssigmentFloorDivision,1)
-        # self.addOperator('%=','assignment',AssigmentMod,1)
-        # self.addOperator('&=','assignment',AssigmentBitAnd,1)
-        # self.addOperator('|=','assignment',AssigmentBitOr,1)
-        # self.addOperator('^=','assignment',AssigmentBitXor,1)
-        # self.addOperator('<<=','assignment',AssigmentLeftShift,1)
-        # self.addOperator('>>=','assignment',AssigmentRightShift,1)        
+        self.addOperator('=','assignment',Operators.assigment,1)
+        self.addOperator('+=','assignment',Operators.assigmentAddition,1)
+        self.addOperator('-=','assignment',Operators.assigmentSubtraction,1)
+        self.addOperator('*=','assignment',Operators.assigmentMultiplication,1)
+        self.addOperator('/=','assignment',Operators.assigmentDivision,1)
+        self.addOperator('**=','assignment',Operators.assigmentExponentiation,1)
+        self.addOperator('//=','assignment',Operators.assigmentFloorDivision,1)
+        self.addOperator('%=','assignment',Operators.assigmentMod,1)
+        self.addOperator('&=','assignment',Operators.assigmentBitAnd,1)
+        self.addOperator('|=','assignment',Operators.assigmentBitOr,1)
+        self.addOperator('^=','assignment',Operators.assigmentBitXor,1)
+        self.addOperator('<<=','assignment',Operators.assigmentLeftShift,1)
+        self.addOperator('>>=','assignment',Operators.assigmentRightShift,1)        
 
     def generalFunctions(self):
         self.addFunction('nvl',General.nvl )

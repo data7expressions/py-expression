@@ -1,4 +1,3 @@
-from _typeshed import StrPath
 import re
 
 from .base import *
@@ -52,20 +51,31 @@ class ModelManager():
         self._model.operators[name][cardinality] = metadata       
 
     def getOperator(self,name:str,cardinality:int):
-        try:            
-            if name in self._model.operators:
-                operator = self._model.operators[name]
-                if cardinality in operator:
-                    metadata = operator[cardinality]
-                    if metadata['lib'] in self._libraries:
-                        return self._libraries[metadata['lib']].operators[name][cardinality]['source']
+        try:
+            metadata = self.getOperatorInfo(name,cardinality)
+            if metadata['lib'] in self._libraries:
+                return self._libraries[metadata['lib']].operators[name][cardinality]['source']
             return None        
         except:
             raise ModelError('error with operator: '+name)  
 
+    def getOperatorInfo(self,name:str,cardinality:int):
+        try:            
+            if name in self._model.operators:
+                operator = self._model.operators[name]
+                if cardinality in operator:
+                    return operator[cardinality]
+            return None        
+        except:
+            raise ModelError('error with operator: '+name)             
+
     def priority(self,name:str,cardinality:int)->int:
-        operator = self.getOperator(name,cardinality)
-        return operator["priority"] if operator is not None else -1 
+        try:
+            metadata = self.getOperatorInfo(name,cardinality)
+            return metadata["priority"] if metadata is not None else -1
+        except:
+            raise ModelError('error to priority : '+name)        
+
 
     def addFunction(self:str,name:str,type:str,metadata):
         if name not in self._model.functions.keys():
@@ -73,18 +83,23 @@ class ModelManager():
         self._model.functions[name][type] = metadata
 
     def getFunction(self,name:str,type:str='na'):
-        try:
-            if name in self._model.functions:
-                function = self._model.functions[name]
-                if type in function:
-                    metadata = function[type]
-                    if metadata['lib'] in self._libraries:
-                        return self._libraries[metadata['lib']].functions[name][type]['source']
+        try:            
+            metadata = self.getFunctionInfo(name,type)
+            if metadata['lib'] in self._libraries:
+                return self._libraries[metadata['lib']].functions[name][type]['source']
             return None
         except:
             raise ModelError('error with function: '+name)      
 
-      
+    def getFunctionInfo(self,name:str,type:str='na'):
+        try:
+            if name in self._model.functions:
+                function = self._model.functions[name]
+                if type in function:
+                    return function[type]
+            return None
+        except:
+            raise ModelError('error with function: '+name)        
 
 # Facade   
 class Exp(metaclass=Singleton):
@@ -94,6 +109,7 @@ class Exp(metaclass=Singleton):
        self.reFloat = re.compile('(\d+(\.\d*)?|\.\d+)([eE]\d+)?')
        self._tripleOperators = []
        self._doubleOperators = [] 
+       self._assigmentOperators = [] 
        self._modelManager = ModelManager(Model())
        self.addLibrary(CoreLib())        
 
@@ -106,7 +122,12 @@ class Exp(metaclass=Singleton):
         for key in self._modelManager.model.operators.keys():
             if len(key)==2: self._doubleOperators.append(key)
             elif len(key)==3: self._tripleOperators.append(key)
-    
+
+            operator = self._modelManager.model.operators[key]
+            if 2 in operator.keys():
+               if operator[2]['category'] == 'assignment':
+                  self._assigmentOperators.append(key)
+
     @property
     def doubleOperators(self):
         return self._doubleOperators
@@ -125,7 +146,7 @@ class Exp(metaclass=Singleton):
                     return And(name,operands,self)
                 elif name == '||':
                     return Or(name,operands,self)
-                elif name.endswith('=') and name != '==':
+                elif name in self._assigmentOperators:
                     return AssigmentOperator(name,operands,self)      
                 else:
                     return BinaryOperator(name,operands,self) 
@@ -139,7 +160,7 @@ class Exp(metaclass=Singleton):
     def getOperator(self,name:str,cardinality:int):
         return self._modelManager.getOperator(name,cardinality)
     def priority(self,name:str,cardinality:int)->int:
-        return self._modelManager.priorityr(name,cardinality)
+        return self._modelManager.priority(name,cardinality)
   
     def isEnum(self,name):    
         return self._modelManager.isEnum(name) 
@@ -253,12 +274,12 @@ class Exp(metaclass=Singleton):
     def getOperators(self,expression:Operand)->dict:
         list = {}
         if isinstance(expression,Operator):
-            operator = self._modelManager.getOperator(expression.name)   #self._operators[expression.name]; 
-            list[expression.name] = operator['category']
+            metadata = self._modelManager.getOperatorInfo(expression.name)   #self._operators[expression.name]; 
+            list[expression.name] = metadata['category']
         for p in expression.operands:
             if isinstance(p,Operator):
-                operator = self._modelManager.getOperator(p.name); 
-                list[p.name] =  operator['category']
+                metadata = self._modelManager.getOperatorInfo(p.name); 
+                list[p.name] =  metadata['category']
             elif len(p.operands)>0:
                 subList= self.getOperators(p)
                 list = {**list, **subList}
@@ -385,7 +406,7 @@ class Parser():
                     operand= self.getChildFunction(name,variable)
                 else:
                     args=  self.getArgs(end=')')
-                    operand= Function(value,args)                
+                    operand= Function(value,args,self.mgr)                
 
             elif not self.end and self.current == '[':
                 self.index+=1    
@@ -444,9 +465,9 @@ class Parser():
             # if '.' not in function.name :function.name = '.'+function.name
             # operand=function
 
-        if isNegative:operand=self.mgr.newOperator('-',[operand],self.mgr )
-        if isNot:operand=self.mgr.newOperator('!',[operand],self.mgr )
-        if isBitNot:operand=self.mgr.newOperator('~',[operand],self.mgr )  
+        if isNegative:operand=self.mgr.newOperator('-',[operand])
+        if isNot:operand=self.mgr.newOperator('!',[operand])
+        if isBitNot:operand=self.mgr.newOperator('~',[operand])  
         return operand
 
     def priority(self,op:str,cardinality:int=2)->int:
@@ -568,7 +589,7 @@ class Parser():
         else: 
             args=  self.getArgs(end=')')
             args.insert(0,parent)
-            return Function('.'+name,args)
+            return Function('.'+name,args,self.mgr)
 
         # if '.' in name:
         #     names = name.split('.')
