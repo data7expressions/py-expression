@@ -321,16 +321,6 @@ class Exp(metaclass=Singleton):
             list[key] = self._modelManager.model.functions[key]
         return list
 
-    def getMetadata(self,operand:Operand)->dict:
-        
-        if isinstance(operand,Operator):
-            pass
-        elif isinstance(operand,Function):
-            pass
-        elif isinstance(operand,Constant):
-            pass    
-        elif isinstance(operand,Variable):
-            pass
     
  
 class Parser():
