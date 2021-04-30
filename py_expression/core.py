@@ -29,10 +29,8 @@ class ModelManager():
                 self.addOperator(name,cardinality,data['metadata'])    
 
         for name in library.functions:
-            function = library.functions[name]
-            for type in function:
-                data = function[type]  
-                self.addFunction(name,type,data['metadata'])
+            data = library.functions[name]
+            self.addFunction(name,data['metadata'])
 
     def addEnum(self,key,source):
         self._model.enums[key]=source
@@ -51,14 +49,14 @@ class ModelManager():
 
     def getOperator(self,name:str,cardinality:int):
         try:
-            metadata = self.getOperatorInfo(name,cardinality)
+            metadata = self.getOperatorMetadata(name,cardinality)
             if metadata['lib'] in self._libraries:
                 return self._libraries[metadata['lib']].operators[name][cardinality]['source']
             return None        
         except:
             raise ModelError('error with operator: '+name)  
 
-    def getOperatorInfo(self,name:str,cardinality:int):
+    def getOperatorMetadata(self,name:str,cardinality:int):
         try:            
             if name in self._model.operators:
                 operator = self._model.operators[name]
@@ -70,35 +68,31 @@ class ModelManager():
 
     def priority(self,name:str,cardinality:int)->int:
         try:
-            metadata = self.getOperatorInfo(name,cardinality)
+            metadata = self.getOperatorMetadata(name,cardinality)
             return metadata["priority"] if metadata is not None else -1
         except:
             raise ModelError('error to priority : '+name)        
 
+    def addFunction(self:str,name:str,metadata):
+        self._model.functions[name] = metadata
 
-    def addFunction(self:str,name:str,type:str,metadata):
-        if name not in self._model.functions.keys():
-            self._model.functions[name]= {}    
-        self._model.functions[name][type] = metadata
-
-    def getFunction(self,name:str,type:str='na'):
+    def getFunction(self,name:str):
         try:            
-            metadata = self.getFunctionInfo(name,type)
+            metadata = self.getFunctionMetadata(name)
             if metadata['lib'] in self._libraries:
-                return self._libraries[metadata['lib']].functions[name][type]['source']
+                return self._libraries[metadata['lib']].functions[name]['source']
             return None
         except:
             raise ModelError('error with function: '+name)      
 
-    def getFunctionInfo(self,name:str,type:str='na'):
+    def getFunctionMetadata(self,name:str):
         try:
             if name in self._model.functions:
-                function = self._model.functions[name]
-                if type in function:
-                    return function[type]
+                return self._model.functions[name]
             return None
         except:
             raise ModelError('error with function: '+name)        
+
 
 # Facade   
 class Exp(metaclass=Singleton):
@@ -168,8 +162,8 @@ class Exp(metaclass=Singleton):
     def getEnum(self,name): 
         return self._modelManager.getEnum(name) 
     
-    def getFunction(self,name,type='na'):
-        return self._modelManager.getFunction(name,type)
+    def getFunction(self,name):
+        return self._modelManager.getFunction(name)
 
       
     
@@ -241,30 +235,57 @@ class Exp(metaclass=Singleton):
                 if len(p.operands)>0:
                     self.setContext(p,context)
 
-    def setParent(self,expression:Operand,parent:Operand=None):
-        expression.parent = parent
-        if  len(expression.operands)>0: 
-            for p in expression.operands:
-                self.setParent(p,expression)        
+    def setParent(self,operand:Operand,parent:Operand=None,index:int=0):
+        operand.parent = parent
+        operand.index = index
+        if  len(operand.operands)>0:
+            for i,p in enumerate(operand.operands):
+                self.setParent(p,operand,i) 
 
+    def getVars(self,operand:Operand)->dict:
+        self.setParent(operand)
+        return self._getVars(operand)        
 
-    def getVars(self,expression:Operand)->dict:
+    def _getVars(self,operand:Operand)->dict:
         list = {}
-        if type(expression).__name__ ==  'Variable':
-            list[expression.name] = "any"
-        for p in expression.operands:
-            if type(p).__name__ ==  'Variable':
-                list[p.name] = "any"
+        if isinstance(operand,Variable):
+            list[operand.name] = self.getVarType(operand)
+        for p in operand.operands:
+            if isinstance(p,Variable):
+                list[p.name] = self.getVarType(p)
             elif len(p.operands)>0:
-                subList= self.getVars(p)
+                subList= self._getVars(p)
                 list = {**list, **subList}
-        return list        
-    def getConstants(self,expression:Operand)->dict:
+        return list 
+
+    def getVarType(self,operand:Operand)->str:
+        return self.getOperandType(operand.parent,operand.index)
+
+    def getOperandType(self,parent:Operand,index)->str:
+        """ """
+        if isinstance(parent,Operator):
+            metadata = self._modelManager.getOperatorMetadata(parent.name,len(parent.operands))
+            if metadata['category'] == 'comparison':
+                otherIndex = 1 if index == 0 else 0
+                otherOperand= parent.operands[otherIndex]
+                if isinstance(otherOperand,Constant):
+                    return otherOperand.type
+                elif isinstance(otherOperand,Function):    
+                    pass
+                # TODO continuar
+            else:        
+                return metadata['args'][index]['type']
+        elif isinstance(parent,Function):
+            name = parent.name.replace('.','',1) if parent.name.starWith('.') else  parent.name
+            metadata =self._modelManager.model.functions[name]
+            return metadata['args'][index]['type'] 
+
+    def getConstants(self,operand:Operand)->dict:
         list = {}
-        if type(expression).__name__ ==  'Constant':
-            list[expression.value] = expression.type
-        for p in expression.operands:
-            if type(p).__name__ ==  'Constant':
+        if isinstance(operand,Constant):
+            list[operand.value] = operand.type
+        for p in operand.operands:
+            if isinstance(p,Constant):
                 list[p.value] = p.type
             elif len(p.operands)>0:
                 subList= self.getConstants(p)
@@ -274,32 +295,43 @@ class Exp(metaclass=Singleton):
     def getOperators(self,operand:Operand)->dict:
         list = {}
         if isinstance(operand,Operator):
-            metadata = self._modelManager.getOperatorInfo(operand.name,len(operand.operands)) 
+            metadata = self._modelManager.getOperatorMetadata(operand.name,len(operand.operands)) 
             list[operand.name] = metadata['category']
         for p in operand.operands:
             if isinstance(p,Operator):
-                metadata = self._modelManager.getOperatorInfo(p.name,len(p.operands)); 
+                metadata = self._modelManager.getOperatorMetadata(p.name,len(p.operands)); 
                 list[p.name] =  metadata['category']
             elif len(p.operands)>0:
                 subList= self.getOperators(p)
                 list = {**list, **subList}
         return list
 
-    def getFunctions(self,expression:Operand)->dict:
+    def getFunctions(self,operand:Operand)->dict:
         list = {}
-        if type(expression).__name__ ==  'Function':list[expression.name] = {"isChild": '.' in expression.name}
-        for p in expression.operands:
-            if type(p).__name__ ==  'Function':list[p.name] =  {"isChild": '.' in p.name}
+        if isinstance(operand,Function):
+            list[operand.name] = {}
+        for p in operand.operands:
+            if isinstance(p,Function):
+                list[p.name] = {}
             elif len(p.operands)>0:
                 subList= self.getFunctions(p)
                 list = {**list, **subList}
+
+        for key in list:
+            list[key] = self._modelManager.model.functions[key]
         return list
-    def functionInfo(self,key):
-        if key not in self._functions: return None
-        info=[]
-        for p in self._functions[key]:
-            info.append({'types':p['types']})
-        return info;
+
+    def getMetadata(self,operand:Operand)->dict:
+        
+        if isinstance(operand,Operator):
+            pass
+        elif isinstance(operand,Function):
+            pass
+        elif isinstance(operand,Constant):
+            pass    
+        elif isinstance(operand,Variable):
+            pass
+    
  
 class Parser():
     def __init__(self,mgr,expression):

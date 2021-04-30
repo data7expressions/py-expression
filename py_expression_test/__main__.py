@@ -61,11 +61,11 @@ class TestExpression(unittest.TestCase):
 
     def test_functions(self):
         self.assertEqual(exp.solve('nvl(a,b)',{"a":None,"b":2}),2) 
-        self.assertEqual(exp.solve('a.capitalize()',{"a":"aaa","b":2}),"Aaa")  
-        self.assertEqual(exp.solve('"aaa".capitalize()'),"Aaa") 
-        self.assertEqual(exp.solve('a.count("a")',{"a":"aaa"}),3)
-        self.assertEqual(exp.solve('a.count("b")',{"a":"aaa"}),0) 
-        self.assertEqual(exp.solve('a.upper()',{"a":"aaa"}),"AAA") 
+        self.assertEqual(exp.solve('capitalize(a)',{"a":"aaa","b":2}),"Aaa")  
+        self.assertEqual(exp.solve('capitalize("aaa")'),"Aaa") 
+        self.assertEqual(exp.solve('strCount(a,"a")',{"a":"aaa"}),3)
+        self.assertEqual(exp.solve('strCount(a,"b")',{"a":"aaa"}),0) 
+        self.assertEqual(exp.solve('upper(a)',{"a":"aaa"}),"AAA") 
 
     def test_enums(self):
 
@@ -148,12 +148,12 @@ class TestExpression(unittest.TestCase):
         # context = {"a":[1,2,3,4,5],"b":0}
         # self.assertEqual(exp.solve('a.filter(p: p>1 && p<5).map(p: p*2).reverse()',context),[8,6,4])
 
-    # def test_info(self):
-    #     op = exp.parse('"expression".count("e")>= a+1')
-    #     self.assertEqual(op.vars(),{'a': 'any'})
-    #     self.assertEqual(op.constants(),{'expression': 'str', 'e': 'str', 1: 'int'})
-    #     self.assertEqual(op.operators(),{'>=': 'comparison', '+': 'arithmetic'})
-    #     self.assertEqual(op.functions(),{'.count': {'isChild': True}} )  
+    def test_info(self):
+        op = exp.parse('strCount("expression","e")>= a+1')
+        self.assertEqual(op.vars(),{'a': 'any'})
+        self.assertEqual(op.constants(),{'expression': 'str', 'e': 'str', 1: 'int'})
+        self.assertEqual(op.operators(),{'>=': 'comparison', '+': 'arithmetic'})
+        self.assertEqual(op.functions()['strCount']['signature'] ,'(self:str,x:str,start:int=None,end:int=None)->int' )  
 
     # def test_serialize(self): 
     #     operand =exp.parse(('i=0;'
@@ -169,14 +169,25 @@ class TestExpression(unittest.TestCase):
     #     self.assertEqual(context['output'],12) 
 
 
+op = exp.parse('a-1')
+print(op.vars()) # {'a': 'float'}
 
-# unittest.main()
+op = exp.parse('a && true')
+print(op.vars()) # {'a': 'bool'}
 
-op = exp.parse('"expression".count("e")>= a+1')
-print(op.vars())
-print(op.constants())
-print(op.operators())
-print(op.functions())  
+op = exp.parse('a > 1')
+print(op.vars()) # {'a': 'bool'}
+
+op = exp.parse('strCount("expression","e")>= a+1')
+print(op.functions())
+
+unittest.main()
+
+# op = exp.parse('"expression".count("e")>= a+1')
+# print(op.vars())
+# print(op.constants())
+# print(op.operators())
+# print(op.functions())  
 
 # result = exp.solve('nvl(a,b)',{"a":None,"b":2})
 # print(result)

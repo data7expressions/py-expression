@@ -73,41 +73,47 @@ class Library():
         cardinality = len(metadata['args'])    
         self._operators[name][cardinality]={"source":source,"metadata":metadata}
 
-    def addFunction(self,name,source,type='na'):
-        if name not in self._functions.keys():
-            self._functions[name]= {}
-
+    def addFunction(self,name,source):        
         metadata = self.getMetadata(source)
-        metadata['lib'] =self._name     
+        metadata['lib'] =self._name  
+        self._functions[name]={"source":source,"metadata":metadata} 
 
-        self._functions[name][type]={"source":source,"metadata":metadata} 
-
-    def getFunction(self,name,type='na'):
+    def getFunction(self,name):
         if name in self._functions:
-            function = self._functions[name]
-            if type in function:
-                return function[type]
+            return self._functions[name]
         return None
 
     def getMetadata(self,source):
         signature= inspect.signature(source)
         args=[]
+        _signature = ''
         for parameter in signature.parameters.values():
+            _type = self.getType(parameter.annotation)
+            _default = self.getDefault(parameter.default)
             arg = {'name':parameter.name
-                  ,'type': inspect.formatannotation(parameter.annotation)
-                  ,'default':parameter.default 
+                  ,'type': _type
+                  ,'default':_default
                   }
-            args.append(arg) 
+            args.append(arg)
+            _signature+= ('' if _signature=='' else ',')+(parameter.name)+(':'+_type if _type is not None else '' )+( '='+_default if _default is not None else '')    
 
-        # TODO: resolver estos tipos como
-        # inspect._empty : null
-        # <built-in function any> ; any    
+        returnType = self.getType(signature.return_annotation)        
         return {
-            'name': source.__name__,
+            'originalName': source.__name__,
+            'signature': '('+_signature+')'+ ( '->'+returnType if returnType is not None else ''),
             'doc':source.__doc__,
             'args': args,
-            'return':inspect.formatannotation(signature.return_annotation)
-        }     
+            'return':returnType
+        }
+
+    def getDefault(self,default):
+        if str(default) == "<class 'inspect._empty'>": return None
+        return str(default)     
+    def getType(self,annotation):
+        _type = inspect.formatannotation(annotation)
+        if(_type == '<built-in function any>'):return 'any'
+        elif (_type == 'inspect._empty'):return None
+        return _type
 
 class Context():
     def __init__(self,data:dict={},parent:'Context'=None):
@@ -178,7 +184,8 @@ class Operand():
         self._name = name         
         self._operands  = operands
         self.mgr = mgr 
-        self._parent = None        
+        self._parent = None
+        self._index = None        
 
     @property
     def name(self):
@@ -193,6 +200,13 @@ class Operand():
     @parent.setter
     def parent(self,value):
         self._parent =value  
+
+    @property
+    def index(self):
+        return self._index 
+    @index.setter
+    def index(self,value):
+        self._index =value  
 
     @property
     def value(self): 
