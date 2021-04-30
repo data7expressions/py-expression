@@ -1,8 +1,9 @@
+from _typeshed import StrPath
 import re
 
 from .base import *
 from .coreLib import CoreLib
-import inspect
+
 
 class ModelManager():
     def __init__(self,model):
@@ -17,8 +18,8 @@ class ModelManager():
     def libraries(self):
         return self._libraries     
 
-    def addLibrary(self,libName,library):
-        self._libraries[libName] =library
+    def addLibrary(self,library):
+        self._libraries[library.name] =library
 
         for name in library.enums:
             self.addEnum(name,library.enums[name])
@@ -26,14 +27,14 @@ class ModelManager():
         for name in library.operators:
             operator= library.operators[name]
             for cardinality in operator:
-                source = operator[cardinality]
-                self.addOperator(name,library.operators[name])    
+                data = operator[cardinality]
+                self.addOperator(name,cardinality,data['metadata'])    
 
         for name in library.functions:
             function = library.functions[name]
             for type in function:
-                source = function[type]  
-                self.addFunction(libName,name,type,source)
+                data = function[type]  
+                self.addFunction(name,type,data['metadata'])
 
     def addEnum(self,key,source):
         self._model.enums[key]=source
@@ -45,59 +46,45 @@ class ModelManager():
     def getEnum(self,name): 
         return self._model.enums[name]
   
-    def addOperator(self,libName:str,name:str,operator):
-        metadata = self.getMetadata(operator['source'])
-        metadata['lib'] =libName
-        metadata['category'] =operator['category']  
-        metadata['priority'] =operator['priority']
-        self._model.operators[name]=operator
+    def addOperator(self,name:str,cardinality:int,metadata):
+        if name not in self._model.operators.keys():
+            self._model.operators[name]= {}    
+        self._model.operators[name][cardinality] = metadata       
 
-    def getOperator(self,name):
+    def getOperator(self,name:str,cardinality:int):
         try:            
             if name in self._model.operators:
-                metadata = self._model.operators[name]
-                if metadata['lib'] in self._libraries:
-                    return self._libraries[metadata['lib']].operators[name]['source']
+                operator = self._model.operators[name]
+                if cardinality in operator:
+                    metadata = operator[cardinality]
+                    if metadata['lib'] in self._libraries:
+                        return self._libraries[metadata['lib']].operators[name][cardinality]['source']
             return None        
         except:
-            raise ModelError('error with operator: '+str(name))  
+            raise ModelError('error with operator: '+name)  
 
-    def addFunction(self,libName:str,name:str,type:str,source):
+    def priority(self,name:str,cardinality:int)->int:
+        operator = self.getOperator(name,cardinality)
+        return operator["priority"] if operator is not None else -1 
+
+    def addFunction(self:str,name:str,type:str,metadata):
         if name not in self._model.functions.keys():
-            self._model.functions[name]= {}
-
-        metadata = self.getMetadata(source)
-        metadata['lib'] =libName    
+            self._model.functions[name]= {}    
         self._model.functions[name][type] = metadata
 
-    def getFunction(self,name,type='na'):
-        if name in self._model.functions:
-            function = self._model.functions[name]
-            if type in function:
-                metadata = function[type]
-                if metadata['lib'] in self._libraries:
-                    return self._libraries[metadata['lib']].functions[name][type]
-        return None 
+    def getFunction(self,name:str,type:str='na'):
+        try:
+            if name in self._model.functions:
+                function = self._model.functions[name]
+                if type in function:
+                    metadata = function[type]
+                    if metadata['lib'] in self._libraries:
+                        return self._libraries[metadata['lib']].functions[name][type]['source']
+            return None
+        except:
+            raise ModelError('error with function: '+name)      
 
-    def getMetadata(self,source):
-        signature= inspect.signature(source)
-        args=[]
-        for parameter in signature.parameters.values():
-            arg = {'name':parameter.name
-                  ,'type': inspect.formatannotation(parameter.annotation)
-                  ,'default':parameter.default 
-                  }
-            args.append(arg) 
-
-        # TODO: resolver estos tipos como
-        # inspect._empty : null
-        # <built-in function any> ; any    
-        return {
-            'name': source.__name__,
-            'doc':source.__doc__,
-            'args': args,
-            'return':inspect.formatannotation(signature.return_annotation)
-        }    
+      
 
 # Facade   
 class Exp(metaclass=Singleton):
@@ -108,11 +95,11 @@ class Exp(metaclass=Singleton):
        self._tripleOperators = []
        self._doubleOperators = [] 
        self._modelManager = ModelManager(Model())
-       self.addLibrary('core',CoreLib())        
+       self.addLibrary(CoreLib())        
 
 
-    def addLibrary(self,name,library):
-        self._modelManager.addLibrary(name,library)
+    def addLibrary(self,library):
+        self._modelManager.addLibrary(library)
         self.refresh() 
     
     def refresh(self):
@@ -128,16 +115,31 @@ class Exp(metaclass=Singleton):
     def tripleOperators(self):
         return self._tripleOperators   
 
-    def newOperator(self,name,operands):
+    def newOperator(self,name:str,operands:list[Operand])->Operator:
         try: 
-            operator = self._modelManager.getOperator(name)             
-            return operator["source"](name,operands,self)
+            args = len(operands)
+            if args == 1:
+                return UnitaryOperator(name,operands,self)
+            elif args == 2:
+                if name == '&&':
+                    return And(name,operands,self)
+                elif name == '||':
+                    return Or(name,operands,self)
+                elif name.endswith('=') and name != '==':
+                    return AssigmentOperator(name,operands,self)      
+                else:
+                    return BinaryOperator(name,operands,self) 
+            elif args == 3:
+                return TernaryOperator(name,operands,self) 
+            else:
+                return Operator(name,operands,self) 
         except:
-            raise ExpressionError('error with operator: '+str(name)) 
+            raise ExpressionError('error with operator: '+name) 
 
-    def priority(self,name):
-        operator = self._modelManager.getOperator(name)
-        return operator["priority"] if operator is not None else -1 
+    def getOperator(self,name:str,cardinality:int):
+        return self._modelManager.getOperator(name,cardinality)
+    def priority(self,name:str,cardinality:int)->int:
+        return self._modelManager.priorityr(name,cardinality)
   
     def isEnum(self,name):    
         return self._modelManager.isEnum(name) 
@@ -442,13 +444,13 @@ class Parser():
             # if '.' not in function.name :function.name = '.'+function.name
             # operand=function
 
-        if isNegative:operand=UnitaryOperator('-',[operand],self.mgr )
-        if isNot:operand=UnitaryOperator('!',[operand],self.mgr )
-        if isBitNot:operand=UnitaryOperator('~',[operand],self.mgr )  
+        if isNegative:operand=self.mgr.newOperator('-',[operand],self.mgr )
+        if isNot:operand=self.mgr.newOperator('!',[operand],self.mgr )
+        if isBitNot:operand=self.mgr.newOperator('~',[operand],self.mgr )  
         return operand
 
-    def priority(self,op):
-        return self.mgr.priority(op)        
+    def priority(self,op:str,cardinality:int=2)->int:
+        return self.mgr.priority(op,cardinality)        
 
     def getValue(self,increment:bool=True):
         buff=[]

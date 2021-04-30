@@ -454,43 +454,31 @@ class Operator(Operand):
 
     @property
     def value(self):
-        function = self.mgr.getOperator(self.name)
+        function = self.mgr.getOperator(self.name,len(self._operands))
         val=self._operands[0].value
         l=len(self._operands)
         i=1
         while i<l:
             val=function(val,self._operands[i].value)
             i+=1
-        return val 
-    # @property
-    # def value(self):
-    #     val=self._operands[0].value
-    #     l=len(self._operands)
-    #     i=1
-    #     while i<l:
-    #         val=self.solve(val,self._operands[i].value)
-    #         i+=1
-    #     return val  
-
-    # def solve(self,a,b):
-    #     pass 
+        return val
 
 class UnitaryOperator(Operator):
     @property
     def value(self):
-        function = self.mgr.getOperator(self.name)
+        function = self.mgr.getOperator(self.name,1)
         return function(self._operands[0].value)
 
 class BinaryOperator(Operator):
     @property
     def value(self):
-        function = self.mgr.getOperator(self.name)
+        function = self.mgr.getOperator(self.name,2)
         return function(self._operands[0].value,self._operands[1].value)
 
 class TernaryOperator(Operator):
     @property
     def value(self):
-        function = self.mgr.getOperator(self.name)
+        function = self.mgr.getOperator(self.name,3)
         return function(self._operands[0].value,self._operands[1].value,self._operands[2].value)
 
 class AssigmentOperator(Operator):
@@ -540,10 +528,15 @@ class Model():
         return self._functions
 
 class Library():
-    def __init__(self):
+    def __init__(self,name):
+        self._name = name
         self._enums={} 
         self._operators={}
         self._functions={}
+
+    @property
+    def name(self):
+        return self._name
 
     @property
     def enums(self):
@@ -570,26 +563,48 @@ class Library():
             raise ModelError('enum not supported: '+key)    
 
     def addOperator(self,name:str,category:str,source,priority:int=-1):
+        if name not in self._operators.keys():
+            self._operators[name]= {}
 
-        signature= inspect.signature(source)        
-        args= len(signature.parameters)
-        cardinality='multiple'
-        if args == 1:
-            cardinality= 'unitary'
-        elif args == 2:
-            cardinality= 'binary' 
-        elif args == 3:
-            cardinality= 'ternary'
-        self._operators[name][cardinality]={"category":category,"priority":priority,"source":source}
+        metadata = self.getMetadata(source)
+        metadata['lib'] =self._name   
+        metadata['category'] =category
+        metadata['priority'] =priority
+        cardinality = len(metadata['args'])    
+        self._operators[name][cardinality]={"source":source,"metadata":metadata}
 
     def addFunction(self,name,source,type='na'):
         if name not in self._functions.keys():
-            self._functions[name]= {} 
-        self._functions[name][type] =source 
+            self._functions[name]= {}
+
+        metadata = self.getMetadata(source)
+        metadata['lib'] =self._name     
+
+        self._functions[name][type]={"source":source,"metadata":metadata} 
 
     def getFunction(self,name,type='na'):
         if name in self._functions:
             function = self._functions[name]
             if type in function:
                 return function[type]
-        return None  
+        return None
+
+    def getMetadata(self,source):
+        signature= inspect.signature(source)
+        args=[]
+        for parameter in signature.parameters.values():
+            arg = {'name':parameter.name
+                  ,'type': inspect.formatannotation(parameter.annotation)
+                  ,'default':parameter.default 
+                  }
+            args.append(arg) 
+
+        # TODO: resolver estos tipos como
+        # inspect._empty : null
+        # <built-in function any> ; any    
+        return {
+            'name': source.__name__,
+            'doc':source.__doc__,
+            'args': args,
+            'return':inspect.formatannotation(signature.return_annotation)
+        }     

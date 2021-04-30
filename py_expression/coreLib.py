@@ -756,7 +756,7 @@ class IO():
 
 class CoreLib(Library):
     def __init__(self):
-       super(CoreLib,self).__init__()   
+       super(CoreLib,self).__init__('core')   
        self.initEnums()
        self.initOperators()
        self.generalFunctions()
