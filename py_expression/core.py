@@ -1,5 +1,4 @@
 import re
-
 from .base import *
 from .coreLib import CoreLib
 
@@ -271,19 +270,21 @@ class Exp(metaclass=Singleton):
                 subList= self.getConstants(p)
                 list = {**list, **subList}
         return list
-    def getOperators(self,expression:Operand)->dict:
+    
+    def getOperators(self,operand:Operand)->dict:
         list = {}
-        if isinstance(expression,Operator):
-            metadata = self._modelManager.getOperatorInfo(expression.name)   #self._operators[expression.name]; 
-            list[expression.name] = metadata['category']
-        for p in expression.operands:
+        if isinstance(operand,Operator):
+            metadata = self._modelManager.getOperatorInfo(operand.name,len(operand.operands)) 
+            list[operand.name] = metadata['category']
+        for p in operand.operands:
             if isinstance(p,Operator):
-                metadata = self._modelManager.getOperatorInfo(p.name); 
+                metadata = self._modelManager.getOperatorInfo(p.name,len(p.operands)); 
                 list[p.name] =  metadata['category']
             elif len(p.operands)>0:
                 subList= self.getOperators(p)
                 list = {**list, **subList}
         return list
+
     def getFunctions(self,expression:Operand)->dict:
         list = {}
         if type(expression).__name__ ==  'Function':list[expression.name] = {"isChild": '.' in expression.name}

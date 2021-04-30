@@ -90,8 +90,6 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(exp.solve('ColorConversion.GRAY2BGR'),8)
         self.assertEqual(exp.solve('Color.GREEN'),2)  
 
-    
-
     def test_multine(self):    
         text='a=4; '\
              'b=a+2; '\
@@ -171,6 +169,15 @@ class TestExpression(unittest.TestCase):
     #     self.assertEqual(context['output'],12) 
 
 
+
+# unittest.main()
+
+op = exp.parse('"expression".count("e")>= a+1')
+print(op.vars())
+print(op.constants())
+print(op.operators())
+print(op.functions())  
+
 # result = exp.solve('nvl(a,b)',{"a":None,"b":2})
 # print(result)
 
@@ -181,8 +188,6 @@ class TestExpression(unittest.TestCase):
 # context = {}
 # expression.eval(context)
 # print(context['output'])
-unittest.main()
-
 
 # context = {"a":"1","b":2,"c":{"a":4,"b":5}}
 # exp.solve('a=8',context)

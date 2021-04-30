@@ -11,6 +11,104 @@ class Singleton(type):
 class ModelError(Exception):pass
 class ExpressionError(Exception):pass
 
+class Model():
+    def __init__(self):
+        self._operators={}
+        self._enums={} 
+        self._functions={}
+
+    @property
+    def enums(self):
+        return self._enums
+    @property
+    def operators(self):
+        return self._operators
+    @property
+    def functions(self):
+        return self._functions
+
+class Library():
+    def __init__(self,name):
+        self._name = name
+        self._enums={} 
+        self._operators={}
+        self._functions={}
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def enums(self):
+        return self._enums
+
+    @property
+    def operators(self):
+        return self._operators 
+
+    @property
+    def functions(self):
+        return self._functions
+ 
+    def addEnum(self,key,source):
+        if(type(source).__name__ == 'dict'):
+            self._enums[key] =source
+        elif issubclass(source, Enum):
+            list ={}
+            enum = {name: value for name, value in vars(source).items() if name.isupper()}
+            for p in enum:
+                list[p]=enum[p].value
+            self._enums[key] =list
+        else:
+            raise ModelError('enum not supported: '+key)    
+
+    def addOperator(self,name:str,category:str,source,priority:int=-1):
+        if name not in self._operators.keys():
+            self._operators[name]= {}
+
+        metadata = self.getMetadata(source)
+        metadata['lib'] =self._name   
+        metadata['category'] =category
+        metadata['priority'] =priority
+        cardinality = len(metadata['args'])    
+        self._operators[name][cardinality]={"source":source,"metadata":metadata}
+
+    def addFunction(self,name,source,type='na'):
+        if name not in self._functions.keys():
+            self._functions[name]= {}
+
+        metadata = self.getMetadata(source)
+        metadata['lib'] =self._name     
+
+        self._functions[name][type]={"source":source,"metadata":metadata} 
+
+    def getFunction(self,name,type='na'):
+        if name in self._functions:
+            function = self._functions[name]
+            if type in function:
+                return function[type]
+        return None
+
+    def getMetadata(self,source):
+        signature= inspect.signature(source)
+        args=[]
+        for parameter in signature.parameters.values():
+            arg = {'name':parameter.name
+                  ,'type': inspect.formatannotation(parameter.annotation)
+                  ,'default':parameter.default 
+                  }
+            args.append(arg) 
+
+        # TODO: resolver estos tipos como
+        # inspect._empty : null
+        # <built-in function any> ; any    
+        return {
+            'name': source.__name__,
+            'doc':source.__doc__,
+            'args': args,
+            'return':inspect.formatannotation(signature.return_annotation)
+        }     
+
 class Context():
     def __init__(self,data:dict={},parent:'Context'=None):
         self.data = data
@@ -510,101 +608,3 @@ class Or(Operator):
     # TODO
     def debug(self,token:Token,level): 
         pass 
-
-class Model():
-    def __init__(self):
-        self._operators={}
-        self._enums={} 
-        self._functions={}
-
-    @property
-    def enums(self):
-        return self._enums
-    @property
-    def operators(self):
-        return self._operators
-    @property
-    def functions(self):
-        return self._functions
-
-class Library():
-    def __init__(self,name):
-        self._name = name
-        self._enums={} 
-        self._operators={}
-        self._functions={}
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def enums(self):
-        return self._enums
-
-    @property
-    def operators(self):
-        return self._operators 
-
-    @property
-    def functions(self):
-        return self._functions
- 
-    def addEnum(self,key,source):
-        if(type(source).__name__ == 'dict'):
-            self._enums[key] =source
-        elif issubclass(source, Enum):
-            list ={}
-            enum = {name: value for name, value in vars(source).items() if name.isupper()}
-            for p in enum:
-                list[p]=enum[p].value
-            self._enums[key] =list
-        else:
-            raise ModelError('enum not supported: '+key)    
-
-    def addOperator(self,name:str,category:str,source,priority:int=-1):
-        if name not in self._operators.keys():
-            self._operators[name]= {}
-
-        metadata = self.getMetadata(source)
-        metadata['lib'] =self._name   
-        metadata['category'] =category
-        metadata['priority'] =priority
-        cardinality = len(metadata['args'])    
-        self._operators[name][cardinality]={"source":source,"metadata":metadata}
-
-    def addFunction(self,name,source,type='na'):
-        if name not in self._functions.keys():
-            self._functions[name]= {}
-
-        metadata = self.getMetadata(source)
-        metadata['lib'] =self._name     
-
-        self._functions[name][type]={"source":source,"metadata":metadata} 
-
-    def getFunction(self,name,type='na'):
-        if name in self._functions:
-            function = self._functions[name]
-            if type in function:
-                return function[type]
-        return None
-
-    def getMetadata(self,source):
-        signature= inspect.signature(source)
-        args=[]
-        for parameter in signature.parameters.values():
-            arg = {'name':parameter.name
-                  ,'type': inspect.formatannotation(parameter.annotation)
-                  ,'default':parameter.default 
-                  }
-            args.append(arg) 
-
-        # TODO: resolver estos tipos como
-        # inspect._empty : null
-        # <built-in function any> ; any    
-        return {
-            'name': source.__name__,
-            'doc':source.__doc__,
-            'args': args,
-            'return':inspect.formatannotation(signature.return_annotation)
-        }     
