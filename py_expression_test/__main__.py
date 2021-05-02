@@ -155,6 +155,16 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(op.operators(),{'>=': 'comparison', '+': 'arithmetic'})
         self.assertEqual(op.functions()['strCount']['signature'] ,'(self:str,x:str,start:int=None,end:int=None)->int' )  
 
+
+        op = exp.parse('a-1')
+        self.assertEqual(op.vars(), {'a': 'float'})
+        op = exp.parse('a && true')
+        self.assertEqual(op.vars(), {'a': 'bool'})
+        op = exp.parse('a > 1')
+        self.assertEqual(op.vars(), {'a': 'int'})
+        op = exp.parse('a > "a"')
+        self.assertEqual(op.vars(), {'a': 'str'})
+
     # def test_serialize(self): 
     #     operand =exp.parse(('i=0;'
     #              'while(i<=6){'
@@ -169,17 +179,17 @@ class TestExpression(unittest.TestCase):
     #     self.assertEqual(context['output'],12) 
 
 
-op = exp.parse('a-1')
-print(op.vars()) # {'a': 'float'}
-
-op = exp.parse('a && true')
-print(op.vars()) # {'a': 'bool'}
-
-op = exp.parse('a > 1')
-print(op.vars()) # {'a': 'bool'}
-
-op = exp.parse('strCount("expression","e")>= a+1')
-print(op.functions())
+# operand =exp.parse(('i=0;'
+#             'while(i<=6){'
+#             '  output=i*2;'
+#             '  i=i+1;'
+#             '}'))
+# serialized = exp.serialize(operand)
+# print(serialized)
+# operand2= exp.deserialize(serialized)
+# context = {}
+# exp.eval(operand2,context)
+# self.assertEqual(context['output'],12) 
 
 unittest.main()
 

@@ -2,7 +2,6 @@ import re
 from .base import *
 from .coreLib import CoreLib
 
-
 class ModelManager():
     def __init__(self,model):
         self._model=model
@@ -43,18 +42,83 @@ class ModelManager():
         return self._model.enums[name]
   
     def addOperator(self,name:str,cardinality:int,metadata):
-        if name not in self._model.operators.keys():
-            self._model.operators[name]= {}    
+        if name not in self._model.operators.keys():self._model.operators[name]= {}    
         self._model.operators[name][cardinality] = metadata       
 
-    def getOperator(self,name:str,cardinality:int):
+    def addFunction(self:str,name:str,metadata):
+        self._model.functions[name] = metadata
+
+    def priority(self,name:str,cardinality:int)->int:
+        try:
+            metadata = self.getOperatorMetadata(name,cardinality)
+            return metadata["priority"] if metadata is not None else -1
+        except:
+            raise ModelError('error to priority : '+name)        
+
+   
+
+
+    def getOperandEvaluator(self,operand:Operand):
+
+        if isinstance(operand,Constant):
+            return ConstantEvaluator()
+        elif isinstance(operand,Variable):
+            return VariableEvaluator()
+        elif isinstance(operand,KeyValue):
+            return KeyValueEvaluator()
+        elif isinstance(operand,Array):
+            return ArrayEvaluator()
+        elif isinstance(operand,Object):
+            return ObjectEvaluator()
+        elif isinstance(operand,Operator):
+            return self._modelManager.getOperatorEvaluator(operand.name,len(operand.operands))
+        elif isinstance(operand,Function):
+            return self._modelManager.getFunctionEvaluator(operand.name)
+        elif isinstance(operand,ArrowFunctions):
+            return self._modelManager.getFunctionEvaluator(operand.name)
+        elif isinstance(operand,ChildFunction):
+            if operand.name in self.model.functions:
+                return self._modelManager.getFunctionEvaluator(operand.name)
+            else:
+               return  ContextFunctionEvaluator()
+        elif isinstance(operand,Block):
+            return  BlockEvaluator()
+        elif isinstance(operand,If):
+            return  IfEvaluator()
+        elif isinstance(operand,While):
+            return  WhileEvaluator()
+        else:
+            raise ExpressionError('operand: '+operand.name +' not supported') 
+
+    def getOperatorEvaluator(self,name:str,cardinality:int):
         try:
             metadata = self.getOperatorMetadata(name,cardinality)
             if metadata['lib'] in self._libraries:
-                return self._libraries[metadata['lib']].operators[name][cardinality]['source']
+                implementation= self._libraries[metadata['lib']].operators[name][cardinality]
+                if implementation['evaluator'] is not None:
+                    return implementation['evaluator'] 
+                else:
+                    function= implementation['function']
+                    return FunctionEvaluator(function)
             return None        
         except:
             raise ModelError('error with operator: '+name)  
+
+    def getFunctionEvaluator(self,name:str):
+        try:            
+            metadata = self.getFunctionMetadata(name)
+            if metadata['lib'] in self._libraries:
+                implementation= self._libraries[metadata['lib']].functions[name]
+                if implementation['evaluator'] is not None:
+                    return implementation['evaluator'] 
+                else:
+                    function= implementation['function']
+                    return FunctionEvaluator(function)
+            return None
+        except:
+            raise ModelError('error with function: '+name)      
+
+
 
     def getOperatorMetadata(self,name:str,cardinality:int):
         try:            
@@ -64,26 +128,7 @@ class ModelManager():
                     return operator[cardinality]
             return None        
         except:
-            raise ModelError('error with operator: '+name)             
-
-    def priority(self,name:str,cardinality:int)->int:
-        try:
-            metadata = self.getOperatorMetadata(name,cardinality)
-            return metadata["priority"] if metadata is not None else -1
-        except:
-            raise ModelError('error to priority : '+name)        
-
-    def addFunction(self:str,name:str,metadata):
-        self._model.functions[name] = metadata
-
-    def getFunction(self,name:str):
-        try:            
-            metadata = self.getFunctionMetadata(name)
-            if metadata['lib'] in self._libraries:
-                return self._libraries[metadata['lib']].functions[name]['source']
-            return None
-        except:
-            raise ModelError('error with function: '+name)      
+            raise ModelError('error with operator: '+name)     
 
     def getFunctionMetadata(self,name:str):
         try:
@@ -93,7 +138,6 @@ class ModelManager():
         except:
             raise ModelError('error with function: '+name)        
 
-
 # Facade   
 class Exp(metaclass=Singleton):
     def __init__(self):
@@ -102,10 +146,10 @@ class Exp(metaclass=Singleton):
        self.reFloat = re.compile('(\d+(\.\d*)?|\.\d+)([eE]\d+)?')
        self._tripleOperators = []
        self._doubleOperators = [] 
-       self._assigmentOperators = [] 
+       self._assigmentOperators = []
+       self._arrowFunction = [] 
        self._modelManager = ModelManager(Model())
-       self.addLibrary(CoreLib())        
-
+       self.addLibrary(CoreLib()) 
 
     def addLibrary(self,library):
         self._modelManager.addLibrary(library)
@@ -121,6 +165,10 @@ class Exp(metaclass=Singleton):
                if operator[2]['category'] == 'assignment':
                   self._assigmentOperators.append(key)
 
+        for key in self._modelManager.model.functions.keys():
+            metadata = self._modelManager.model.functions[key]
+            if metadata['isArrowFunction']: self._arrowFunction.append(key)
+
     @property
     def doubleOperators(self):
         return self._doubleOperators
@@ -129,29 +177,10 @@ class Exp(metaclass=Singleton):
     def tripleOperators(self):
         return self._tripleOperators   
 
-    def newOperator(self,name:str,operands:list[Operand])->Operator:
-        try: 
-            args = len(operands)
-            if args == 1:
-                return UnitaryOperator(name,operands,self)
-            elif args == 2:
-                if name == '&&':
-                    return And(name,operands,self)
-                elif name == '||':
-                    return Or(name,operands,self)
-                elif name in self._assigmentOperators:
-                    return AssigmentOperator(name,operands,self)      
-                else:
-                    return BinaryOperator(name,operands,self) 
-            elif args == 3:
-                return TernaryOperator(name,operands,self) 
-            else:
-                return Operator(name,operands,self) 
-        except:
-            raise ExpressionError('error with operator: '+name) 
-
-    def getOperator(self,name:str,cardinality:int):
-        return self._modelManager.getOperator(name,cardinality)
+    @property
+    def arrowFunction(self):
+        return self._arrowFunction      
+    
     def priority(self,name:str,cardinality:int)->int:
         return self._modelManager.priority(name,cardinality)
   
@@ -162,10 +191,8 @@ class Exp(metaclass=Singleton):
     def getEnum(self,name): 
         return self._modelManager.getEnum(name) 
     
-    def getFunction(self,name):
-        return self._modelManager.getFunction(name)
-
-      
+    # def getFunction(self,name):
+    #     return self._modelManager.getFunction(name)
     
     def minify(self,expression:str)->str:
         isString=False
@@ -181,11 +208,17 @@ class Exp(metaclass=Singleton):
                result.append(p)
         return result
     
+    def solve(self,expression:str,context:dict={})-> any :
+        operand=self.parse(expression)
+        return self.eval(operand,context)
+
     def parse(self,expression)->Operand:
         try:            
             parser = Parser(self,self.minify(expression))
             operand= parser.parse() 
             del parser
+            self.setParent(operand)
+            self.setEvaluator(operand)
             return operand  
         except Exception as error:
             raise ExpressionError('expression: '+expression+' error: '+str(error))
@@ -200,47 +233,39 @@ class Exp(metaclass=Singleton):
             self.setContext(operand,Context(context))
         operand.debug(token,0)
 
-    def solve(self,expression:str,context:dict={})-> any :
-        operand=self.parse(expression)
-        return self.eval(operand,context)
 
-    def serialize(self,operand:Operand)-> dict:        
-        if len(operand.operands)==0:return {'n':operand.name,'t':type(operand).__name__}
-        children = []                
-        for p in operand.operands:
-            children.append(self.serialize(p))
-        return {'n':operand.name,'t':type(operand).__name__,'c':children}     
 
-    def deserialize(self,serialized:dict)-> Operand:
-        children = []
-        if 'c' in serialized:
-            for p in serialized['c']:
-                children.append(self.deserialize(p))
-        return  eval(serialized['t'])(serialized['n'],children,self) 
-
- 
+   
     def getOperandByPath(self,operand:Operand,path)->Operand:
         search = operand
         for p in path:
             if len(search.operands) <= p:return None
             search = search.operands[p]
         return search    
-
         
-    def setContext(self,operand:Operand,context:Context):
-        if issubclass(operand.__class__,Contextable):operand.context = context         
-        if len(operand.operands)>0 :       
-            for p in operand.operands:
-                if issubclass(p.__class__,Contextable):p.context = context                
-                if len(p.operands)>0:
-                    self.setContext(p,context)
 
     def setParent(self,operand:Operand,parent:Operand=None,index:int=0):
         operand.parent = parent
         operand.index = index
         if  len(operand.operands)>0:
             for i,p in enumerate(operand.operands):
-                self.setParent(p,operand,i) 
+                self.setParent(p,operand,i)     
+
+    def setEvaluator(self,operand:Operand):
+        operand.evaluator = self._modelManager.getOperandEvaluator(operand)           
+        for p in operand.operands:
+            self.setEvaluator(p)   
+
+    def setContext(self,operand:Operand,context:Context):
+        current = context
+        if issubclass(operand.__class__,ChildContextable):
+            childContext=current.newContext()
+            operand.context = childContext
+            current = childContext
+        elif issubclass(operand.__class__,Contextable):
+            operand.context = current       
+        for p in operand.operands:
+            self.setContext(p,current)   
 
     def getVars(self,operand:Operand)->dict:
         self.setParent(operand)
@@ -271,13 +296,18 @@ class Exp(metaclass=Singleton):
                 if isinstance(otherOperand,Constant):
                     return otherOperand.type
                 elif isinstance(otherOperand,Function):    
-                    pass
-                # TODO continuar
+                    metadata =self._modelManager.getFunctionMetadata(otherOperand.name)
+                    return metadata['return']
+                elif isinstance(otherOperand,Operator):    
+                    metadata =self._modelManager.getOperatorMetadata(otherOperand.name,len(otherOperand.operands))
+                    return metadata['return']    
+                else:
+                    return 'any'
             else:        
                 return metadata['args'][index]['type']
         elif isinstance(parent,Function):
             name = parent.name.replace('.','',1) if parent.name.starWith('.') else  parent.name
-            metadata =self._modelManager.model.functions[name]
+            metadata =self._modelManager.getFunctionMetadata(name)
             return metadata['args'][index]['type'] 
 
     def getConstants(self,operand:Operand)->dict:
@@ -321,7 +351,20 @@ class Exp(metaclass=Singleton):
             list[key] = self._modelManager.model.functions[key]
         return list
 
-    
+    def serialize(self,operand:Operand)-> dict:        
+        if len(operand.operands)==0:return {'n':operand.name,'t':type(operand).__name__}
+        children = []                
+        for p in operand.operands:
+            children.append(self.serialize(p))
+        return {'n':operand.name,'t':type(operand).__name__,'c':children}     
+
+    def deserialize(self,serialized:dict)-> Operand:
+        children = []
+        if 'c' in serialized:
+            for p in serialized['c']:
+                children.append(self.deserialize(p))
+        return  eval(serialized['t'])(serialized['n'],children,self) 
+ 
  
 class Parser():
     def __init__(self,mgr,expression):
@@ -338,7 +381,7 @@ class Parser():
             operands.append(operand)
         if len(operands)==1 :
             return operands[0]
-        return Block('block',operands,self.mgr) 
+        return Block('block',operands)
 
     @property
     def previous(self):
@@ -368,18 +411,18 @@ class Parser():
             operand2=  self.getOperand()
             nextOperator= self.getOperator()
             if nextOperator is None or nextOperator in _break:
-                expression= self.mgr.newOperator(operator,[operand1,operand2])
+                expression= Operator(operator,[operand1,operand2])
                 isbreak= True
                 break
             elif self.priority(operator)>=self.priority(nextOperator):
-                operand1=self.mgr.newOperator(operator,[operand1,operand2])
+                operand1=Operator(operator,[operand1,operand2])
                 operator=nextOperator
             else:
                 operand2 = self.getExpression(operand1=operand2,operator=nextOperator,_break=_break)
-                expression= self.mgr.newOperator(operator,[operand1,operand2])
+                expression= Operator(operator,[operand1,operand2])
                 isbreak= True
                 break
-        if not isbreak: expression=self.mgr.newOperator(operator,[operand1,operand2])
+        if not isbreak: expression=Operator(operator,[operand1,operand2])
         # if all the operands are constant, reduce the expression a constant 
         if expression is not None and len(expression.operands)>0:    
             allConstants=True              
@@ -389,7 +432,7 @@ class Parser():
                     break
             if  allConstants:
                 value = expression.value                
-                return Constant(value,[],self.mgr)
+                return Constant(value,[])
         return expression             
 
     def getOperand(self):        
@@ -429,7 +472,7 @@ class Parser():
                     operand= self.getChildFunction(name,variable)
                 else:
                     args=  self.getArgs(end=')')
-                    operand= Function(value,args,self.mgr)                
+                    operand= Function(value,args)                
 
             elif not self.end and self.current == '[':
                 self.index+=1    
@@ -443,7 +486,7 @@ class Parser():
                     isBitNot= False     
                 else:
                     value =int(value)
-                operand = Constant(value,[],self.mgr)
+                operand = Constant(value)
             elif self.mgr.reFloat.match(value):
                 if isNegative:
                     value = float(value)* -1
@@ -453,11 +496,11 @@ class Parser():
                     isBitNot= False      
                 else:
                     value =float(value)
-                operand = Constant(value,[],self.mgr)
+                operand = Constant(value)
             elif value=='true':                
-                operand = Constant(True,[],self.mgr)
+                operand = Constant(True)
             elif value=='false':                
-                operand = Constant(False,[],self.mgr)
+                operand = Constant(False)
             elif self.mgr.isEnum(value):                
                 operand= self.getEnum(value)
             else:
@@ -465,7 +508,7 @@ class Parser():
         elif char == '\'' or char == '"':
             self.index+=1
             result=  self.getString(char)
-            operand= Constant(result,[],self.mgr)
+            operand= Constant(result)
         elif char == '(':
             self.index+=1
             operand=  self.getExpression(_break=')') 
@@ -488,9 +531,9 @@ class Parser():
             # if '.' not in function.name :function.name = '.'+function.name
             # operand=function
 
-        if isNegative:operand=self.mgr.newOperator('-',[operand])
-        if isNot:operand=self.mgr.newOperator('!',[operand])
-        if isBitNot:operand=self.mgr.newOperator('~',[operand])  
+        if isNegative:operand=Operator('-',[operand])
+        if isNot:operand=Operator('!',[operand])
+        if isBitNot:operand=Operator('~',[operand])  
         return operand
 
     def priority(self,op:str,cardinality:int=2)->int:
@@ -556,12 +599,12 @@ class Parser():
             if self.current==':':self.index+=1
             else:raise ExpressionError('attribute '+name+' without value')
             value= self.getExpression(_break=',}')
-            attribute = KeyValue(name,[value],self.mgr)
+            attribute = KeyValue(name,[value])
             attributes.append(attribute)
             if self.previous=='}':
                 break
         
-        return Object('object',attributes,self.mgr) 
+        return Object('object',attributes) 
 
     def getBlock(self):
         lines= []
@@ -570,7 +613,7 @@ class Parser():
             if line is not None :lines.append(line)
             if self.previous=='}':
                 break        
-        return Block('block',lines,self.mgr)     
+        return Block('block',lines)     
 
     def getIfBlock(self):
         condition= self.getExpression(_break=')')
@@ -590,7 +633,7 @@ class Parser():
             else:
                 elseblock= self.getExpression(_break=';') 
 
-        return If('if',[condition,block,elseblock],self.mgr) 
+        return If('if',[condition,block,elseblock]) 
 
     def getWhileBlock(self):
         condition= self.getExpression(_break=')')
@@ -600,86 +643,24 @@ class Parser():
         else:
             block= self.getExpression(_break=';') 
 
-        return While('while',[condition,block],self.mgr)   
+        return While('while',[condition,block])   
 
-    def getChildFunction(self,name,parent):
-        if name == 'foreach': return self.getForeach(parent)
-        elif name == 'map': return self.getMap(parent)
-        elif name == 'reverse': return self.getReverse(parent)
-        elif name == 'first': return self.getFirst(parent)
-        elif name == 'last': return self.getLast(parent)
-        elif name == 'filter': return self.getFilter(parent)
+    def getChildFunction(self,name,parent):        
+        if name in self.mgr.arrowFunction:
+            name= self.getValue()
+            if self.current==':':self.index+=1
+            else:raise ExpressionError('map without body')
+            body= self.getExpression(_break=')')
+            return ArrowFunctions(name,[parent,body],self.mgr)        
         else: 
             args=  self.getArgs(end=')')
             args.insert(0,parent)
-            return Function('.'+name,args,self.mgr)
-
-        # if '.' in name:
-        #     names = name.split('.')
-        #     key = names.pop()
-        #     variableName= '.'.join(names)
-        #     variable = Variable(variableName)
-        #     if key == 'foreach': return self.getForeach(variable)
-        #     elif key == 'map': return self.getMap(variable)
-        #     elif key == 'reverse': return self.getReverse(variable)
-        #     elif key == 'first': return self.getFirst(variable)
-        #     elif key == 'last': return self.getLast(variable)
-        #     elif key == 'filter': return self.getFilter(variable)
-        #     else: 
-        #         args=  self.getArgs(end=')')
-        #         args.insert(0,variable)
-        #         return Function('.'+key,args)
-        # else:
-        #     args=  self.getArgs(end=')')
-        #     return Function(name,args)
-
-    def getForeach(self,variable):
-        name= self.getValue()
-        if self.current==':':self.index+=1
-        else:raise ExpressionError('foreach without body')
-        body= self.getExpression(_break=')')
-        return ArrayForeach(name,[variable,body],self.mgr) 
-
-    def getMap(self,variable):
-        name= self.getValue()
-        if self.current==':':self.index+=1
-        else:raise ExpressionError('map without body')
-        body= self.getExpression(_break=')')
-        return ArrayMap(name,[variable,body],self.mgr)   
-
-    def getReverse(self,variable): 
-        if self.current == ')': self.index+=1       
-        return ArrayReverse('',[variable],self.mgr) 
-        # if self.current==':':self.index+=1
-        # else:raise ExpressionError('reverse without body')
-        # body= self.getExpression(_break=')')
-        # return Reverse(name,[variable,body])   
-
-    def getFirst(self,variable):
-        name= self.getValue()
-        if self.current==':':self.index+=1
-        else:raise ExpressionError('first without body')
-        body= self.getExpression(_break=')')
-        return ArrayFirst(name,[variable,body],self.mgr)  
-
-    def getLast(self,variable):
-        name= self.getValue()
-        if self.current==':':self.index+=1
-        else:raise ExpressionError('last without body')
-        body= self.getExpression(_break=')')
-        return ArrayLast(name,[variable,body],self.mgr)                   
-
-    def getFilter(self,variable):
-        name= self.getValue()
-        if self.current==':':self.index+=1
-        else:raise ExpressionError('filter without body')
-        body= self.getExpression(_break=')')
-        return ArrayFilter(name,[variable,body],self.mgr)  
+            return ChildFunction(name,args)
 
     def getIndexOperand(self,name):
         idx= self.getExpression(_break=']')
         operand= Variable(name)
-        return BinaryOperator('[]',[operand,idx],self.mgr) 
+        return Operator('[]',[operand,idx]) 
 
     def getEnum(self,value):
         if '.' in value and self.mgr.isEnum(value):
@@ -688,16 +669,16 @@ class Parser():
             enumOption = names[1] 
             enumValue= self.mgr.getEnumValue(enumName,enumOption)
             # enumType = type(enumValue).__name__
-            return Constant(enumValue,[],self.mgr)
+            return Constant(enumValue)
         else:
             values= self.mgr.getEnum(value)
             attributes= []
             for name in values:
                 _value = values[name]
                 # _valueType = type(_value).__name__
-                attribute = KeyValue(name,[Constant(_value)],[],self.mgr)
+                attribute = KeyValue(name,[Constant(_value)])
                 attributes.append(attribute)
-            return Object('object',attributes,self.mgr)
+            return Object('object',attributes)
    
 
                             
