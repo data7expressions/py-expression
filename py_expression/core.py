@@ -2,7 +2,7 @@ import re
 from .base import *
 from .coreLib import CoreLib
 
-class ModelManager():
+class SourceManager():
     def __init__(self,model):
         self._model=model
         self._libraries={}
@@ -31,11 +31,6 @@ class ModelManager():
             data = library.functions[name]
             self._model.addFunction(name,data['metadata'])        
   
-    def compile(self,node:Node):
-        operand =self.nodeToOperand(node)
-        operand =self.reduce(operand)
-        return operand
-
     def nodeToOperand(self,node:Node)->Operand:
         children = []
         for p in node.children:
@@ -141,7 +136,61 @@ class ModelManager():
         except:
             raise ModelError('error with function: '+node.name)              
 
+    def compile(self,node:Node):
+        operand =self.nodeToOperand(node)
+        operand =self.reduce(operand)
+        return operand
 
+    def run(self,operand:Operand,context:dict={})-> any :  
+        if context is not None:
+            self.setContext(operand,Context(context))
+        return operand.value
+
+    def setContext(self,operand:Operand,context:Context):
+        current = context
+        if issubclass(operand.__class__,ChildContextable):
+            childContext=current.newContext()
+            operand.context = childContext
+            current = childContext
+        elif issubclass(operand.__class__,Contextable):
+            operand.context = current       
+        for p in operand.children:
+            self.setContext(p,current) 
+
+    # def debug(self,operand:Operand,token:Token,context:dict={}):
+    #     if context is not None:
+    #         self.setContext(operand,Context(context))
+    #     operand.debug(token,0)
+
+    # def debug(self,token:Token,level): 
+    #     if len(token.path) <= level:
+    #         if len(self.children)== 0:
+    #             token.value= self.value 
+    #         else:
+    #             token.path.append(0)
+    #             self.children[0].debug(token,level+1)   
+    #     else:
+    #         idx = token.path[level]
+    #         # si es el anteultimo nodo 
+    #         if len(token.path) -1 == level:           
+    #             if len(self.children) > idx+1:
+    #                token.path[level] = idx+1
+    #                self.children[idx+1].debug(token,level+1)
+    #             else:
+    #                token.path.pop() 
+    #                token.value= self.value       
+    #         else:
+    #             self.children[idx].debug(token,level+1)  
+
+    # def getOperandByPath(self,operand:Operand,path)->Operand:
+    #     search = operand
+    #     for p in path:
+    #         if len(search.children) <= p:return None
+    #         search = search.children[p]
+    #     return search    
+        
+   
+      
 
 class OperandManager():
     def __init__(self,model):
@@ -310,14 +359,14 @@ class NodeManager():
 class Exp(metaclass=Singleton):
     def __init__(self):
        self.model = Model() 
-       self._modelManager = ModelManager(self.model)
+       self.sourceManager = SourceManager(self.model)
        self.parser = Parser(self.model)
        self.nodeManager = NodeManager(self.model)
        self.operandManager = OperandManager(self.model)       
        self.addLibrary(CoreLib())        
 
     def addLibrary(self,library):
-        self._modelManager.addLibrary(library)
+        self.sourceManager.addLibrary(library)
         self.refresh() 
     
     def refresh(self):
@@ -340,7 +389,7 @@ class Exp(metaclass=Singleton):
     def solve(self,expression:str,context:dict={})-> any :
         node=self.parse(expression)
         operand=self.compile(node)
-        return self.eval(operand,context)
+        return self.run(operand,context)
 
     def parse(self,expression)->Node:
         try:  
@@ -350,38 +399,18 @@ class Exp(metaclass=Singleton):
 
     def compile(self,node:Node)->Operand:
         try: 
-            return self._modelManager.compile(node)
+            return self.sourceManager.compile(node)
         except Exception as error:
-            raise ExpressionError('node: '+node.name+' error: '+str(error))        
+            raise ExpressionError('node: '+node.name+' error: '+str(error))  
 
-    def eval(self,operand:Operand,context:dict={})-> any :  
-        if context is not None:
-            self.setContext(operand,Context(context))
-        return operand.value
+    def run(self,operand:Operand,context:dict={})-> any : 
+        try: 
+            return self.sourceManager.run(operand,context)
+        except Exception as error:
+            raise ExpressionError('operand: '+operand.name+' error: '+str(error))               
 
-    def debug(self,operand:Operand,token:Token,context:dict={}):
-        if context is not None:
-            self.setContext(operand,Context(context))
-        operand.debug(token,0)
-        
-    def getOperandByPath(self,operand:Operand,path)->Operand:
-        search = operand
-        for p in path:
-            if len(search.children) <= p:return None
-            search = search.children[p]
-        return search    
-        
-   
-    def setContext(self,operand:Operand,context:Context):
-        current = context
-        if issubclass(operand.__class__,ChildContextable):
-            childContext=current.newContext()
-            operand.context = childContext
-            current = childContext
-        elif issubclass(operand.__class__,Contextable):
-            operand.context = current       
-        for p in operand.children:
-            self.setContext(p,current)   
+    
+    
 
     def serialize(self,operand:Operand)-> dict:        
         if len(operand.children)==0:return {'n':operand.name,'t':type(operand).__name__}
@@ -397,20 +426,40 @@ class Exp(metaclass=Singleton):
                 children.append(self.deserialize(p))
         return  eval(serialized['t'])(serialized['n'],children,self) 
  
-    def vars(self,node:Node)->dict:
-        return self.nodeManager.vars(node)
+    def vars(self,value)->dict:
+        if isinstance(value,Node):
+            return self.nodeManager.vars(value)
+        elif isinstance(value,Operand):
+            return self.operandManager.vars(value)
+        return None       
 
-    def operandType(self,node:Node)->str:
-        return self.nodeManager.operandType(node)
+    def operandType(self,value)->str:
+        if isinstance(value,Node):
+            return self.nodeManager.operandType(value)
+        elif isinstance(value,Operand):
+            return self.operandManager.operandType(value) 
+        return None     
 
-    def constants(self,node:Node)->dict:
-        return self.nodeManager.constants(node)
+    def constants(self,value)->dict:
+        if isinstance(value,Node):
+            return self.nodeManager.constants(value)
+        elif isinstance(value,Operand):
+            return self.operandManager.constants(value)
+        return None 
     
-    def operators(self,node:Node)->dict:
-        return self.nodeManager.operators(node)
+    def operators(self,value)->dict:
+        if isinstance(value,Node):
+            return self.nodeManager.operators(value)
+        elif isinstance(value,Operand):
+            return self.operandManager.operators(value)
+        return None
 
-    def functions(self,node:Node)->dict:
-        return self.nodeManager.functions(node)
+    def functions(self,value)->dict:
+        if isinstance(value,Node):
+            return self.nodeManager.functions(value)
+        elif isinstance(value,Operand):
+            return self.operandManager.functions(value)
+        return None
 
 class Parser():
     def __init__(self,model):

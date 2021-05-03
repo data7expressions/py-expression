@@ -294,25 +294,7 @@ class Node():
     def __imod__(self, other):return Node('%=','operator',[other,self])
     def __ipow__(self, other):return Node('**=','operator',[other,self])   
 
-    # def debug(self,token:Token,level): 
-    #     if len(token.path) <= level:
-    #         if len(self.children)== 0:
-    #             token.value= self.value 
-    #         else:
-    #             token.path.append(0)
-    #             self.children[0].debug(token,level+1)   
-    #     else:
-    #         idx = token.path[level]
-    #         # si es el anteultimo nodo 
-    #         if len(token.path) -1 == level:           
-    #             if len(self.children) > idx+1:
-    #                token.path[level] = idx+1
-    #                self.children[idx+1].debug(token,level+1)
-    #             else:
-    #                token.path.pop() 
-    #                token.value= self.value       
-    #         else:
-    #             self.children[idx].debug(token,level+1)  
+    
 
 class Operand():
     def __init__(self,name:str,children:list['Operand']=[]):
