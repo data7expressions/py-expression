@@ -138,61 +138,100 @@ class ModelManager():
         except:
             raise ModelError('error with function: '+name)        
 
+      
+    def vars(self,operand:Operand)->dict:
+        list = {}
+        if isinstance(operand,Variable):
+            list[operand.name] = self.operandType(operand)
+        for p in operand.operands:
+            if isinstance(p,Variable):
+                list[p.name] = self.operandType(p)
+            elif len(p.operands)>0:
+                subList= self.vars(p)
+                list = {**list, **subList}
+        return list 
+
+    def operandType(self,operand:Operand)->str:
+        """ """
+        if isinstance(operand.parent,Operator):
+            metadata = self.getOperatorMetadata(operand.parent.name,len(operand.parent.operands))
+            if metadata['category'] == 'comparison':
+                otherIndex = 1 if operand.index == 0 else 0
+                otherOperand= operand.parent.operands[otherIndex]
+                if isinstance(otherOperand,Constant):
+                    return otherOperand.type
+                elif isinstance(otherOperand,Function):    
+                    metadata =self.getFunctionMetadata(otherOperand.name)
+                    return metadata['return']
+                elif isinstance(otherOperand,Operator):    
+                    metadata =self.getOperatorMetadata(otherOperand.name,len(otherOperand.operands))
+                    return metadata['return']    
+                else:
+                    return 'any'
+            else:        
+                return metadata['args'][operand.index]['type']
+        elif isinstance(operand.parent,Function):
+            name = operand.parent.name.replace('.','',1) if operand.parent.name.starWith('.') else  operand.parent.name
+            metadata =self.getFunctionMetadata(name)
+            return metadata['args'][operand.index]['type'] 
+
+    def constants(self,operand:Operand)->dict:
+        list = {}
+        if isinstance(operand,Constant):
+            list[operand.value] = operand.type
+        for p in operand.operands:
+            if isinstance(p,Constant):
+                list[p.value] = p.type
+            elif len(p.operands)>0:
+                subList= self.constants(p)
+                list = {**list, **subList}
+        return list
+    
+    def operators(self,operand:Operand)->dict:
+        list = {}
+        if isinstance(operand,Operator):
+            metadata = self.getOperatorMetadata(operand.name,len(operand.operands)) 
+            list[operand.name] = metadata['category']
+        for p in operand.operands:
+            if isinstance(p,Operator):
+                metadata = self.getOperatorMetadata(p.name,len(p.operands)); 
+                list[p.name] =  metadata['category']
+            elif len(p.operands)>0:
+                subList= self.operators(p)
+                list = {**list, **subList}
+        return list
+
+    def functions(self,operand:Operand)->dict:
+        list = {}
+        if isinstance(operand,Function):
+            list[operand.name] = {}
+        for p in operand.operands:
+            if isinstance(p,Function):
+                list[p.name] = {}
+            elif len(p.operands)>0:
+                subList= self.functions(p)
+                list = {**list, **subList}
+
+        for key in list:
+            list[key] = self.model.functions[key]
+        return list
+
+
+
+
 # Facade   
 class Exp(metaclass=Singleton):
     def __init__(self):
-       self.reAlphanumeric = re.compile('[a-zA-Z0-9_.]+$') 
-       self.reInt = re.compile('[0-9]+$')
-       self.reFloat = re.compile('(\d+(\.\d*)?|\.\d+)([eE]\d+)?')
-       self._tripleOperators = []
-       self._doubleOperators = [] 
-       self._assigmentOperators = []
-       self._arrowFunction = [] 
        self._modelManager = ModelManager(Model())
-       self.addLibrary(CoreLib()) 
+       self.parser = Parser(self._modelManager)
+       self.addLibrary(CoreLib())        
 
     def addLibrary(self,library):
         self._modelManager.addLibrary(library)
         self.refresh() 
     
     def refresh(self):
-        for key in self._modelManager.model.operators.keys():
-            if len(key)==2: self._doubleOperators.append(key)
-            elif len(key)==3: self._tripleOperators.append(key)
-
-            operator = self._modelManager.model.operators[key]
-            if 2 in operator.keys():
-               if operator[2]['category'] == 'assignment':
-                  self._assigmentOperators.append(key)
-
-        for key in self._modelManager.model.functions.keys():
-            metadata = self._modelManager.model.functions[key]
-            if metadata['isArrowFunction']: self._arrowFunction.append(key)
-
-    @property
-    def doubleOperators(self):
-        return self._doubleOperators
-
-    @property
-    def tripleOperators(self):
-        return self._tripleOperators   
-
-    @property
-    def arrowFunction(self):
-        return self._arrowFunction      
-    
-    def priority(self,name:str,cardinality:int)->int:
-        return self._modelManager.priority(name,cardinality)
-  
-    def isEnum(self,name):    
-        return self._modelManager.isEnum(name) 
-    def getEnumValue(self,name,option): 
-        return self._modelManager.getEnumValue(name,option) 
-    def getEnum(self,name): 
-        return self._modelManager.getEnum(name) 
-    
-    # def getFunction(self,name):
-    #     return self._modelManager.getFunction(name)
+        self.parser.refresh()    
     
     def minify(self,expression:str)->str:
         isString=False
@@ -213,13 +252,11 @@ class Exp(metaclass=Singleton):
         return self.eval(operand,context)
 
     def parse(self,expression)->Operand:
-        try:            
-            parser = Parser(self,self.minify(expression))
-            operand= parser.parse() 
-            del parser            
+        try:  
+            operand= self.parser.parse(self.minify(expression))
             self.setEvaluator(operand)
             operand =self.reduce(operand)
-            self.setParent(operand)
+            # self.setParent(operand)
             return operand  
         except Exception as error:
             raise ExpressionError('expression: '+expression+' error: '+str(error))
@@ -234,7 +271,6 @@ class Exp(metaclass=Singleton):
             self.setContext(operand,Context(context))
         operand.debug(token,0)
 
-
     def reduce(self,operand:Operand):
         """ if all the operands are constant, reduce the expression a constant """
         # if len(operand.operands)>0:
@@ -248,6 +284,8 @@ class Exp(metaclass=Singleton):
                 value = operand.value                
                 constant= Constant(value,[])
                 constant.evaluator= self._modelManager.getOperandEvaluator(constant)
+                constant.parent = operand.parent
+                constant.index = operand.index
                 return constant
             else:
                 for i, p in enumerate(operand.operands):
@@ -261,13 +299,7 @@ class Exp(metaclass=Singleton):
             search = search.operands[p]
         return search    
         
-
-    def setParent(self,operand:Operand,parent:Operand=None,index:int=0):
-        operand.parent = parent
-        operand.index = index
-        if  len(operand.operands)>0:
-            for i,p in enumerate(operand.operands):
-                self.setParent(p,operand,i)     
+       
 
     def setEvaluator(self,operand:Operand):
         operand.evaluator = self._modelManager.getOperandEvaluator(operand)           
@@ -299,94 +331,88 @@ class Exp(metaclass=Singleton):
                 children.append(self.deserialize(p))
         return  eval(serialized['t'])(serialized['n'],children,self) 
  
-
     def vars(self,operand:Operand)->dict:
-        self.setParent(operand)
-        return self._getVars(operand)        
+        return self._modelManager.vars(operand)
 
-    def _getVars(self,operand:Operand)->dict:
-        list = {}
-        if isinstance(operand,Variable):
-            list[operand.name] = self.getVarType(operand)
-        for p in operand.operands:
-            if isinstance(p,Variable):
-                list[p.name] = self.getVarType(p)
-            elif len(p.operands)>0:
-                subList= self._getVars(p)
-                list = {**list, **subList}
-        return list 
-
-    def getVarType(self,operand:Operand)->str:
-        return self.getOperandType(operand.parent,operand.index)
-
-    def getOperandType(self,parent:Operand,index)->str:
-        """ """
-        if isinstance(parent,Operator):
-            metadata = self._modelManager.getOperatorMetadata(parent.name,len(parent.operands))
-            if metadata['category'] == 'comparison':
-                otherIndex = 1 if index == 0 else 0
-                otherOperand= parent.operands[otherIndex]
-                if isinstance(otherOperand,Constant):
-                    return otherOperand.type
-                elif isinstance(otherOperand,Function):    
-                    metadata =self._modelManager.getFunctionMetadata(otherOperand.name)
-                    return metadata['return']
-                elif isinstance(otherOperand,Operator):    
-                    metadata =self._modelManager.getOperatorMetadata(otherOperand.name,len(otherOperand.operands))
-                    return metadata['return']    
-                else:
-                    return 'any'
-            else:        
-                return metadata['args'][index]['type']
-        elif isinstance(parent,Function):
-            name = parent.name.replace('.','',1) if parent.name.starWith('.') else  parent.name
-            metadata =self._modelManager.getFunctionMetadata(name)
-            return metadata['args'][index]['type'] 
+    def operandType(self,operand:Operand)->str:
+        return self._modelManager.operandType(operand)
 
     def constants(self,operand:Operand)->dict:
-        list = {}
-        if isinstance(operand,Constant):
-            list[operand.value] = operand.type
-        for p in operand.operands:
-            if isinstance(p,Constant):
-                list[p.value] = p.type
-            elif len(p.operands)>0:
-                subList= self.constants(p)
-                list = {**list, **subList}
-        return list
+        return self._modelManager.constants(operand)
     
     def operators(self,operand:Operand)->dict:
-        list = {}
-        if isinstance(operand,Operator):
-            metadata = self._modelManager.getOperatorMetadata(operand.name,len(operand.operands)) 
-            list[operand.name] = metadata['category']
-        for p in operand.operands:
-            if isinstance(p,Operator):
-                metadata = self._modelManager.getOperatorMetadata(p.name,len(p.operands)); 
-                list[p.name] =  metadata['category']
-            elif len(p.operands)>0:
-                subList= self.operators(p)
-                list = {**list, **subList}
-        return list
+        return self._modelManager.operators(operand)
 
     def functions(self,operand:Operand)->dict:
-        list = {}
-        if isinstance(operand,Function):
-            list[operand.name] = {}
-        for p in operand.operands:
-            if isinstance(p,Function):
-                list[p.name] = {}
-            elif len(p.operands)>0:
-                subList= self.functions(p)
-                list = {**list, **subList}
-
-        for key in list:
-            list[key] = self._modelManager.model.functions[key]
-        return list
+        return self._modelManager.functions(operand)
 
 
- 
 class Parser():
+    def __init__(self,modelManager):
+       self._modelManager = modelManager 
+       self.reAlphanumeric = re.compile('[a-zA-Z0-9_.]+$') 
+       self.reInt = re.compile('[0-9]+$')
+       self.reFloat = re.compile('(\d+(\.\d*)?|\.\d+)([eE]\d+)?')
+       self._tripleOperators = []
+       self._doubleOperators = [] 
+       self._assigmentOperators = []
+       self._arrowFunction = []         
+   
+    def refresh(self):
+        for key in self._modelManager.model.operators.keys():
+            if len(key)==2: self._doubleOperators.append(key)
+            elif len(key)==3: self._tripleOperators.append(key)
+
+            operator = self._modelManager.model.operators[key]
+            if 2 in operator.keys():
+               if operator[2]['category'] == 'assignment':
+                  self._assigmentOperators.append(key)
+
+        for key in self._modelManager.model.functions.keys():
+            metadata = self._modelManager.model.functions[key]
+            if metadata['isArrowFunction']: self._arrowFunction.append(key)
+
+    @property
+    def doubleOperators(self):
+        return self._doubleOperators
+
+    @property
+    def tripleOperators(self):
+        return self._tripleOperators   
+
+    @property
+    def arrowFunction(self):
+        return self._arrowFunction 
+
+    def priority(self,name:str,cardinality:int)->int:
+        return self._modelManager.priority(name,cardinality)
+  
+    def isEnum(self,name):    
+        return self._modelManager.isEnum(name) 
+    def getEnumValue(self,name,option): 
+        return self._modelManager.getEnumValue(name,option) 
+    def getEnum(self,name): 
+        return self._modelManager.getEnum(name) 
+
+    def setParent(self,operand:Operand,parent:Operand=None,index:int=0):
+        operand.parent = parent
+        operand.index = index
+        if  len(operand.operands)>0:
+            for i,p in enumerate(operand.operands):
+                self.setParent(p,operand,i)      
+
+    def parse(self,expression)->Operand:
+        try:            
+            _parser = _Parser(self,expression)
+            operand= _parser.parse() 
+            del _parser 
+            self.setParent(operand)
+            return operand  
+        except Exception as error:
+            raise ExpressionError('expression: '+expression+' error: '+str(error))      
+ 
+
+class _Parser():
     def __init__(self,mgr,expression):
        self.mgr = mgr 
        self.buffer = list(expression)
