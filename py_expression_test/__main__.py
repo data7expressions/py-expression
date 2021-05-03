@@ -177,6 +177,8 @@ class TestExpression(unittest.TestCase):
     #     self.assertEqual(context['output'],12) 
 
 
+# print(exp.solve('1+3'))
+unittest.main()
 
 # text = ('rectangle = {"x":50,"y":50,"width":80,"height":60}; '
 #         'sleepSecs = 1;'
@@ -191,7 +193,7 @@ class TestExpression(unittest.TestCase):
 
 # context = {"a":[1,2,3,4,5],"b":0}
 # print(exp.solve('a.filter(p: p>1 && p<5).reverse()',context))
-unittest.main()
+
 
 # operand =exp.parse(('i=0;'
 #             'while(i<=6){'

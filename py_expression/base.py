@@ -27,6 +27,42 @@ class Model():
     def functions(self):
         return self._functions
 
+    def addEnum(self,key,source):
+        self.enums[key]=source
+    def isEnum(self,name):    
+        names = name.split('.')
+        return names[0] in self.enums.keys()
+    def getEnumValue(self,name,option): 
+        return self.enums[name][option]
+    def getEnum(self,name): 
+        return self.enums[name]
+  
+    def addOperator(self,name:str,cardinality:int,metadata):
+        if name not in self.operators.keys():self.operators[name]= {}    
+        self.operators[name][cardinality] = metadata       
+
+    def addFunction(self:str,name:str,metadata):
+        self.functions[name] = metadata    
+    
+    def getOperatorMetadata(self,name:str,cardinality:int):
+        try:            
+            if name in self._operators:
+                operator = self._operators[name]
+                if cardinality in operator:
+                    return operator[cardinality]
+            return None        
+        except:
+            raise ModelError('error with operator: '+name)     
+
+    def getFunctionMetadata(self,name:str):
+        try:
+            if name in self._functions:
+                return self._functions[name]
+            return None
+        except:
+            raise ModelError('error with function: '+name)        
+          
+
 class Library():
     def __init__(self,name):
         self._name = name
@@ -62,7 +98,7 @@ class Library():
         else:
             raise ModelError('enum not supported: '+key)    
 
-    def addOperator(self,name:str,category:str,source,priority:int=-1,evaluator=None):
+    def addOperator(self,name:str,category:str,source,priority:int=-1,custom=None,customFunction=None):
         if name not in self._operators.keys():
             self._operators[name]= {}
 
@@ -71,13 +107,13 @@ class Library():
         metadata['category'] =category
         metadata['priority'] =priority
         cardinality = len(metadata['args'])    
-        self._operators[name][cardinality]={'function':source,'evaluator':evaluator,'metadata':metadata}
+        self._operators[name][cardinality]={'function':source,'metadata':metadata,'custom':custom,'customFunction':customFunction}
 
-    def addFunction(self,name,source,evaluator=None,isArrowFunction:bool=False):        
+    def addFunction(self,name,source,custom=None,isArrowFunction:bool=False):        
         metadata = self.getMetadata(source)
         metadata['lib'] =self._name  
         metadata['isArrowFunction'] =isArrowFunction        
-        self._functions[name]={'function':source,'evaluator':evaluator,'metadata':metadata} 
+        self._functions[name]={'function':source,'metadata':metadata,'custom':custom} 
 
     def getFunction(self,name):
         if name in self._functions:
@@ -182,13 +218,108 @@ class Token():
     def path(self,value):
         self._path =value         
 
-class Operand():
-    def __init__(self,name,operands=[]): 
-        self._name = name         
-        self._operands  = operands
+
+class Node():
+    def __init__(self,name,type,children=[]): 
+        self._name = name
+        self._type = type         
+        self._children  = children
         self._parent = None
         self._index = None
-        self._evaluator = None        
+
+    @property
+    def name(self):
+        return self._name
+    @name.setter
+    def name(self,value):
+        self._name =value    
+
+    @property
+    def type(self):
+        return self._type 
+    @type.setter
+    def type(self,value):
+        self._type =value         
+    
+    @property
+    def children(self):
+        return self._children 
+
+    @property
+    def parent(self):
+        return self._parent 
+    @parent.setter
+    def parent(self,value):
+        self._parent =value  
+
+    @property
+    def index(self):
+        return self._index 
+    @index.setter
+    def index(self,value):
+        self._index =value      
+    
+
+    def __add__(self, other):return Node('+','operator',[other,self]) 
+    def __sub__(self, other):return Node('-','operator',[other,self])    
+    def __mul__(self, other):return Node('*','operator',[other,self])
+    def __pow__(self, other):return Node('**','operator',[other,self]) 
+    def __truediv__(self, other):return Node('/','operator',[other,self]) 
+    def __floordiv__(self, other):return Node('//','operator',[other,self]) 
+    def __mod__(self, other):return Node('%','operator',[other,self])
+
+    def __lshift__(self, other):return Node('<<','operator',[other,self])
+    def __rshift__(self, other):return Node('>>','operator',[other,self])
+    def __and__(self, other):return Node('&','operator',[other,self])
+    def __or__(self, other):return Node('|','operator',[other,self])
+    def __xor__(self, other):return Node('^','operator',[other,self])
+    def __invert__(self, other):return Node('~','operator',[other,self])
+
+    def __lt__(self, other):return Node('<','operator',[other,self])
+    def __le__(self, other):return Node('<=','operator',[other,self])
+    def __eq__(self, other):return Node('==','operator',[other,self])
+    def __ne__(self, other):return Node('!=','operator',[other,self])
+    def __gt__(self, other):return Node('>','operator',[other,self])
+    def __ge__(self, other):return Node('>=','operator',[other,self])
+
+    def __not__(self):return Node('!','operator',[self])
+    def __and2__(self, other):return Node('&&','operator',[other,self])
+    def __or2__(self, other):return Node('||','operator',[other,self])
+
+    def __isub__(self, other):return Node('-=','operator',[other,self])
+    def __iadd__(self, other):return Node('+=','operator',[other,self])
+    def __imul__(self, other):return Node('*=','operator',[other,self])
+    def __idiv__(self, other):return Node('/=','operator',[other,self])
+    def __ifloordiv__(self, other):return Node('//=','operator',[other,self])
+    def __imod__(self, other):return Node('%=','operator',[other,self])
+    def __ipow__(self, other):return Node('**=','operator',[other,self])   
+
+    # def debug(self,token:Token,level): 
+    #     if len(token.path) <= level:
+    #         if len(self.children)== 0:
+    #             token.value= self.value 
+    #         else:
+    #             token.path.append(0)
+    #             self.children[0].debug(token,level+1)   
+    #     else:
+    #         idx = token.path[level]
+    #         # si es el anteultimo nodo 
+    #         if len(token.path) -1 == level:           
+    #             if len(self.children) > idx+1:
+    #                token.path[level] = idx+1
+    #                self.children[idx+1].debug(token,level+1)
+    #             else:
+    #                token.path.pop() 
+    #                token.value= self.value       
+    #         else:
+    #             self.children[idx].debug(token,level+1)  
+
+class Operand():
+    def __init__(self,name:str,children:list['Operand']=[]):
+        self._name = name        
+        self._children  = children
+        self._parent = None
+        self._index = None
 
     @property
     def name(self):
@@ -209,200 +340,110 @@ class Operand():
         return self._index 
     @index.setter
     def index(self,value):
-        self._index =value  
+        self._index =value      
 
     @property
-    def evaluator(self):
-        return self._evaluator
-    @evaluator.setter
-    def evaluator(self,value):
-        self._evaluator =value       
-    
-    @property
-    def operands(self):
-        return self._operands 
+    def children(self):
+        return self._children 
 
     @property
     def value(self): 
-        return self._evaluator.eval(self) 
-
-    @value.setter
-    def value(self,value):
-        self._evaluator.set(self,value)
-
-    def __str__(self):
-        return self._name
-    def __repr__(self):
-        return self._name    
-     
-    
-
-    def __add__(self, other):return Operator('+',[other,self]) 
-    def __sub__(self, other):return Operator('-',[other,self])    
-    def __mul__(self, other):return Operator('*',[other,self])
-    def __pow__(self, other):return Operator('**',[other,self]) 
-    def __truediv__(self, other):return Operator('/',[other,self]) 
-    def __floordiv__(self, other):return Operator('//',[other,self]) 
-    def __mod__(self, other):return Operator('%',[other,self])
-
-    def __lshift__(self, other):return Operator('<<',[other,self])
-    def __rshift__(self, other):return Operator('>>',[other,self])
-    def __and__(self, other):return Operator('&',[other,self])
-    def __or__(self, other):return Operator('|',[other,self])
-    def __xor__(self, other):return Operator('^',[other,self])
-    def __invert__(self, other):return Operator('~',[other,self])
-
-    def __lt__(self, other):return Operator('<',[other,self])
-    def __le__(self, other):return Operator('<=',[other,self])
-    def __eq__(self, other):return Operator('==',[other,self])
-    def __ne__(self, other):return Operator('!=',[other,self])
-    def __gt__(self, other):return Operator('>',[other,self])
-    def __ge__(self, other):return Operator('>=',[other,self])
-
-    def __not__(self):return Operator('!',[self])
-    def __and2__(self, other):return Operator('&&',[other,self])
-    def __or2__(self, other):return Operator('||',[other,self])
-
-    def __isub__(self, other):return Operator('-=',[other,self])
-    def __iadd__(self, other):return Operator('+=',[other,self])
-    def __imul__(self, other):return Operator('*=',[other,self])
-    def __idiv__(self, other):return Operator('/=',[other,self])
-    def __ifloordiv__(self, other):return Operator('//=',[other,self])
-    def __imod__(self, other):return Operator('%=',[other,self])
-    def __ipow__(self, other):return Operator('**=',[other,self])
-
-
-    # def debug(self,token:Token,level): 
-    #     if len(token.path) <= level:
-    #         if len(self.operands)== 0:
-    #             token.value= self.value 
-    #         else:
-    #             token.path.append(0)
-    #             self.operands[0].debug(token,level+1)   
-    #     else:
-    #         idx = token.path[level]
-    #         # si es el anteultimo nodo 
-    #         if len(token.path) -1 == level:           
-    #             if len(self.operands) > idx+1:
-    #                token.path[level] = idx+1
-    #                self.operands[idx+1].debug(token,level+1)
-    #             else:
-    #                token.path.pop() 
-    #                token.value= self.value       
-    #         else:
-    #             self.operands[idx].debug(token,level+1)
-        
-  
-    # def eval(self,context:dict=None):
-    #     return self.mgr.eval(self,context)
-    # def vars(self):
-    #     return self.mgr.getVars(self)
-    # def constants(self):
-    #     return self.mgr.getConstants(self) 
-    # def operators(self):
-    #     return self.mgr.getOperators(self)
-    # def functions(self):
-    #     return self.mgr.getFunctions(self)
+        pass
 
 class Constant(Operand):
-    def __init__(self,name,operands=[]):
-      super(Constant,self).__init__(name,operands)  
+    def __init__(self,name,children=[]):
+      super(Constant,self).__init__(name,children)  
       self._type  = type(name).__name__
 
     @property
     def type(self): 
         return self._type  
+    @property
+    def value(self): 
+        return self._name 
 
+   
 class Variable(Operand,Contextable):
-    def __init__(self,name,operands=[]):
-      Operand.__init__(self,name,operands) 
+    def __init__(self,name:str,children:list[Operand]=[]):
+        Operand.__init__(self,name,children)
 
-class KeyValue(Operand):pass
-class Array(Operand): pass
-class Object(Operand): pass
-class Operator(Operand):pass
-class Function(Operand):pass
-class ArrowFunctions(Operand,ChildContextable):
-    def __init__(self,name,operands=[]):
-      Operand.__init__(self,name,operands)
+    @property
+    def value(self): 
+        return self.context.get(self._name)
+    @value.setter
+    def value(self,value):
+        self.context.set(self._name,value) 
+    
 
-class ChildFunction(Operand):pass
-class Block(Operand):pass
-class If(Operand):pass          
-class While(Operand):pass
+class KeyValue(Operand):
 
-class Evaluator():
-    def eval(self,operand):
-        pass
-    def set(self,operand,value):
-        pass
+    @property
+    def value(self):
+        return self._children[0].value
 
-class ConstantEvaluator(Evaluator):
-    def eval(self,operand):
-        return operand.name
-
-class VariableEvaluator(Evaluator):
-    def eval(self,operand):
-        return operand.context.get(operand.name)
-
-    def set(self,operand,value):
-        operand.context.set(operand.name,value)
-
-class KeyValueEvaluator(Evaluator):
-    def eval(self,operand):
-        return operand.operands[0].value
-
-class ArrayEvaluator(Evaluator):
-    def eval(self,operand):
+class Array(Operand):
+    @property
+    def value(self):
         list= []
-        for p in operand.operands:
+        for p in self._children:
             list.append(p.value)
         return list 
 
-class ObjectEvaluator(Evaluator):
-    def eval(self,operand):
+class Object(Operand):
+    @property
+    def value(self):
         dic= {}
-        for p in operand.operands:
+        for p in self._children:
             dic[p.name]=p.value
         return dic
 
-class FunctionEvaluator(Evaluator):
-    def __init__(self,function=None):
-      super(FunctionEvaluator,self).__init__()         
-      self.function = function
-       
-    def eval(self,operand):        
-        values= []
-        for p in operand.operands:
-            values.append(p.value)
-        return self.function(*values)
+class Function(Operand):
+    def __init__(self,name:str,children:list[Operand]=[],function=None):
+        Operand.__init__(self,name,children)
+        self._function = function
 
-class ContextFunctionEvaluator(Evaluator):
-    def eval(self,operand):  
+    @property
+    def value(self):       
+        values= []
+        for p in self._children:
+            values.append(p.value)
+        return self._function(*values)
+
+class Operator(Function):pass
+
+
+class ArrowFunction(Function,ChildContextable):pass
+
+class ContextFunction(Operand):
+    @property
+    def value(self):  
         args=[] 
-        parent = operand.operands.pop(0)
+        parent = self._children.pop(0)
         value = parent.value
-        if isinstance(value,object) and hasattr(value, operand.name):
-            function=getattr(value, operand.name)
-            for p in operand.operands:
+        if isinstance(value,object) and hasattr(value, self._name):
+            function=getattr(value, self._name)
+            for p in self._children:
                 args.append(p.value)
             return function(*args)     
         else:    
-            raise ExpressionError('function: '+operand.name +' not found in '+parent.name)
+            raise ExpressionError('function: '+self._name +' not found in '+parent.name)
 
-class BlockEvaluator(Evaluator):
-    def eval(self,operand):        
-        for p in operand.operands:
+class Block(Operand):
+    @property
+    def value(self):         
+        for p in self._children:
             p.value
                 
-class IfEvaluator(Evaluator):
-    def eval(self,operand):         
-        if operand.operands[0].value:
-           operand.operands[1].value
-        elif len(operand.operands) > 2 and operand.operands[2] is not None:       
-            operand.operands[2].value
+class If(Operand):
+    @property
+    def value(self):         
+        if self._children[0].value:
+           self._children[1].value
+        elif len(self._children) > 2 and self._children[2] is not None:       
+            self._children[2].value
          
-class WhileEvaluator(Evaluator):
-    def eval(self,operand):
-        while operand.operands[0].value:
-           operand.operands[1].value
+class While(Operand):
+    @property
+    def value(self):
+        while self._children[0].value:
+           self._children[1].value

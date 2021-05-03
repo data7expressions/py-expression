@@ -51,25 +51,25 @@ class CoreLib(Library):
         self.addOperator('>=','comparison',self.Operators.greaterThanOrEqual,3)
         self.addOperator('<=','comparison',self.Operators.lessThanOrEqual,3)
 
-        self.addOperator('&&','logical',self.Operators._and,2,self.AndEvaluator())
-        self.addOperator('||','logical',self.Operators._or,2,self.OrEvaluator())
+        self.addOperator('&&','logical',self.Operators._and,2,self.And)
+        self.addOperator('||','logical',self.Operators._or,2,self.Or)
         self.addOperator('!','logical',self.Operators._not,4)
 
         self.addOperator('[]','list',self.Operators.item)
         
-        self.addOperator('=','assignment',self.Operators.assigment,1,self.AssigmentEvaluator())
-        self.addOperator('+=','assignment',self.Operators.assigmentAddition,1,self.AssigmentEvaluator(self.Operators.addition))
-        self.addOperator('-=','assignment',self.Operators.assigmentSubtraction,1,self.AssigmentEvaluator(self.Operators.subtraction))
-        self.addOperator('*=','assignment',self.Operators.assigmentMultiplication,1,self.AssigmentEvaluator(self.Operators.multiplication))
-        self.addOperator('/=','assignment',self.Operators.assigmentDivision,1,self.AssigmentEvaluator(self.Operators.division))
-        self.addOperator('**=','assignment',self.Operators.assigmentExponentiation,1,self.AssigmentEvaluator(self.Operators.exponentiation))
-        self.addOperator('//=','assignment',self.Operators.assigmentFloorDivision,1,self.AssigmentEvaluator(self.Operators.floorDivision))
-        self.addOperator('%=','assignment',self.Operators.assigmentMod,1,self.AssigmentEvaluator(self.Operators.mod))
-        self.addOperator('&=','assignment',self.Operators.assigmentBitAnd,1,self.AssigmentEvaluator(self.Operators.bitAnd))
-        self.addOperator('|=','assignment',self.Operators.assigmentBitOr,1,self.AssigmentEvaluator(self.Operators.bitOr))
-        self.addOperator('^=','assignment',self.Operators.assigmentBitXor,1,self.AssigmentEvaluator(self.Operators.bitXor))
-        self.addOperator('<<=','assignment',self.Operators.assigmentLeftShift,1,self.AssigmentEvaluator(self.Operators.leftShift))
-        self.addOperator('>>=','assignment',self.Operators.assigmentRightShift,1,self.AssigmentEvaluator(self.Operators.rightShift))        
+        self.addOperator('=','assignment',self.Operators.assigment,1,self.Assigment)
+        self.addOperator('+=','assignment',self.Operators.assigmentAddition,1,self.Assigment,self.Operators.addition)
+        self.addOperator('-=','assignment',self.Operators.assigmentSubtraction,1,self.Assigment,self.Operators.subtraction)
+        self.addOperator('*=','assignment',self.Operators.assigmentMultiplication,1,self.Assigment,self.Operators.multiplication)
+        self.addOperator('/=','assignment',self.Operators.assigmentDivision,1,self.Assigment,self.Operators.division)
+        self.addOperator('**=','assignment',self.Operators.assigmentExponentiation,1,self.Assigment,self.Operators.exponentiation)
+        self.addOperator('//=','assignment',self.Operators.assigmentFloorDivision,1,self.Assigment,self.Operators.floorDivision)
+        self.addOperator('%=','assignment',self.Operators.assigmentMod,1,self.Assigment,self.Operators.mod)
+        self.addOperator('&=','assignment',self.Operators.assigmentBitAnd,1,self.Assigment,self.Operators.bitAnd)
+        self.addOperator('|=','assignment',self.Operators.assigmentBitOr,1,self.Assigment,self.Operators.bitOr)
+        self.addOperator('^=','assignment',self.Operators.assigmentBitXor,1,self.Assigment,self.Operators.bitXor)
+        self.addOperator('<<=','assignment',self.Operators.assigmentLeftShift,1,self.Assigment,self.Operators.leftShift)
+        self.addOperator('>>=','assignment',self.Operators.assigmentRightShift,1,self.Assigment,self.Operators.rightShift)        
 
     def generalFunctions(self):
         self.addFunction('nvl',self.General.nvl )
@@ -172,16 +172,16 @@ class CoreLib(Library):
         self.addFunction('pathJoin',self.IO.pathJoin)
 
     def arrayFunctions(self): 
-        self.addFunction('foreach',self.Array.foreach,self.ArrayForeachEvaluator(),True)
-        self.addFunction('map',self.Array.map,self.ArrayMapEvaluator(),True)
-        self.addFunction('filter',self.Array.filter,self.ArrayFilterEvaluator(),True)
-        self.addFunction('reverse',self.Array.reverse,self.ArrayReverseEvaluator(),True)
-        self.addFunction('first',self.Array.first,self.ArrayFirstEvaluator(),True)
-        self.addFunction('last',self.Array.last,self.ArrayLastEvaluator(),True)
-        self.addFunction('sort',self.Array.sort,self.ArraySortEvaluator(),True)
-        self.addFunction('push',self.Array.push,self.ArrayPushEvaluator())
-        self.addFunction('pop',self.Array.pop,self.ArrayPopEvaluator())
-        self.addFunction('remove',self.Array.remove,self.ArrayRemoveEvaluator())
+        self.addFunction('foreach',self.Array.foreach,self.ArrayForeach,True)
+        self.addFunction('map',self.Array.map,self.ArrayMap,True)
+        self.addFunction('filter',self.Array.filter,self.ArrayFilter,True)
+        self.addFunction('reverse',self.Array.reverse,self.ArrayReverse,True)
+        self.addFunction('first',self.Array.first,self.ArrayFirst,True)
+        self.addFunction('last',self.Array.last,self.ArrayLast,True)
+        self.addFunction('sort',self.Array.sort,self.ArraySort,True)
+        self.addFunction('push',self.Array.push,self.ArrayPush)
+        self.addFunction('pop',self.Array.pop,self.ArrayPop)
+        self.addFunction('remove',self.Array.remove,self.ArrayRemove)
 
     class Operators():
         @staticmethod
@@ -289,24 +289,27 @@ class CoreLib(Library):
         def item(list:list[any],index:int):
             return list[index]
 
-    class AndEvaluator(Evaluator):
-        def eval(self,operand):
-            if not operand.operands[0].value : return False
-            return operand.operands[1].value
+    class And(Operator):
+        @property
+        def value(self):
+            if not self._children[0].value : return False
+            return self._children[1].value
 
-    class OrEvaluator(Evaluator):
-        def eval(self,operand):
-            if operand.value : return True
-            return operand.value
+    class Or(Operator):
+        @property
+        def value(self): 
+            if self._children[0].value : return True
+            return self._children[1].value
 
-    class AssigmentEvaluator(FunctionEvaluator):
-        def eval(self,operand):
-            if self.function is None:
-                operand.operands[0].value = operand.operands[1].value
-                return operand.operands[0].value
+    class Assigment(Operator):
+        @property
+        def value(self):
+            if self._function is None:
+                self._children[0].value = self._children[1].value
+                return self._children[0].value
             else:
-                operand.operands[0].value= self.function(operand.operands[0].value,operand.operands[1].value)
-                return operand.operands[0].value  
+                self._children[0].value= self._function(self._children[0].value,self._children[1].value)
+                return self._children[0].value  
 
     class General():
         @staticmethod
@@ -1003,44 +1006,48 @@ class CoreLib(Library):
         def remove(list:list[Operand],item:Operand): pass
 
     
-    class ArrayForeachEvaluator(Evaluator):   
-        def eval(self,operand):
-            list= operand.operands[0]
-            variable= operand.operands[1]
-            body= operand.operands[2]
+    class ArrayForeach(ArrowFunction):   
+        @property
+        def value(self):
+            list= self._children[0]
+            variable= self._children[1]
+            body= self._children[2]
             for p in list.value:
                 variable.value = p
                 # operand.context.init(operand.varName,p)
                 body.value
 
-    class ArrayMapEvaluator(Evaluator):
-        def eval(self,operand):
+    class ArrayMap(ArrowFunction):
+        @property
+        def value(self):
             result=[]
-            list= operand.operands[0]
-            variable= operand.operands[1]
-            body= operand.operands[2]
+            list= self._children[0]
+            variable= self._children[1]
+            body= self._children[2]
             for p in list.value:
                 # operand.context.init(operand.varName,p)
                 variable.value = p
                 result.append(body.value)
             return result
             
-    class ArrayFirstEvaluator(Evaluator):
-        def eval(self,operand):
-            list= operand.operands[0]
-            variable= operand.operands[1]
-            body= operand.operands[2]
+    class ArrayFirst(ArrowFunction):
+        @property
+        def value(self):
+            list= self._children[0]
+            variable= self._children[1]
+            body= self._children[2]
             for p in list.value:
                 # operand.context.init(operand.varName,p)
                 variable.value = p
                 if body.value : return p
             return None
 
-    class ArrayLastEvaluator(Evaluator):
-        def eval(self,operand):
-            list= operand.operands[0]
-            variable= operand.operands[1]
-            body= operand.operands[2]
+    class ArrayLast(ArrowFunction):
+        @property
+        def value(self):
+            list= self._children[0]
+            variable= self._children[1]
+            body= self._children[2]
             value = list.value
             value.reverse()
             for p in value:
@@ -1049,30 +1056,32 @@ class CoreLib(Library):
                 if body.value : return p
             return None 
 
-    class ArrayFilterEvaluator(Evaluator):
-        def eval(self,operand):
+    class ArrayFilter(ArrowFunction):
+        @property
+        def value(self):
             result=[]
-            list= operand.operands[0]
-            variable= operand.operands[1]
-            body= operand.operands[2]
+            list= self._children[0]
+            variable= self._children[1]
+            body= self._children[2]
             for p in list.value:
                 # operand.context.init(operand.varName,p)
                 variable.value = p
                 if body.value: result.append(p)
             return result  
 
-    class ArrayReverseEvaluator(Evaluator):
-        def eval(self,operand):
-            if len(operand.operands)==1:
-                list= operand.operands[0]
+    class ArrayReverse(ArrowFunction):
+        @property
+        def value(self):
+            if len(self._children)==1:
+                list= self._children[0]
                 value = list.value
                 value.reverse()
                 return value
             else:
                 result=[]
-                list= operand.operands[0]
-                variable= operand.operands[1]
-                method= operand.operands[2]
+                list= self._children[0]
+                variable= self._children[1]
+                method= self._children[2]
                 for p in list.value:
                     # operand.context.init(operand.varName,p)
                     variable.value = p
@@ -1081,18 +1090,19 @@ class CoreLib(Library):
                 result.reverse()    
                 return map(lambda p: p['p'],result)
 
-    class ArraySortEvaluator(Evaluator):
-        def eval(self,operand):
-            if len(operand.operands)==1:
-                list= operand.operands[0]
+    class ArraySort(ArrowFunction):
+        @property
+        def value(self):
+            if len(self._children)==1:
+                list= self._children[0]
                 value = list.value
                 value.reverse()
                 return value
             else:
                 result=[]
-                list= operand.operands[0]
-                variable= operand.operands[1]
-                method= operand.operands[2]
+                list= self._children[0]
+                variable= self._children[1]
+                method= self._children[2]
                 for p in list.value:
                     # operand.context.init(operand.varName,p)
                     variable.value = p
@@ -1100,28 +1110,31 @@ class CoreLib(Library):
                 result.sort((lambda p: p['ord']))
                 return map(lambda p: p['p'],result)
                 
-    class ArrayPushEvaluator(Evaluator):
-        def eval(self,operand):       
-            list= operand.operands[0]
-            elemnent= operand.operands[1]
+    class ArrayPush(ArrowFunction):
+        @property
+        def value(self):       
+            list= self._children[0]
+            elemnent= self._children[1]
             value = list.value
             value.append(elemnent)
             return value
 
-    class ArrayPopEvaluator(Evaluator):
-        def eval(self,operand):         
-            list= operand.operands[0]
+    class ArrayPop(ArrowFunction):
+        @property
+        def value(self):         
+            list= self._children[0]
             index =None
-            if len(operand.operands)>1:
-                index= operand.operands[1].value
+            if len(self._children)>1:
+                index= self._children[1].value
             else:
-                index = len(operand.operands) -1        
+                index = len(self._children) -1        
             return list.value.pop(index)
 
-    class ArrayRemoveEvaluator(Evaluator):
-        def eval(self,operand):        
-            list= operand.operands[0]
-            element= operand.operands[1]
+    class ArrayRemove(ArrowFunction):
+        @property
+        def value(self):        
+            list= self._children[0]
+            element= self._children[1]
             list.value.remove(element.value)
 
     
