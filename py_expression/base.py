@@ -324,7 +324,7 @@ class Operator(Operand):pass
 class Function(Operand):pass
 class ArrowFunctions(Operand,ChildContextable):
     def __init__(self,name,operands=[]):
-      Operand.__init__(self,name,operands) 
+      Operand.__init__(self,name,operands)
 
 class ChildFunction(Operand):pass
 class Block(Operand):pass
@@ -359,7 +359,7 @@ class ArrayEvaluator(Evaluator):
             list.append(p.value)
         return list 
 
-class ObjectEvaluator(Operand):
+class ObjectEvaluator(Evaluator):
     def eval(self,operand):
         dic= {}
         for p in operand.operands:
@@ -367,7 +367,7 @@ class ObjectEvaluator(Operand):
         return dic
 
 class FunctionEvaluator(Evaluator):
-    def __init__(self,function):
+    def __init__(self,function=None):
       super(FunctionEvaluator,self).__init__()         
       self.function = function
        

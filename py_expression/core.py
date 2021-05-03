@@ -71,14 +71,14 @@ class ModelManager():
         elif isinstance(operand,Object):
             return ObjectEvaluator()
         elif isinstance(operand,Operator):
-            return self._modelManager.getOperatorEvaluator(operand.name,len(operand.operands))
+            return self.getOperatorEvaluator(operand.name,len(operand.operands))
         elif isinstance(operand,Function):
-            return self._modelManager.getFunctionEvaluator(operand.name)
+            return self.getFunctionEvaluator(operand.name)
         elif isinstance(operand,ArrowFunctions):
-            return self._modelManager.getFunctionEvaluator(operand.name)
+            return self.getFunctionEvaluator(operand.name)
         elif isinstance(operand,ChildFunction):
             if operand.name in self.model.functions:
-                return self._modelManager.getFunctionEvaluator(operand.name)
+                return self.getFunctionEvaluator(operand.name)
             else:
                return  ContextFunctionEvaluator()
         elif isinstance(operand,Block):
@@ -216,9 +216,10 @@ class Exp(metaclass=Singleton):
         try:            
             parser = Parser(self,self.minify(expression))
             operand= parser.parse() 
-            del parser
-            self.setParent(operand)
+            del parser            
             self.setEvaluator(operand)
+            operand =self.reduce(operand)
+            self.setParent(operand)
             return operand  
         except Exception as error:
             raise ExpressionError('expression: '+expression+' error: '+str(error))
@@ -234,7 +235,24 @@ class Exp(metaclass=Singleton):
         operand.debug(token,0)
 
 
-
+    def reduce(self,operand:Operand):
+        """ if all the operands are constant, reduce the expression a constant """
+        # if len(operand.operands)>0:
+        if isinstance(operand,Operator):        
+            allConstants=True              
+            for p in operand.operands:
+                if not isinstance(p,Constant):
+                    allConstants=False
+                    break
+            if  allConstants:
+                value = operand.value                
+                constant= Constant(value,[])
+                constant.evaluator= self._modelManager.getOperandEvaluator(constant)
+                return constant
+            else:
+                for i, p in enumerate(operand.operands):
+                   operand.operands[i]=self.reduce(p)
+        return operand   
    
     def getOperandByPath(self,operand:Operand,path)->Operand:
         search = operand
@@ -267,7 +285,22 @@ class Exp(metaclass=Singleton):
         for p in operand.operands:
             self.setContext(p,current)   
 
-    def getVars(self,operand:Operand)->dict:
+    def serialize(self,operand:Operand)-> dict:        
+        if len(operand.operands)==0:return {'n':operand.name,'t':type(operand).__name__}
+        children = []                
+        for p in operand.operands:
+            children.append(self.serialize(p))
+        return {'n':operand.name,'t':type(operand).__name__,'c':children}     
+
+    def deserialize(self,serialized:dict)-> Operand:
+        children = []
+        if 'c' in serialized:
+            for p in serialized['c']:
+                children.append(self.deserialize(p))
+        return  eval(serialized['t'])(serialized['n'],children,self) 
+ 
+
+    def vars(self,operand:Operand)->dict:
         self.setParent(operand)
         return self._getVars(operand)        
 
@@ -310,7 +343,7 @@ class Exp(metaclass=Singleton):
             metadata =self._modelManager.getFunctionMetadata(name)
             return metadata['args'][index]['type'] 
 
-    def getConstants(self,operand:Operand)->dict:
+    def constants(self,operand:Operand)->dict:
         list = {}
         if isinstance(operand,Constant):
             list[operand.value] = operand.type
@@ -318,11 +351,11 @@ class Exp(metaclass=Singleton):
             if isinstance(p,Constant):
                 list[p.value] = p.type
             elif len(p.operands)>0:
-                subList= self.getConstants(p)
+                subList= self.constants(p)
                 list = {**list, **subList}
         return list
     
-    def getOperators(self,operand:Operand)->dict:
+    def operators(self,operand:Operand)->dict:
         list = {}
         if isinstance(operand,Operator):
             metadata = self._modelManager.getOperatorMetadata(operand.name,len(operand.operands)) 
@@ -332,11 +365,11 @@ class Exp(metaclass=Singleton):
                 metadata = self._modelManager.getOperatorMetadata(p.name,len(p.operands)); 
                 list[p.name] =  metadata['category']
             elif len(p.operands)>0:
-                subList= self.getOperators(p)
+                subList= self.operators(p)
                 list = {**list, **subList}
         return list
 
-    def getFunctions(self,operand:Operand)->dict:
+    def functions(self,operand:Operand)->dict:
         list = {}
         if isinstance(operand,Function):
             list[operand.name] = {}
@@ -344,27 +377,14 @@ class Exp(metaclass=Singleton):
             if isinstance(p,Function):
                 list[p.name] = {}
             elif len(p.operands)>0:
-                subList= self.getFunctions(p)
+                subList= self.functions(p)
                 list = {**list, **subList}
 
         for key in list:
             list[key] = self._modelManager.model.functions[key]
         return list
 
-    def serialize(self,operand:Operand)-> dict:        
-        if len(operand.operands)==0:return {'n':operand.name,'t':type(operand).__name__}
-        children = []                
-        for p in operand.operands:
-            children.append(self.serialize(p))
-        return {'n':operand.name,'t':type(operand).__name__,'c':children}     
 
-    def deserialize(self,serialized:dict)-> Operand:
-        children = []
-        if 'c' in serialized:
-            for p in serialized['c']:
-                children.append(self.deserialize(p))
-        return  eval(serialized['t'])(serialized['n'],children,self) 
- 
  
 class Parser():
     def __init__(self,mgr,expression):
@@ -423,17 +443,8 @@ class Parser():
                 isbreak= True
                 break
         if not isbreak: expression=Operator(operator,[operand1,operand2])
-        # if all the operands are constant, reduce the expression a constant 
-        if expression is not None and len(expression.operands)>0:    
-            allConstants=True              
-            for p in expression.operands:
-                if type(p).__name__ !=  'Constant':
-                    allConstants=False
-                    break
-            if  allConstants:
-                value = expression.value                
-                return Constant(value,[])
-        return expression             
+        return expression  
+                 
 
     def getOperand(self):        
         isNegative=False
@@ -647,11 +658,16 @@ class Parser():
 
     def getChildFunction(self,name,parent):        
         if name in self.mgr.arrowFunction:
-            name= self.getValue()
-            if self.current==':':self.index+=1
-            else:raise ExpressionError('map without body')
-            body= self.getExpression(_break=')')
-            return ArrowFunctions(name,[parent,body],self.mgr)        
+            variableName= self.getValue()
+            if variableName=='' and self.current==')':
+                self.index+=1
+                return ArrowFunctions(name,[parent]) 
+            else:    
+                if self.current==':':self.index+=1
+                else:raise ExpressionError('map without body')
+                variable= Variable(variableName)
+                body= self.getExpression(_break=')')
+                return ArrowFunctions(name,[parent,variable,body])        
         else: 
             args=  self.getArgs(end=')')
             args.insert(0,parent)

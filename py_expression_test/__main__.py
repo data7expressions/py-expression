@@ -94,9 +94,8 @@ class TestExpression(unittest.TestCase):
         text='a=4; '\
              'b=a+2; '\
             ' output=a*b; ' 
-        expression = exp.parse(text)
         context = {}
-        expression.eval(context)
+        exp.solve(text,context)
         self.assertEqual(context['output'],24)
 
     def test_blockControl(self):        
@@ -125,9 +124,8 @@ class TestExpression(unittest.TestCase):
         text = ('rectangle = {"x":50,"y":50,"width":80,"height":60}; '
                'sleepSecs = 1;'
                'source=nvl(source,"data/source.jpg");')
-        expression = exp.parse(text)
         context = {}
-        result= expression.eval(context)
+        result= exp.solve(text,context)
         self.assertEqual(context['rectangle']['x'],50)
 
     def test_lambdaFunctions(self):            
@@ -150,20 +148,20 @@ class TestExpression(unittest.TestCase):
 
     def test_info(self):
         op = exp.parse('strCount("expression","e")>= a+1')
-        self.assertEqual(op.vars(),{'a': 'any'})
-        self.assertEqual(op.constants(),{'expression': 'str', 'e': 'str', 1: 'int'})
-        self.assertEqual(op.operators(),{'>=': 'comparison', '+': 'arithmetic'})
-        self.assertEqual(op.functions()['strCount']['signature'] ,'(self:str,x:str,start:int=None,end:int=None)->int' )  
+        self.assertEqual(exp.vars(op),{'a': 'any'})
+        self.assertEqual(exp.constants(op),{'expression': 'str', 'e': 'str', 1: 'int'})
+        self.assertEqual(exp.operators(op),{'>=': 'comparison', '+': 'arithmetic'})
+        self.assertEqual(exp.functions(op)['strCount']['signature'] ,'(self:str,x:str,start:int=None,end:int=None)->int' )  
 
 
         op = exp.parse('a-1')
-        self.assertEqual(op.vars(), {'a': 'float'})
+        self.assertEqual(exp.vars(op), {'a': 'float'})
         op = exp.parse('a && true')
-        self.assertEqual(op.vars(), {'a': 'bool'})
+        self.assertEqual(exp.vars(op), {'a': 'bool'})
         op = exp.parse('a > 1')
-        self.assertEqual(op.vars(), {'a': 'int'})
+        self.assertEqual(exp.vars(op), {'a': 'int'})
         op = exp.parse('a > "a"')
-        self.assertEqual(op.vars(), {'a': 'str'})
+        self.assertEqual(exp.vars(op), {'a': 'str'})
 
     # def test_serialize(self): 
     #     operand =exp.parse(('i=0;'
@@ -179,6 +177,22 @@ class TestExpression(unittest.TestCase):
     #     self.assertEqual(context['output'],12) 
 
 
+
+# text = ('rectangle = {"x":50,"y":50,"width":80,"height":60}; '
+#         'sleepSecs = 1;'
+#         'source=nvl(source,"data/source.jpg");')
+# context = {}
+# result= exp.solve(text,context)
+# print(context['rectangle']['x'])
+
+# context = {"a":[1,2,3],"b":0}
+# exp.solve('a.foreach(p:b=b+p)',context)
+# print(context['b']) 
+
+# context = {"a":[1,2,3,4,5],"b":0}
+# print(exp.solve('a.filter(p: p>1 && p<5).reverse()',context))
+unittest.main()
+
 # operand =exp.parse(('i=0;'
 #             'while(i<=6){'
 #             '  output=i*2;'
@@ -191,7 +205,7 @@ class TestExpression(unittest.TestCase):
 # exp.eval(operand2,context)
 # self.assertEqual(context['output'],12) 
 
-unittest.main()
+
 
 # op = exp.parse('"expression".count("e")>= a+1')
 # print(op.vars())

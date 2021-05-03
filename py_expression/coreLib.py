@@ -20,6 +20,7 @@ class CoreLib(Library):
        self.mathFunctions()
        self.datetimeFunctions()
        self.ioFunctions()
+       self.arrayFunctions()
 
     def initEnums(self): 
         self.addEnum('DayOfWeek',{"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":0}) 
@@ -1004,65 +1005,77 @@ class CoreLib(Library):
     
     class ArrayForeachEvaluator(Evaluator):   
         def eval(self,operand):
-            variable= operand.operands[0]
-            body= operand.operands[1]
-            for p in variable.value:
-                operand.context.init(operand.name,p)
+            list= operand.operands[0]
+            variable= operand.operands[1]
+            body= operand.operands[2]
+            for p in list.value:
+                variable.value = p
+                # operand.context.init(operand.varName,p)
                 body.value
 
     class ArrayMapEvaluator(Evaluator):
         def eval(self,operand):
             result=[]
-            variable= operand.operands[0]
-            body= operand.operands[1]
-            for p in variable.value:
-                operand.context.init(operand.name,p)
+            list= operand.operands[0]
+            variable= operand.operands[1]
+            body= operand.operands[2]
+            for p in list.value:
+                # operand.context.init(operand.varName,p)
+                variable.value = p
                 result.append(body.value)
             return result
             
     class ArrayFirstEvaluator(Evaluator):
         def eval(self,operand):
-            variable= operand.operands[0]
-            body= operand.operands[1]
-            for p in variable.value:
-                operand.context.init(operand.name,p)
+            list= operand.operands[0]
+            variable= operand.operands[1]
+            body= operand.operands[2]
+            for p in list.value:
+                # operand.context.init(operand.varName,p)
+                variable.value = p
                 if body.value : return p
             return None
 
     class ArrayLastEvaluator(Evaluator):
         def eval(self,operand):
-            variable= operand.operands[0]
-            body= operand.operands[1]
-            value = variable.value
+            list= operand.operands[0]
+            variable= operand.operands[1]
+            body= operand.operands[2]
+            value = list.value
             value.reverse()
             for p in value:
-                operand.context.init(operand.name,p)
+                # operand.context.init(operand.varName,p)
+                variable.value = p
                 if body.value : return p
             return None 
 
     class ArrayFilterEvaluator(Evaluator):
         def eval(self,operand):
             result=[]
-            variable= operand.operands[0]
-            body= operand.operands[1]
-            for p in variable.value:
-                operand.context.init(operand.name,p)
+            list= operand.operands[0]
+            variable= operand.operands[1]
+            body= operand.operands[2]
+            for p in list.value:
+                # operand.context.init(operand.varName,p)
+                variable.value = p
                 if body.value: result.append(p)
             return result  
 
     class ArrayReverseEvaluator(Evaluator):
         def eval(self,operand):
             if len(operand.operands)==1:
-                variable= operand.operands[0]
-                value = variable.value
+                list= operand.operands[0]
+                value = list.value
                 value.reverse()
                 return value
             else:
                 result=[]
-                variable= operand.operands[0]
-                method= operand.operands[1]
-                for p in variable.value:
-                    operand.context.init(operand.name,p)
+                list= operand.operands[0]
+                variable= operand.operands[1]
+                method= operand.operands[2]
+                for p in list.value:
+                    # operand.context.init(operand.varName,p)
+                    variable.value = p
                     result.append({'ord':method.value,'p':p})
                 result.sort((lambda p: p['ord']))
                 result.reverse()    
@@ -1071,42 +1084,44 @@ class CoreLib(Library):
     class ArraySortEvaluator(Evaluator):
         def eval(self,operand):
             if len(operand.operands)==1:
-                variable= operand.operands[0]
-                value = variable.value
+                list= operand.operands[0]
+                value = list.value
                 value.reverse()
                 return value
             else:
                 result=[]
-                variable= operand.operands[0]
-                method= operand.operands[1]
-                for p in variable.value:
-                    operand.context.init(operand.name,p)
+                list= operand.operands[0]
+                variable= operand.operands[1]
+                method= operand.operands[2]
+                for p in list.value:
+                    # operand.context.init(operand.varName,p)
+                    variable.value = p
                     result.append({'ord':method.value,'p':p})
                 result.sort((lambda p: p['ord']))
                 return map(lambda p: p['p'],result)
                 
     class ArrayPushEvaluator(Evaluator):
         def eval(self,operand):       
-            variable= operand.operands[0]
+            list= operand.operands[0]
             elemnent= operand.operands[1]
-            value = variable.value
+            value = list.value
             value.append(elemnent)
             return value
 
     class ArrayPopEvaluator(Evaluator):
         def eval(self,operand):         
-            variable= operand.operands[0]
+            list= operand.operands[0]
             index =None
             if len(operand.operands)>1:
                 index= operand.operands[1].value
             else:
                 index = len(operand.operands) -1        
-            return variable.value.pop(index)
+            return list.value.pop(index)
 
     class ArrayRemoveEvaluator(Evaluator):
         def eval(self,operand):        
-            variable= operand.operands[0]
+            list= operand.operands[0]
             element= operand.operands[1]
-            variable.value.remove(element.value)
+            list.value.remove(element.value)
 
     
