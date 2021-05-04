@@ -291,9 +291,6 @@ class SourceManager():
     #         search = search.children[p]
     #     return search    
         
-   
-      
-
 class NodeManager():
     def __init__(self,model):
        self._model = model    
@@ -402,10 +399,10 @@ class NodeManager():
 # Facade   
 class Exp(metaclass=Singleton):
     def __init__(self):
-       self.model = Model() 
-       self.sourceManager = SourceManager(self.model)
+       self.model = Model()
        self.parser = Parser(self.model)
-       self.nodeManager = NodeManager(self.model)   
+       self.nodeManager = NodeManager(self.model)
+       self.sourceManager = SourceManager(self.model)   
        self.addLibrary(CoreLib())        
 
     def addLibrary(self,library):
@@ -855,7 +852,7 @@ class _Parser():
                 self.index+=1
                 return Node(name,'arrowFunction',[parent]) 
             else:    
-                if self.current==':':self.index+=1
+                if self.current=='=' and self.next == '>':self.index+=2
                 else:raise ExpressionError('map without body')
                 variable= Node(variableName,'variable')
                 body= self.getExpression(_break=')')

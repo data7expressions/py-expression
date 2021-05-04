@@ -126,23 +126,23 @@ class TestExpression(unittest.TestCase):
         exp.run(text,context)
         self.assertEqual(context['rectangle']['x'],50)
 
-    def test_lambdaFunctions(self):            
+    def test_arrowFunctions(self):            
         context = {"a":[1,2,3],"b":0}
-        exp.run('a.foreach(p:b=b+p)',context)
+        exp.run('a.foreach(p=>b=b+p)',context)
         self.assertEqual(context['b'],6) 
         context = {"a":[1,2,3,4,5],"b":0}
-        exp.run('a.filter(p: p<5).foreach(p: b=b+p)',context)
+        exp.run('a.filter(p=> p<5).foreach(p=> b=b+p)',context)
         self.assertEqual(context['b'],10) 
         context = {"a":[1,2,3,4,5],"b":0}
-        self.assertEqual(exp.run('a.first(p: p%2==0)',context),2) 
+        self.assertEqual(exp.run('a.first(p=> p%2==0)',context),2) 
         context = {"a":[1,2,3,4,5],"b":0}
-        self.assertEqual(exp.run('a.last(p: p%2==0)',context),4) 
+        self.assertEqual(exp.run('a.last(p=> p%2==0)',context),4) 
         context = {"a":[1,2,3,4,5],"b":0}
-        self.assertEqual(exp.run('a.filter(p: p>1 && p<5).map(p: p*2)',context),[4,6,8])
+        self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).map(p=> p*2)',context),[4,6,8])
         context = {"a":[1,2,3,4,5],"b":0}
-        self.assertEqual(exp.run('a.filter(p: p>1 && p<5).reverse()',context),[4,3,2])
+        self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).reverse()',context),[4,3,2])
         # context = {"a":[1,2,3,4,5],"b":0}
-        # self.assertEqual(exp.run('a.filter(p: p>1 && p<5).map(p: p*2).reverse()',context),[8,6,4])
+        # self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).map(p=> p*2).reverse()',context),[8,6,4])
 
     def test_info(self):
         node = exp.parse('strCount("expression","e")>= a+1')
