@@ -379,9 +379,9 @@ class Object(Operand):
             dic[p.name]=p.value
         return dic
 
-class Function(Operand):
+class Operator(Operand):
     def __init__(self,name:str,children:list[Operand]=[],function=None):
-        Operand.__init__(self,name,children)
+        super(Operator,self).__init__(name,children) 
         self._function = function
 
     @property
@@ -391,12 +391,21 @@ class Function(Operand):
             values.append(p.value)
         return self._function(*values)
 
-class Operator(Function):pass
+class Function(Operand):
+    def __init__(self,name:str,children:list[Operand]=[],function=None):
+        super(Function,self).__init__(name,children) 
+        self._function = function
 
+    @property
+    def value(self):       
+        values= []
+        for p in self._children:
+            values.append(p.value)
+        return self._function(*values)
 
 class ArrowFunction(Function,ChildContextable):pass
 
-class ContextFunction(Operand):
+class ContextFunction(Function):
     @property
     def value(self):  
         args=[] 

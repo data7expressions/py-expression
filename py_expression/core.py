@@ -117,7 +117,7 @@ class SourceManager():
                     return implementation['custom'](node.name,children) 
                 else:
                     function= implementation['function']
-                    return Function(node,children,function)
+                    return Function(node.name,children,function)
             return None
         except:
             raise ModelError('error with function: '+node.name) 
@@ -386,25 +386,39 @@ class Exp(metaclass=Singleton):
                result.append(p)
         return result
     
-    def solve(self,expression:str,context:dict={})-> any :
-        node=self.parse(expression)
-        operand=self.compile(node)
-        return self.run(operand,context)
-
-    def parse(self,expression)->Node:
+    def parse(self,expression:str)->Node:
         try:  
             return self.parser.parse(self.minify(expression))
         except Exception as error:
             raise ExpressionError('expression: '+expression+' error: '+str(error))
 
-    def compile(self,node:Node)->Operand:
-        try: 
+    def compile(self,value)->Operand:
+        try:
+            node=None
+            if isinstance(value,Node):
+                node=value                
+            elif isinstance(value,str):
+                node = self.parser.parse(self.minify(value))
+            else:
+               raise ExpressionError('not possible to compile')      
+
             return self.sourceManager.compile(node)
         except Exception as error:
             raise ExpressionError('node: '+node.name+' error: '+str(error))  
 
-    def run(self,operand:Operand,context:dict={})-> any : 
-        try: 
+    def run(self,value,context:dict={})-> any : 
+        try:
+            operand=None
+            if isinstance(value,Operand):
+                operand=value
+            elif isinstance(value,Node):                
+                operand =self.sourceManager.compile(value)                   
+            elif isinstance(value,str):
+                node = self.parser.parse(self.minify(value))
+                operand =self.sourceManager.compile(node) 
+            else:
+               raise ExpressionError('not possible to run')  
+
             return self.sourceManager.run(operand,context)
         except Exception as error:
             raise ExpressionError('operand: '+operand.name+' error: '+str(error))               
