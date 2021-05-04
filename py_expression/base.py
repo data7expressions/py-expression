@@ -294,7 +294,6 @@ class Node():
     def __imod__(self, other):return Node('%=','operator',[other,self])
     def __ipow__(self, other):return Node('**=','operator',[other,self])   
 
-    
 
 class Operand():
     def __init__(self,name:str,children:list['Operand']=[]):
@@ -329,8 +328,34 @@ class Operand():
         return self._children 
 
     @property
-    def value(self): 
-        pass
+    def value(self): pass
+    @value.setter
+    def value(self,value):pass
+
+class Debug():
+    def __init__(self,operand:Operand,children:list['Debug']=[]):
+        self.operand = operand
+        self.children  = children   
+
+    def debug(self,token:Token,level): 
+        if len(token.path) <= level:
+            if len(self.children)== 0:
+                token.value= self.operand.value
+            else:
+                token.path.append(0)
+                self.children[0].debug(token,level+1)   
+        else:
+            idx = token.path[level]
+            # si es el anteultimo nodo 
+            if len(token.path) -1 == level:           
+                if len(self.children) > idx+1:
+                   token.path[level] = idx+1
+                   self.children[idx+1].debug(token,level+1)
+                else:
+                   token.path.pop() 
+                   token.value= self.operand.value      
+            else:
+                self.children[idx].debug(token,level+1)  
 
 class Constant(Operand):
     def __init__(self,name,children=[]):
@@ -344,7 +369,6 @@ class Constant(Operand):
     def value(self): 
         return self._name 
 
-   
 class Variable(Operand,Contextable):
     def __init__(self,name:str,children:list[Operand]=[]):
         Operand.__init__(self,name,children)
@@ -356,7 +380,6 @@ class Variable(Operand,Contextable):
     def value(self,value):
         self.context.set(self._name,value) 
     
-
 class KeyValue(Operand):
 
     @property

@@ -234,11 +234,11 @@ class SourceManager():
             list[key] = self._model.functions[key]
         return list
       
-    def serialize(self,node:Node)-> dict:
+    def serialize(self,operand:Operand)-> dict:
         children = []                
-        for p in node.children:
+        for p in operand.children:
             children.append(self.serialize(p))
-        return {'n':node.name,'t':node.type,'c':children} 
+        return {'n':operand.name,'t':type(operand).__name__,'c':children} 
 
     def deserialize(self,serialized:dict)-> Operand:
         children = []
@@ -251,10 +251,18 @@ class SourceManager():
             p.index = i
         return operand   
 
-    # def debug(self,operand:Operand,token:Token,context:dict={}):
-    #     if context is not None:
-    #         self.setContext(operand,Context(context))
-    #     operand.debug(token,0)
+    def debug(self,operand:Operand,token:Token,context:dict={}):
+        if context is not None:
+            self.setContext(operand,Context(context))
+        _debug = self.toDebug(operand)    
+        _debug.debug(token,0)
+
+    def toDebug(self,operand:Operand)-> dict:
+        children = []                
+        for p in operand.children:
+            children.append(self.toDebug(p))
+        return Debug(operand,children)    
+        
 
     # def debug(self,token:Token,level): 
     #     if len(token.path) <= level:
