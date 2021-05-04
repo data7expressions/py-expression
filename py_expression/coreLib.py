@@ -1004,7 +1004,6 @@ class CoreLib(Library):
         def pop(list:list[Operand],item:Operand): pass
         @staticmethod
         def remove(list:list[Operand],item:Operand): pass
-
     
     class ArrayForeach(ArrowFunction):   
         @property
@@ -1014,7 +1013,6 @@ class CoreLib(Library):
             body= self._children[2]
             for p in list.value:
                 variable.value = p
-                # operand.context.init(operand.varName,p)
                 body.value
 
     class ArrayMap(ArrowFunction):
@@ -1025,7 +1023,6 @@ class CoreLib(Library):
             variable= self._children[1]
             body= self._children[2]
             for p in list.value:
-                # operand.context.init(operand.varName,p)
                 variable.value = p
                 result.append(body.value)
             return result
@@ -1037,7 +1034,6 @@ class CoreLib(Library):
             variable= self._children[1]
             body= self._children[2]
             for p in list.value:
-                # operand.context.init(operand.varName,p)
                 variable.value = p
                 if body.value : return p
             return None
@@ -1051,7 +1047,6 @@ class CoreLib(Library):
             value = list.value
             value.reverse()
             for p in value:
-                # operand.context.init(operand.varName,p)
                 variable.value = p
                 if body.value : return p
             return None 
@@ -1064,7 +1059,6 @@ class CoreLib(Library):
             variable= self._children[1]
             body= self._children[2]
             for p in list.value:
-                # operand.context.init(operand.varName,p)
                 variable.value = p
                 if body.value: result.append(p)
             return result  
@@ -1083,7 +1077,6 @@ class CoreLib(Library):
                 variable= self._children[1]
                 method= self._children[2]
                 for p in list.value:
-                    # operand.context.init(operand.varName,p)
                     variable.value = p
                     result.append({'ord':method.value,'p':p})
                 result.sort((lambda p: p['ord']))
@@ -1104,7 +1097,6 @@ class CoreLib(Library):
                 variable= self._children[1]
                 method= self._children[2]
                 for p in list.value:
-                    # operand.context.init(operand.varName,p)
                     variable.value = p
                     result.append({'ord':method.value,'p':p})
                 result.sort((lambda p: p['ord']))

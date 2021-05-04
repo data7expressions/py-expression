@@ -3,8 +3,6 @@ from py_expression.base import *
 from py_expression.core import Exp,Token
 from enum import Enum
 
-
-
 exp = Exp()
 
 class TestExpression(unittest.TestCase):
@@ -125,7 +123,7 @@ class TestExpression(unittest.TestCase):
                'sleepSecs = 1;'
                'source=nvl(source,"data/source.jpg");')
         context = {}
-        result= exp.run(text,context)
+        exp.run(text,context)
         self.assertEqual(context['rectangle']['x'],50)
 
     def test_lambdaFunctions(self):            
@@ -177,7 +175,6 @@ class TestExpression(unittest.TestCase):
         op  = exp.compile('a > "a"')
         self.assertEqual(exp.vars(op ), {'a': 'str'})
 
-
     def test_serialize(self): 
         node =exp.parse(('i=0;'
                  'while(i<=6){'
@@ -196,55 +193,6 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(context['output'],12) 
 
 unittest.main()
-
-
-# op = exp.parse('"expression".count("e")>= a+1')
-# print(op.vars())
-# print(op.constants())
-# print(op.operators())
-# print(op.functions())  
-
-# result = exp.run('nvl(a,b)',{"a":None,"b":2})
-# print(result)
-
-# text='a=4; '\
-#         'b=a+2; '\
-#     ' output=a*b; ' 
-# expression = exp.parse(text)
-# context = {}
-# expression.eval(context)
-# print(context['output'])
-
-# context = {"a":"1","b":2,"c":{"a":4,"b":5}}
-# exp.run('a=8',context)
-# print(context['a'])
-
-# context = {"a":[1,2,3,4,5],"b":0}
-# exp.run('a.filter(p:p<5).foreach(p: b=b+p)',context)
-# print(context['b'])
-
-# context = {"a":[1,2,3,4,5],"b":0}
-# print(exp.run('a.filter(p: p>1 && p<5).map(p: p*2)',context))
-
-# TODO: esta expression falla , hay que solucionarlo
-# context = {"a":[1,2,3,4,5],"b":0}
-# print(exp.run('a.filter(p: p>1 && p<5).map(p: p*2).reverse()',context))
-
-
-# operand =exp.parse(('i=0;'
-#                  'while(i<=6){'
-#                  '  output=i*2;'
-#                  '  i=i+1;'
-#                  '}'))
-
-# serialized = exp.serialize(operand)
-# print(serialized)
-# operand2= exp.deserialize(serialized)
-# context = {}
-# exp.eval(operand2,context)
-# print(context['output'])
-
-
 
 # operand=exp.parse('(a+1)*(a-1)')
 # context = {'a':3}
