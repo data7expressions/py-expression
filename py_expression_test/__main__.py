@@ -131,10 +131,10 @@ class TestExpression(unittest.TestCase):
         exp.run('a.foreach(p=>b=b+p)',context)
         self.assertEqual(context['b'],6) 
         context = {"a":[1,2,3,4,5],"b":0}
-        exp.run('a.filter(p=> p<5).foreach(p=> b=b+p)',context)
+        exp.run('a.filter(p=> p<5).foreach(p => b=b+p)',context)
         self.assertEqual(context['b'],10) 
         context = {"a":[1,2,3,4,5],"b":0}
-        self.assertEqual(exp.run('a.first(p=> p%2==0)',context),2) 
+        self.assertEqual(exp.run('a.first(p => p%2==0)',context),2) 
         context = {"a":[1,2,3,4,5],"b":0}
         self.assertEqual(exp.run('a.last(p=> p%2==0)',context),4) 
         context = {"a":[1,2,3,4,5],"b":0}
