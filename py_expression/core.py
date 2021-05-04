@@ -36,7 +36,7 @@ class SourceManager():
         for p in node.children:
             child = self.nodeToOperand(p)
             children.append(child)
-        operand = self.createOperand(node,children)
+        operand = self.createOperand(node.name,node.type,children)
         for i,p in enumerate(operand.children):
             p.parent = operand
             p.index = i
@@ -61,80 +61,79 @@ class SourceManager():
                    operand.children[i]=self.reduce(p)
         return operand  
 
-    def createOperand(self,node:Node,children:list[Operand])->Operand:
-
-        if node.type == 'constant':
-            return Constant(node.name,children)
-        elif node.type == 'variable':
-            return Variable(node.name,children)
-        elif node.type == 'keyValue':
-            return KeyValue(node.name,children)
-        elif node.type == 'array':
-            return Array(node.name,children)
-        elif node.type == 'object':
-            return Object(node.name,children)
-        elif node.type == 'operator':
-            return self.createOperator(node,children)
-        elif node.type == 'function':
-            return self.createFunction(node,children)
-        elif node.type == 'arrowFunction':
-            return self.createArrowFunction(node,children)
-        elif node.type == 'childFunction':
-            if node.name in self.model.functions:
-                return self.createFunction(node,children)
+    def createOperand(self,name:str,type:str,children:list[Operand])->Operand:
+        if type == 'constant':
+            return Constant(name,children)
+        elif type == 'variable':
+            return Variable(name,children)
+        elif type == 'keyValue':
+            return KeyValue(name,children)
+        elif type == 'array':
+            return Array(name,children)
+        elif type == 'object':
+            return Object(name,children)
+        elif type == 'operator':
+            return self.createOperator(name,children)
+        elif type == 'function':
+            return self.createFunction(name,children)
+        elif type == 'arrowFunction':
+            return self.createArrowFunction(name,children)
+        elif type == 'childFunction':
+            if name in self.model.functions:
+                return self.createFunction(name,children)
             else:
-               return ContextFunction(node.name,children)
-        elif node.type == 'block':
-            return  Block(node.name,children)
-        elif node.type == 'if':
-            return  If(node.name,children)
-        elif node.type == 'while':
-            return  While(node.name,children)
+               return ContextFunction(name,children)
+        elif type == 'block':
+            return  Block(name,children)
+        elif type == 'if':
+            return  If(name,children)
+        elif type == 'while':
+            return  While(name,children)
         else:
-            raise ExpressionError('node: '+node.name +' not supported') 
+            raise ExpressionError('node: '+name +' not supported') 
 
-    def createOperator(self,node:Node,children:list[Operand]):
+    def createOperator(self,name:str,children:list[Operand])->Operator:
         try:
-            cardinality =len(node.children)
-            metadata = self._model.getOperatorMetadata(node.name,cardinality)
+            cardinality =len(children)
+            metadata = self._model.getOperatorMetadata(name,cardinality)
             if metadata['lib'] in self._libraries:
-                implementation= self._libraries[metadata['lib']].operators[node.name][cardinality]
+                implementation= self._libraries[metadata['lib']].operators[name][cardinality]
                 if implementation['custom'] is not None:                    
-                    return implementation['custom'](node.name,children,implementation['customFunction']) 
+                    return implementation['custom'](name,children,implementation['customFunction']) 
                 else:
                     function= implementation['function']
-                    return Operator(node.name,children,function)
+                    return Operator(name,children,function)
             return None        
         except:
-            raise ModelError('error with operator: '+node.name)  
+            raise ModelError('error with operator: '+name)  
 
-    def createFunction(self,node:Node,children:list[Operand]):
+    def createFunction(self,name:str,children:list[Operand])->Function:
         try:            
-            metadata = self._model.getFunctionMetadata(node.name)
+            metadata = self._model.getFunctionMetadata(name)
             if metadata['lib'] in self._libraries:
-                implementation= self._libraries[metadata['lib']].functions[node.name]
+                implementation= self._libraries[metadata['lib']].functions[name]
                 if implementation['custom'] is not None:                   
-                    return implementation['custom'](node.name,children) 
+                    return implementation['custom'](name,children) 
                 else:
                     function= implementation['function']
-                    return Function(node.name,children,function)
+                    return Function(name,children,function)
             return None
         except:
-            raise ModelError('error with function: '+node.name) 
+            raise ModelError('error with function: '+name) 
 
-    def createArrowFunction(self,node:Node,children:list[Operand]):
+    def createArrowFunction(self,name:str,children:list[Operand]):
         try:            
-            metadata = self._model.getFunctionMetadata(node.name)
+            metadata = self._model.getFunctionMetadata(name)
             if metadata['lib'] in self._libraries:
-                implementation= self._libraries[metadata['lib']].functions[node.name]
+                implementation= self._libraries[metadata['lib']].functions[name]
                 if implementation['custom'] is not None:                    
-                    return implementation['custom'](node.name,children) 
+                    return implementation['custom'](name,children) 
                 else:
                     function= implementation['function']
-                    return ArrowFunction(node.name,children,function)
+                    return ArrowFunction(name,children,function)
             return None
         except:
-            raise ModelError('error with function: '+node.name)              
+            raise ModelError('error with function: '+name)              
 
     def compile(self,node:Node):
         operand =self.nodeToOperand(node)
@@ -157,45 +156,7 @@ class SourceManager():
         for p in operand.children:
             self.setContext(p,current) 
 
-    # def debug(self,operand:Operand,token:Token,context:dict={}):
-    #     if context is not None:
-    #         self.setContext(operand,Context(context))
-    #     operand.debug(token,0)
-
-    # def debug(self,token:Token,level): 
-    #     if len(token.path) <= level:
-    #         if len(self.children)== 0:
-    #             token.value= self.value 
-    #         else:
-    #             token.path.append(0)
-    #             self.children[0].debug(token,level+1)   
-    #     else:
-    #         idx = token.path[level]
-    #         # si es el anteultimo nodo 
-    #         if len(token.path) -1 == level:           
-    #             if len(self.children) > idx+1:
-    #                token.path[level] = idx+1
-    #                self.children[idx+1].debug(token,level+1)
-    #             else:
-    #                token.path.pop() 
-    #                token.value= self.value       
-    #         else:
-    #             self.children[idx].debug(token,level+1)  
-
-    # def getOperandByPath(self,operand:Operand,path)->Operand:
-    #     search = operand
-    #     for p in path:
-    #         if len(search.children) <= p:return None
-    #         search = search.children[p]
-    #     return search    
-        
-   
-      
-
-class OperandManager():
-    def __init__(self,model):
-       self._model = model         
-      
+         
     def vars(self,operand:Operand)->dict:
         list = {}
         if isinstance(operand,Variable):
@@ -272,7 +233,59 @@ class OperandManager():
         for key in list:
             list[key] = self._model.functions[key]
         return list
+      
+    def serialize(self,node:Node)-> dict:
+        children = []                
+        for p in node.children:
+            children.append(self.serialize(p))
+        return {'n':node.name,'t':node.type,'c':children} 
+
+    def deserialize(self,serialized:dict)-> Operand:
+        children = []
+        if 'c' in serialized:
+            for p in serialized['c']:
+                children.append(self.deserialize(p))
+        operand = self.createOperand(serialized['n'],serialized['t'],children)
+        for i,p in enumerate(operand.children):
+            p.parent = operand
+            p.index = i
+        return operand   
+
+    # def debug(self,operand:Operand,token:Token,context:dict={}):
+    #     if context is not None:
+    #         self.setContext(operand,Context(context))
+    #     operand.debug(token,0)
+
+    # def debug(self,token:Token,level): 
+    #     if len(token.path) <= level:
+    #         if len(self.children)== 0:
+    #             token.value= self.value 
+    #         else:
+    #             token.path.append(0)
+    #             self.children[0].debug(token,level+1)   
+    #     else:
+    #         idx = token.path[level]
+    #         # si es el anteultimo nodo 
+    #         if len(token.path) -1 == level:           
+    #             if len(self.children) > idx+1:
+    #                token.path[level] = idx+1
+    #                self.children[idx+1].debug(token,level+1)
+    #             else:
+    #                token.path.pop() 
+    #                token.value= self.value       
+    #         else:
+    #             self.children[idx].debug(token,level+1)  
+
+    # def getOperandByPath(self,operand:Operand,path)->Operand:
+    #     search = operand
+    #     for p in path:
+    #         if len(search.children) <= p:return None
+    #         search = search.children[p]
+    #     return search    
+        
    
+      
+
 class NodeManager():
     def __init__(self,model):
        self._model = model    
@@ -354,6 +367,29 @@ class NodeManager():
             list[key] = self._model.functions[key]
         return list
 
+    def serialize(self,node:Node)-> dict:
+        children = []                
+        for p in node.children:
+            children.append(self.serialize(p))
+        return {'n':node.name,'t':node.type,'c':children} 
+
+    def deserialize(self,serialized:dict)-> Node:
+        children = []
+        if 'c' in serialized:
+            for p in serialized['c']:
+                children.append(self.deserialize(p))
+        node=  Node(serialized['n'],serialized['t'],children)
+        for i,p in enumerate(node.children):
+            p.parent = node
+            p.index = i
+        return node        
+
+    def setParent(self,node:Node,parent:Node=None,index:int=0):
+        node.parent = parent
+        node.index = index
+        if  len(node.children)>0:
+            for i,p in enumerate(node.children):
+                self.setParent(p,node,i)       
 
 # Facade   
 class Exp(metaclass=Singleton):
@@ -361,8 +397,7 @@ class Exp(metaclass=Singleton):
        self.model = Model() 
        self.sourceManager = SourceManager(self.model)
        self.parser = Parser(self.model)
-       self.nodeManager = NodeManager(self.model)
-       self.operandManager = OperandManager(self.model)       
+       self.nodeManager = NodeManager(self.model)   
        self.addLibrary(CoreLib())        
 
     def addLibrary(self,library):
@@ -387,8 +422,11 @@ class Exp(metaclass=Singleton):
         return result
     
     def parse(self,expression:str)->Node:
-        try:  
-            return self.parser.parse(self.minify(expression))
+        try:
+            minified = self.minify(expression) 
+            node= self.parser.parse(minified)
+            self.nodeManager.setParent(node)
+            return node
         except Exception as error:
             raise ExpressionError('expression: '+expression+' error: '+str(error))
 
@@ -398,7 +436,7 @@ class Exp(metaclass=Singleton):
             if isinstance(value,Node):
                 node=value                
             elif isinstance(value,str):
-                node = self.parser.parse(self.minify(value))
+                node = self.parse(value)
             else:
                raise ExpressionError('not possible to compile')      
 
@@ -414,7 +452,7 @@ class Exp(metaclass=Singleton):
             elif isinstance(value,Node):                
                 operand =self.sourceManager.compile(value)                   
             elif isinstance(value,str):
-                node = self.parser.parse(self.minify(value))
+                node = self.parse(value)
                 operand =self.sourceManager.compile(node) 
             else:
                raise ExpressionError('not possible to run')  
@@ -423,56 +461,54 @@ class Exp(metaclass=Singleton):
         except Exception as error:
             raise ExpressionError('operand: '+operand.name+' error: '+str(error))               
 
-    
-    
+    def serialize(self,value)-> dict:        
+        if isinstance(value,Node):
+            return self.nodeManager.serialize(value)
+        elif isinstance(value,Operand):
+            return self.sourceManager.serialize(value)
+        return None      
 
-    def serialize(self,operand:Operand)-> dict:        
-        if len(operand.children)==0:return {'n':operand.name,'t':type(operand).__name__}
-        children = []                
-        for p in operand.children:
-            children.append(self.serialize(p))
-        return {'n':operand.name,'t':type(operand).__name__,'c':children}     
-
-    def deserialize(self,serialized:dict)-> Operand:
-        children = []
-        if 'c' in serialized:
-            for p in serialized['c']:
-                children.append(self.deserialize(p))
-        return  eval(serialized['t'])(serialized['n'],children,self) 
+    def deserialize(self,serialized:dict,type:str='Operand'):
+        if type == 'Operand':
+            return self.sourceManager.deserialize(serialized)
+        elif type == 'Node':
+            return self.nodeManager.deserialize(serialized)
+        else:
+            raise ExpressionError('type: '+type+' not support')           
  
     def vars(self,value)->dict:
         if isinstance(value,Node):
             return self.nodeManager.vars(value)
         elif isinstance(value,Operand):
-            return self.operandManager.vars(value)
+            return self.sourceManager.vars(value)
         return None       
 
     def operandType(self,value)->str:
         if isinstance(value,Node):
             return self.nodeManager.operandType(value)
         elif isinstance(value,Operand):
-            return self.operandManager.operandType(value) 
+            return self.sourceManager.operandType(value) 
         return None     
 
     def constants(self,value)->dict:
         if isinstance(value,Node):
             return self.nodeManager.constants(value)
         elif isinstance(value,Operand):
-            return self.operandManager.constants(value)
+            return self.sourceManager.constants(value)
         return None 
     
     def operators(self,value)->dict:
         if isinstance(value,Node):
             return self.nodeManager.operators(value)
         elif isinstance(value,Operand):
-            return self.operandManager.operators(value)
+            return self.sourceManager.operators(value)
         return None
 
     def functions(self,value)->dict:
         if isinstance(value,Node):
             return self.nodeManager.functions(value)
         elif isinstance(value,Operand):
-            return self.operandManager.functions(value)
+            return self.sourceManager.functions(value)
         return None
 
 class Parser():
@@ -528,19 +564,13 @@ class Parser():
     def getEnum(self,name): 
         return self._model.getEnum(name) 
 
-    def setParent(self,node:Node,parent:Node=None,index:int=0):
-        node.parent = parent
-        node.index = index
-        if  len(node.children)>0:
-            for i,p in enumerate(node.children):
-                self.setParent(p,node,i)      
+        
 
     def parse(self,expression)->Node:
         try:            
             _parser = _Parser(self,expression)
             node= _parser.parse() 
-            del _parser 
-            self.setParent(node)
+            del _parser             
             return node  
         except Exception as error:
             raise ExpressionError('expression: '+expression+' error: '+str(error))      

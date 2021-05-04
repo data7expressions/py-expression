@@ -178,50 +178,24 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(exp.vars(op ), {'a': 'str'})
 
 
-    # def test_serialize(self): 
-    #     operand =exp.parse(('i=0;'
-    #              'while(i<=6){'
-    #              '  output=i*2;'
-    #              '  i=i+1;'
-    #              '}'))
-    #     serialized = exp.serialize(operand)
-    #     self.assertEqual(serialized,{'n': 'block', 't': 'Block', 'c': [{'n': '=', 't': 'Assigment', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 0, 't': 'Constant'}]}, {'n': 'while', 't': 'While', 'c': [{'n': '<=', 't': 'LessThanOrEqual', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 6, 't': 'Constant'}]}, {'n': 'block', 't': 'Block', 'c': [{'n': '=', 't': 'Assigment', 'c': [{'n': 'output', 't': 'Variable'}, {'n': '*', 't': 'Multiplication', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 2, 't': 'Constant'}]}]}, {'n': '=', 't': 'Assigment', 'c': [{'n': 'i', 't': 'Variable'}, {'n': '+', 't': 'Addition', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 1, 't': 'Constant'}]}]}]}]}]})
-    #     operand2= exp.deserialize(serialized)
-    #     context = {}
-    #     exp.eval(operand2,context)
-    #     self.assertEqual(context['output'],12) 
+    def test_serialize(self): 
+        node =exp.parse(('i=0;'
+                 'while(i<=6){'
+                 '  output=i*2;'
+                 '  i=i+1;'
+                 '}'))
+        serialized = exp.serialize(node)
+        self.assertEqual(serialized,{'n': 'block', 't': 'block', 'c': [{'n': '=', 't': 'operator', 'c': [{'n': 'i', 't': 'variable', 'c': []}, {'n': 0, 't': 'constant', 'c': []}]}, {'n': 'while', 't': 'while', 'c': [{'n': '<=', 't': 'operator', 'c': [{'n': 'i', 't': 'variable', 'c': []}, {'n': 6, 't': 'constant', 'c': []}]}, {'n': 'block', 't': 'block', 'c': [{'n': '=', 't': 'operator', 'c': [{'n': 'output', 't': 'variable', 'c': []}, {'n': '*', 't': 'operator', 'c': [{'n': 'i', 't': 'variable', 'c': []}, {'n': 2, 't': 'constant', 'c': []}]}]}, {'n': '=', 't': 'operator', 'c': [{'n': 'i', 't': 'variable', 'c': []}, {'n': '+', 't': 'operator', 'c': [{'n': 'i', 't': 'variable', 'c': []}, {'n': 1, 't': 'constant', 'c': []}]}]}]}]}]})
+        node2= exp.deserialize(serialized,'Node')
+        self.assertEqual(node2.children[0].type,'operator')  
+        self.assertEqual(node2.children[0].name,'=')
 
+        operand= exp.deserialize(serialized,'Operand')
+        context = {}
+        exp.run(operand,context)
+        self.assertEqual(context['output'],12) 
 
-# print(exp.run('1+3'))
 unittest.main()
-
-# text = ('rectangle = {"x":50,"y":50,"width":80,"height":60}; '
-#         'sleepSecs = 1;'
-#         'source=nvl(source,"data/source.jpg");')
-# context = {}
-# result= exp.run(text,context)
-# print(context['rectangle']['x'])
-
-# context = {"a":[1,2,3],"b":0}
-# exp.run('a.foreach(p:b=b+p)',context)
-# print(context['b']) 
-
-# context = {"a":[1,2,3,4,5],"b":0}
-# print(exp.run('a.filter(p: p>1 && p<5).reverse()',context))
-
-
-# operand =exp.parse(('i=0;'
-#             'while(i<=6){'
-#             '  output=i*2;'
-#             '  i=i+1;'
-#             '}'))
-# serialized = exp.serialize(operand)
-# print(serialized)
-# operand2= exp.deserialize(serialized)
-# context = {}
-# exp.eval(operand2,context)
-# self.assertEqual(context['output'],12) 
-
 
 
 # op = exp.parse('"expression".count("e")>= a+1')
