@@ -40,6 +40,7 @@ class SourceManager():
         for i,p in enumerate(operand.children):
             p.parent = operand
             p.index = i
+            p.level = operand.level +1
         return operand 
 
     def reduce(self,operand:Operand):
@@ -249,20 +250,27 @@ class SourceManager():
         for i,p in enumerate(operand.children):
             p.parent = operand
             p.index = i
+            p.level = operand.level +1
         return operand   
 
-    def debug(self,operand:Operand,token:Token,context:dict={}):
+    def eval(self,operand:Operand,context:dict={},token:Token=None)-> any :  
         if context is not None:
             self.setContext(operand,Context(context))
-        _debug = self.toDebug(operand)    
-        _debug.debug(token,0)
+        return operand.eval(token)
 
-    def toDebug(self,operand:Operand)-> dict:
-        children = []                
-        for p in operand.children:
-            children.append(self.toDebug(p))
-        return Debug(operand,children)    
-        
+    # def degugger(self,operand:Operand,context:dict={})-> Debug:
+    #     if context is not None:
+    #         self.setContext(operand,Context(context))
+    #     return self._degugger(operand) 
+
+    # def _degugger(self,operand:Operand)-> Debug:
+    #     children = []                
+    #     for p in operand.children:
+    #         children.append(self._degugger(p))
+    #     return Debug(operand,children)    
+
+    # def degug(self,debuggeable:Debug,token:Token):
+    #     debuggeable.debug(token,0)        
 
     # def debug(self,token:Token,level): 
     #     if len(token.path) <= level:
@@ -462,9 +470,14 @@ class Exp(metaclass=Singleton):
             else:
                raise ExpressionError('not possible to run')  
 
-            return self.sourceManager.run(operand,context)
+            # return self.sourceManager.run(operand,context)
+            return self.sourceManager.eval(operand,context)
         except Exception as error:
             raise ExpressionError('operand: '+operand.name+' error: '+str(error))               
+
+    def eval(self,operand:Operand,context:dict={},token:Token=None)-> any : 
+        return self.sourceManager.eval(operand,context,token)
+
 
     def serialize(self,value)-> dict:        
         if isinstance(value,Node):

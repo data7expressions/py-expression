@@ -1,0 +1,47 @@
+Skip to content
+Search or jump to…
+
+Pull requests
+Issues
+Marketplace
+Explore
+ 
+@FlavioLionelRita 
+FlavioLionelRita
+/
+py-process
+Process:
+  bpm02:
+    kind: bpm
+    input:
+      a: float
+      b: float
+    init:
+      exp: |
+        a=1;
+        b=2;    
+    nodes:
+      start:
+        kind: start
+        transition: 
+        - target: evaluate
+      evaluate:
+        kind: exclusiveGateway
+        transition: 
+        - target: subtraction
+          exp: a>b
+        - target: sum
+          exp: a<=b
+      sum:
+        kind: task
+        exp: a = a + b
+        transition: 
+        - target: end    
+      subtraction:
+        kind: task
+        exp: a = a - b
+        transition: 
+        - target: end
+      end:
+        kind: end
+

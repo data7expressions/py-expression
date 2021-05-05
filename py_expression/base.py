@@ -218,6 +218,17 @@ class Token():
     def path(self,value):
         self._path =value         
 
+class Step():
+    def __init__(self,name,index,level):
+        self._name = name
+        self._index = index
+        self._level = level
+        self._values = []
+
+    @property
+    def values(self): 
+        return self._values
+
 
 class Node():
     def __init__(self,name,type,children=[]): 
@@ -300,7 +311,8 @@ class Operand():
         self._name = name        
         self._children  = children
         self._parent = None
-        self._index = None
+        self._index = 0
+        self._level = 0
 
     @property
     def name(self):
@@ -324,6 +336,14 @@ class Operand():
         self._index =value      
 
     @property
+    def level(self):
+        return self._level 
+    @level.setter
+    def level(self,value):
+        self._level =value      
+
+
+    @property
     def children(self):
         return self._children 
 
@@ -332,30 +352,76 @@ class Operand():
     @value.setter
     def value(self,value):pass
 
-class Debug():
-    def __init__(self,operand:Operand,children:list['Debug']=[]):
-        self.operand = operand
-        self.children  = children   
-
-    def debug(self,token:Token,level): 
-        if len(token.path) <= level:
-            if len(self.children)== 0:
-                token.value= self.operand.value
-            else:
-                token.path.append(0)
-                self.children[0].debug(token,level+1)   
+    def eval(self,token:Token=None):
+        values=None
+        if token is None:
+            values= []
         else:
-            idx = token.path[level]
-            # si es el anteultimo nodo 
-            if len(token.path) -1 == level:           
-                if len(self.children) > idx+1:
-                   token.path[level] = idx+1
-                   self.children[idx+1].debug(token,level+1)
-                else:
-                   token.path.pop() 
-                   token.value= self.operand.value      
-            else:
-                self.children[idx].debug(token,level+1)  
+            if len(token.path) <= self.level:
+                token.path.append(Step(self._name,self._index,self._level))
+            values = token.path[self.level].values
+        result=self.solve(values,token)
+        if token is not None: token.path.pop()
+        return result 
+
+    def solve(self,values,token:Token=None):pass
+
+# class Process():
+#     def __init__(self,operand:Operand):
+#         self.operand = operand
+
+#     def execute(self):
+#         self 
+
+# class Debug():
+#     def __init__(self,operand:Operand,children:list['Debug']=[]):
+#         self.operand = operand
+#         self.children  = children   
+
+#     def debug(self,token:Token,level): 
+#         if len(token.path) <= level:
+#             if len(self.children)== 0:
+#                 token.value= self.operand.value
+#             else:
+#                 token.path.append(0)
+#                 self.children[0].debug(token,level+1)   
+#         else:
+#             idx = token.path[level]
+#             # si es el anteultimo nodo 
+#             if len(token.path) -1 == level:           
+#                 if len(self.children) > idx+1:
+#                    token.path[level] = idx+1
+#                    self.children[idx+1].debug(token,level+1)
+#                 else:
+#                    token.path.pop() 
+#                    token.value= self.operand.value      
+#             else:
+#                 self.children[idx].debug(token,level+1)  
+
+# class Debug():
+#     def __init__(self,operand:Operand,children:list['Debug']=[]):
+#         self.operand = operand
+#         self.children  = children   
+
+#     def debug(self,token:Token,level): 
+#         if len(token.path) <= level:
+#             if len(self.children)== 0:
+#                 token.value= self.operand.value
+#             else:
+#                 token.path.append(0)
+#                 self.children[0].debug(token,level+1)   
+#         else:
+#             idx = token.path[level]
+#             # si es el anteultimo nodo 
+#             if len(token.path) -1 == level:           
+#                 if len(self.children) > idx+1:
+#                    token.path[level] = idx+1
+#                    self.children[idx+1].debug(token,level+1)
+#                 else:
+#                    token.path.pop() 
+#                    token.value= self.operand.value      
+#             else:
+#                 self.children[idx].debug(token,level+1)  
 
 class Constant(Operand):
     def __init__(self,name,children=[]):
@@ -369,6 +435,9 @@ class Constant(Operand):
     def value(self): 
         return self._name 
 
+    def eval(self,token:Token=None):
+        return self._name     
+
 class Variable(Operand,Contextable):
     def __init__(self,name:str,children:list[Operand]=[]):
         Operand.__init__(self,name,children)
@@ -379,12 +448,19 @@ class Variable(Operand,Contextable):
     @value.setter
     def value(self,value):
         self.context.set(self._name,value) 
+
+    def eval(self,token:Token=None):
+        return self.context.get(self._name)
+    def set(self,value,token:Token=None):
+        self.context.set(self._name,value)    
     
 class KeyValue(Operand):
-
     @property
     def value(self):
         return self._children[0].value
+
+    def eval(self,token:Token=None):
+        return self._children[0].eval(token)      
 
 class Array(Operand):
     @property
@@ -394,6 +470,13 @@ class Array(Operand):
             list.append(p.value)
         return list 
 
+    def solve(self,values,token:Token=None):
+        for i, p in enumerate(self._children): 
+            if i >= len(values):
+                value = p.eval(token)    
+                values.append(value)
+        return values       
+
 class Object(Operand):
     @property
     def value(self):
@@ -401,6 +484,16 @@ class Object(Operand):
         for p in self._children:
             dic[p.name]=p.value
         return dic
+
+    def solve(self,values,token:Token=None):
+        for i, p in enumerate(self._children): 
+            if i >= len(values):
+                value = p.eval(token)    
+                values.append(value)
+        dic= {}
+        for p in values:
+            dic[p.name]=p
+        return dic     
 
 class Operator(Operand):
     def __init__(self,name:str,children:list[Operand]=[],function=None):
@@ -413,6 +506,14 @@ class Operator(Operand):
         for p in self._children:
             values.append(p.value)
         return self._function(*values)
+   
+    def solve(self,values,token:Token=None):
+        for i, p in enumerate(self._children): 
+            if i >= len(values):
+                value = p.eval(token)    
+                values.append(value)
+        return self._function(*values)                 
+                               
 
 class Function(Operand):
     def __init__(self,name:str,children:list[Operand]=[],function=None):
@@ -426,27 +527,60 @@ class Function(Operand):
             values.append(p.value)
         return self._function(*values)
 
+    def solve(self,values,token:Token=None):
+        for i, p in enumerate(self._children): 
+            if i >= len(values):
+                value = p.eval(token)    
+                values.append(value)
+        return self._function(*values)   
+
 class ArrowFunction(Function,ChildContextable):pass
 
 class ContextFunction(Function):
     @property
     def value(self):  
-        args=[] 
-        parent = self._children.pop(0)
+        values=[] 
+        parent = self._children[0]
         value = parent.value
         if isinstance(value,object) and hasattr(value, self._name):
             function=getattr(value, self._name)
-            for p in self._children:
-                args.append(p.value)
-            return function(*args)     
+            for p in self._children[1:]:
+                values.append(p.value)
+            return function(*values)     
         else:    
             raise ExpressionError('function: '+self._name +' not found in '+parent.name)
+
+
+    def solve(self,values,token:Token=None):
+        if len(values) == 0:
+            parent = self._children[0]
+            values.append(parent.eval(token))
+        if isinstance(values[0],object) and hasattr(values[0], self._name):
+            function=getattr(values[0], self._name)
+            for i,p in enumerate(self._children[1:]):
+                if i >= len(values):
+                    value = p.eval(token)
+                    values.append(value)
+            return function(*values[1:])     
+        else:    
+            raise ExpressionError('function: '+self._name +' not found in '+parent.name) 
+
+        
+
+         
 
 class Block(Operand):
     @property
     def value(self):         
         for p in self._children:
             p.value
+
+    def solve(self,values,token:Token=None):
+        for i, p in enumerate(self._children): 
+            if i >= len(values):
+                value = p.eval(token)    
+                values.append(value)
+        return values          
                 
 class If(Operand):
     @property
@@ -455,9 +589,35 @@ class If(Operand):
            self._children[1].value
         elif len(self._children) > 2 and self._children[2] is not None:       
             self._children[2].value
+
+    def solve(self,values,token:Token=None):
+        if len(values)== 0:
+            values.append(self._children[0].eval(token))
+
+        if values[0]:
+            values.append(self._children[1].eval(token)) 
+        elif len(self._children) > 2 and self._children[2] is not None:
+            values.append(self._children[2].eval(token))         
+        return values         
          
 class While(Operand):
     @property
     def value(self):
         while self._children[0].value:
            self._children[1].value
+
+
+    def solve(self,values,token:Token=None):
+        if len(values)== 0:
+            values.append(self._children[0].eval(token))
+
+        while values[0]:
+            if len(values) < 2:
+                values.append(self._children[1].eval(token))
+
+            values = []
+            values.append(self._children[0].eval(token))      
+           
+
+       
+        
