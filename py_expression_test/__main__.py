@@ -50,12 +50,12 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(exp.run('"a"<"b"'),"a"<"b") 
         self.assertEqual(exp.run('"a ""b"" "<"b"'),"a ""b"" "<"b") 
 
-    # def test_assigments(self):
-    #     context = {"a":"1","b":2,"c":{"a":4,"b":5}}
-    #     exp.run('a=8',context)
-    #     self.assertEqual(context['a'],8)
-    #     exp.run('c.a=1',context)
-    #     self.assertEqual(context['c']['a'],1)
+    def test_assigments(self):
+        context = {"a":"1","b":2,"c":{"a":4,"b":5}}
+        exp.run('a=8',context)
+        self.assertEqual(context['a'],8)
+        exp.run('c.a=1',context)
+        self.assertEqual(context['c']['a'],1)
 
     def test_functions(self):
         self.assertEqual(exp.run('nvl(a,b)',{"a":None,"b":2}),2) 
@@ -88,43 +88,43 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(exp.run('ColorConversion.GRAY2BGR'),8)
         self.assertEqual(exp.run('Color.GREEN'),2)  
 
-    # def test_multine(self):    
-    #     text='a=4; '\
-    #          'b=a+2; '\
-    #         ' output=a*b; ' 
-    #     context = {}
-    #     exp.run(text,context)
-    #     self.assertEqual(context['output'],24)
+    def test_multine(self):    
+        text='a=4; '\
+             'b=a+2; '\
+            ' output=a*b; ' 
+        context = {}
+        exp.run(text,context)
+        self.assertEqual(context['output'],24)
 
-    # def test_blockControl(self):        
-    #     context = {}
-    #     exp.run(('output=1;if(1==2){output=2}else {output=3}'),context)
-    #     self.assertEqual(context['output'],3)
+    def test_blockControl(self):        
+        context = {}
+        exp.run(('output=1;if(1==2){output=2}else {output=3}'),context)
+        self.assertEqual(context['output'],3)
 
-    #     exp.run('output=1;if(1==1){output=2;}else {output=3;}',context)
-    #     self.assertEqual(context['output'],2)
+        exp.run('output=1;if(1==1){output=2;}else {output=3;}',context)
+        self.assertEqual(context['output'],2)
 
-    #     exp.run(('if(1==2){'
-    #                '    output=2'
-    #                '}else {'
-    #                '    output=3'
-    #                '}'),context)
-    #     self.assertEqual(context['output'],3)
+        exp.run(('if(1==2){'
+                   '    output=2'
+                   '}else {'
+                   '    output=3'
+                   '}'),context)
+        self.assertEqual(context['output'],3)
       
-    #     exp.run(('i=0;'
-    #              'while(i<=6){'
-    #              '  output=i*2;'
-    #              '  i=i+1;'
-    #              '}'),context)
-    #     self.assertEqual(context['output'],12)   
+        exp.run(('i=0;'
+                 'while(i<=6){'
+                 '  output=i*2;'
+                 '  i=i+1;'
+                 '}'),context)
+        self.assertEqual(context['output'],12)   
 
-    # def test_initializeLines(self):            
-    #     text = ('rectangle = {"x":50,"y":50,"width":80,"height":60}; '
-    #            'sleepSecs = 1;'
-    #            'source=nvl(source,"data/source.jpg");')
-    #     context = {}
-    #     exp.run(text,context)
-    #     self.assertEqual(context['rectangle']['x'],50)
+    def test_initializeLines(self):            
+        text = ('rectangle = {"x":50,"y":50,"width":80,"height":60}; '
+               'sleepSecs = 1;'
+               'source=nvl(source,"data/source.jpg");')
+        context = {}
+        exp.run(text,context)
+        self.assertEqual(context['rectangle']['x'],50)
 
     # def test_arrowFunctions(self):            
     #     context = {"a":[1,2,3],"b":0}
@@ -176,22 +176,22 @@ class TestExpression(unittest.TestCase):
         op  = exp.compile('a > "a"')
         self.assertEqual(exp.vars(op ), {'a': 'str'})
 
-    # def test_serialize(self): 
-    #     node =exp.parse(('i=0;'
-    #              'while(i<=6){'
-    #              '  output=i*2;'
-    #              '  i=i+1;'
-    #              '}'))
-    #     serialized = exp.serialize(node)
-    #     self.assertEqual(serialized,{'n': 'block', 't': 'block', 'c': [{'n': '=', 't': 'operator', 'c': [{'n': 'i', 't': 'variable', 'c': []}, {'n': 0, 't': 'constant', 'c': []}]}, {'n': 'while', 't': 'while', 'c': [{'n': '<=', 't': 'operator', 'c': [{'n': 'i', 't': 'variable', 'c': []}, {'n': 6, 't': 'constant', 'c': []}]}, {'n': 'block', 't': 'block', 'c': [{'n': '=', 't': 'operator', 'c': [{'n': 'output', 't': 'variable', 'c': []}, {'n': '*', 't': 'operator', 'c': [{'n': 'i', 't': 'variable', 'c': []}, {'n': 2, 't': 'constant', 'c': []}]}]}, {'n': '=', 't': 'operator', 'c': [{'n': 'i', 't': 'variable', 'c': []}, {'n': '+', 't': 'operator', 'c': [{'n': 'i', 't': 'variable', 'c': []}, {'n': 1, 't': 'constant', 'c': []}]}]}]}]}]})
-    #     node2= exp.deserialize(serialized,'Node')
-    #     self.assertEqual(node2.children[0].type,'operator')  
-    #     self.assertEqual(node2.children[0].name,'=')
+    def test_serialize(self): 
+        node =exp.parse(('i=0;'
+                 'while(i<=6){'
+                 '  output=i*2;'
+                 '  i=i+1;'
+                 '}'))
+        serialized = exp.serialize(node)
+        self.assertEqual(serialized,{'n': 'block', 't': 'block', 'c': [{'n': '=', 't': 'operator', 'c': [{'n': 'i', 't': 'variable', 'c': []}, {'n': 0, 't': 'constant', 'c': []}]}, {'n': 'while', 't': 'while', 'c': [{'n': '<=', 't': 'operator', 'c': [{'n': 'i', 't': 'variable', 'c': []}, {'n': 6, 't': 'constant', 'c': []}]}, {'n': 'block', 't': 'block', 'c': [{'n': '=', 't': 'operator', 'c': [{'n': 'output', 't': 'variable', 'c': []}, {'n': '*', 't': 'operator', 'c': [{'n': 'i', 't': 'variable', 'c': []}, {'n': 2, 't': 'constant', 'c': []}]}]}, {'n': '=', 't': 'operator', 'c': [{'n': 'i', 't': 'variable', 'c': []}, {'n': '+', 't': 'operator', 'c': [{'n': 'i', 't': 'variable', 'c': []}, {'n': 1, 't': 'constant', 'c': []}]}]}]}]}]})
+        node2= exp.deserialize(serialized,'Node')
+        self.assertEqual(node2.children[0].type,'operator')  
+        self.assertEqual(node2.children[0].name,'=')
 
-    #     operand= exp.deserialize(serialized,'Operand')
-    #     context = {}
-    #     exp.run(operand,context)
-    #     self.assertEqual(context['output'],12) 
+        operand= exp.deserialize(serialized,'Operand')
+        context = {}
+        exp.run(operand,context)
+        self.assertEqual(context['output'],12) 
 
 unittest.main()
 

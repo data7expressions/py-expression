@@ -309,7 +309,17 @@ class CoreLib(Library):
                 return self._children[0].value
             else:
                 self._children[0].value= self._function(self._children[0].value,self._children[1].value)
-                return self._children[0].value  
+                return self._children[0].value
+
+        def solve(self,values,token:Token=None):
+            if len(values) == 0:
+               values.append(self._children[0].eval(token))
+            if len(values) ==1:
+                value = self._children[1].eval(token)
+                values.append(value)
+                value = values[1] if self._function is None else self._function(values[0],values[1])
+                self._children[0].set(value,token)
+                return value                      
 
     class General():
         @staticmethod

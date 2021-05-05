@@ -486,13 +486,14 @@ class Object(Operand):
         return dic
 
     def solve(self,values,token:Token=None):
+        
         for i, p in enumerate(self._children): 
             if i >= len(values):
                 value = p.eval(token)    
                 values.append(value)
         dic= {}
-        for p in values:
-            dic[p.name]=p
+        for i,value in enumerate(values):
+            dic[self._children[i].name]=value
         return dic     
 
 class Operator(Operand):
