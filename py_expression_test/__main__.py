@@ -130,17 +130,17 @@ class TestExpression(unittest.TestCase):
         context = {"a":[1,2,3],"b":0}
         exp.run('a.foreach(p=>b=b+p)',context)
         self.assertEqual(context['b'],6) 
-    #     context = {"a":[1,2,3,4,5],"b":0}
-    #     exp.run('a.filter(p=> p<5).foreach(p => b=b+p)',context)
-    #     self.assertEqual(context['b'],10) 
-    #     context = {"a":[1,2,3,4,5],"b":0}
-    #     self.assertEqual(exp.run('a.first(p => p%2==0)',context),2) 
-    #     context = {"a":[1,2,3,4,5],"b":0}
-    #     self.assertEqual(exp.run('a.last(p=> p%2==0)',context),4) 
-    #     context = {"a":[1,2,3,4,5],"b":0}
-    #     self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).map(p=> p*2)',context),[4,6,8])
-    #     context = {"a":[1,2,3,4,5],"b":0}
-    #     self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).reverse()',context),[4,3,2])
+        context = {"a":[1,2,3,4,5],"b":0}
+        exp.run('a.filter(p=> p<5).foreach(p => b=b+p)',context)
+        self.assertEqual(context['b'],10) 
+        context = {"a":[1,2,3,4,5],"b":0}
+        self.assertEqual(exp.run('a.first(p => p%2==0)',context),2) 
+        context = {"a":[1,2,3,4,5],"b":0}
+        self.assertEqual(exp.run('a.last(p=> p%2==0)',context),4) 
+        # context = {"a":[1,2,3,4,5],"b":0}
+        # self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).map(p=> p*2)',context),[4,6,8])
+        # context = {"a":[1,2,3,4,5],"b":0}
+        # self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).reverse()',context),[4,3,2])
     #     # TODO: resolver por que falla
     #     # context = {"a":[1,2,3,4,5],"b":0}
     #     # self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).map(p=> p*2).reverse()',context),[8,6,4])
