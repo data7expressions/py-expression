@@ -126,10 +126,10 @@ class TestExpression(unittest.TestCase):
         exp.run(text,context)
         self.assertEqual(context['rectangle']['x'],50)
 
-    # def test_arrowFunctions(self):            
-    #     context = {"a":[1,2,3],"b":0}
-    #     exp.run('a.foreach(p=>b=b+p)',context)
-    #     self.assertEqual(context['b'],6) 
+    def test_arrowFunctions(self):            
+        context = {"a":[1,2,3],"b":0}
+        exp.run('a.foreach(p=>b=b+p)',context)
+        self.assertEqual(context['b'],6) 
     #     context = {"a":[1,2,3,4,5],"b":0}
     #     exp.run('a.filter(p=> p<5).foreach(p => b=b+p)',context)
     #     self.assertEqual(context['b'],10) 
