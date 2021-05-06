@@ -137,13 +137,12 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(exp.run('a.first(p => p%2==0)',context),2) 
         context = {"a":[1,2,3,4,5],"b":0}
         self.assertEqual(exp.run('a.last(p=> p%2==0)',context),4) 
-        # context = {"a":[1,2,3,4,5],"b":0}
-        # self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).map(p=> p*2)',context),[4,6,8])
-        # context = {"a":[1,2,3,4,5],"b":0}
-        # self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).reverse()',context),[4,3,2])
-    #     # TODO: resolver por que falla
-    #     # context = {"a":[1,2,3,4,5],"b":0}
-    #     # self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).map(p=> p*2).reverse()',context),[8,6,4])
+        context = {"a":[1,2,3,4,5],"b":0}
+        self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).map(p=> p*2)',context),[4,6,8])
+        context = {"a":[1,2,3,4,5],"b":0}
+        self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).reverse()',context),[4,3,2])
+        context = {"a":[1,2,3,4,5],"b":0}
+        self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).map(p=> p*2).reverse()',context),[8,6,4])
 
     def test_info(self):
         node = exp.parse('strCount("expression","e")>= a+1')
@@ -193,6 +192,8 @@ class TestExpression(unittest.TestCase):
         exp.run(operand,context)
         self.assertEqual(context['output'],12) 
 
+# context = {"a":[1,2,3,4,5],"b":0}
+# print(exp.run('a.filter(p=> p>1 && p<5).map(p=> p*2)',context))
 unittest.main()
 
 # operand=exp.compile('(a+1)*(a-1)')

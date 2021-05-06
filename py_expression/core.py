@@ -736,18 +736,23 @@ class _Parser():
         elif char == '[':
             self.index+=1
             elements=  self.getArgs(end=']')
-            operand =  Node('array','array',elements)
+            operand =  Node('array','array',elements)        
 
-        if not self.end and  self.current=='.':
-            self.index+=1
-            name=  self.getValue()
-            if self.current == '(': self.index+=1
-            operand =self.getChildFunction(name,operand)            
+        operand = self.solveChain(operand)
 
         if isNegative:operand= Node('-','operator',[operand])
         if isNot:operand=Node('!','operator',[operand])
         if isBitNot:operand=Node('~','operator',[operand])  
         return operand
+
+    def solveChain(self,operand):
+        if not self.end and  self.current=='.':
+            self.index+=1
+            name=  self.getValue()
+            if self.current == '(': self.index+=1
+            return self.solveChain(self.getChildFunction(name,operand))
+        else:    
+            return  operand        
 
     def priority(self,op:str,cardinality:int=2)->int:
         return self.mgr.priority(op,cardinality)        

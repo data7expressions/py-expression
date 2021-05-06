@@ -295,11 +295,27 @@ class CoreLib(Library):
             if not self._children[0].value : return False
             return self._children[1].value
 
+        def solve(self,values,token:Token=None):
+            if len(values) == 0:
+                value = self._children[0].eval(token)
+                if not value : return False
+                values.append(value)                
+            if len(values) == 1:
+                return self._children[1].eval(token)   
+
     class Or(Operator):
         @property
         def value(self): 
             if self._children[0].value : return True
             return self._children[1].value
+
+        def solve(self,values,token:Token=None):
+            if len(values) == 0:
+                value = self._children[0].eval(token)
+                if value : return True
+                values.append(value)                
+            if len(values) == 1:
+                return self._children[1].eval(token)    
 
     class Assigment(Operator):
         @property
@@ -1123,7 +1139,6 @@ class CoreLib(Library):
         def solve(self,values,token:Token=None):
             if len(values) == 0:
                list = self._children[0].eval(token)
-               list.reverse() 
                values.append(list)
             # add index of item in list
             values.append(0)    
