@@ -38,7 +38,6 @@ class SourceManager():
             children.append(child)
         return self.createOperand(node.name,node.type,children)
 
-
     def reduce(self,operand:Operand):
         """ if all the children are constant, reduce the expression a constant """
         if isinstance(operand,Operator):        
@@ -48,7 +47,7 @@ class SourceManager():
                     allConstants=False
                     break
             if  allConstants:
-                value = operand.value                
+                value = operand.eval()                
                 constant= Constant(value)
                 constant.parent = operand.parent
                 constant.index = operand.index
@@ -103,7 +102,7 @@ class SourceManager():
         elif type == 'while':
             return  While(name,children)
         else:
-            raise ExpressionError('node: '+name +' not supported') 
+            raise ExpressionException('node: '+name +' not supported') 
 
     def createOperator(self,name:str,children:list[Operand])->Operator:
         try:
@@ -154,11 +153,6 @@ class SourceManager():
         operand =self.setParent(operand)
         return operand
 
-    def run(self,operand:Operand,context:dict={})-> any :  
-        if context is not None:
-            self.setContext(operand,Context(context))
-        return operand.value
-
     def setContext(self,operand:Operand,context:Context):
         current = context
         if issubclass(operand.__class__,ChildContextable):
@@ -169,7 +163,6 @@ class SourceManager():
             operand.context = current       
         for p in operand.children:
             self.setContext(p,current) 
-
          
     def vars(self,operand:Operand)->dict:
         list = {}
@@ -210,10 +203,10 @@ class SourceManager():
     def constants(self,operand:Operand)->dict:
         list = {}
         if isinstance(operand,Constant):
-            list[operand.value] = operand.type
+            list[operand.name] = operand.type
         for p in operand.children:
             if isinstance(p,Constant):
-                list[p.value] = p.type
+                list[p.name] = p.type
             elif len(p.children)>0:
                 subList= self.constants(p)
                 list = {**list, **subList}
@@ -252,7 +245,7 @@ class SourceManager():
         children = []                
         for p in operand.children:
             children.append(self.serialize(p))
-        return {'n':operand.name,'t':type(operand).__name__,'c':children} 
+        return {'id': operand.id, 'n':operand.name,'t':type(operand).__name__,'c':children} 
 
     def deserialize(self,serialized:dict)-> Operand:
         operand = self._deserialize(serialized)
@@ -270,7 +263,6 @@ class SourceManager():
         if context is not None:
             self.setContext(operand,Context(context))
         return operand.eval(token)
-
         
 class NodeManager():
     def __init__(self,model):
@@ -357,26 +349,36 @@ class NodeManager():
         children = []                
         for p in node.children:
             children.append(self.serialize(p))
-        return {'n':node.name,'t':node.type,'c':children} 
+        return {'id':node.id,'n':node.name,'t':node.type,'c':children} 
 
     def deserialize(self,serialized:dict)-> Node:
+        node = self._deserialize(serialized)
+        node =self.setParent(node)
+        return node
+
+    def _deserialize(self,serialized:dict)-> Node:
         children = []
         if 'c' in serialized:
             for p in serialized['c']:
-                children.append(self.deserialize(p))
-        node=  Node(serialized['n'],serialized['t'],children)
-        for i,p in enumerate(node.children):
-            p.parent = node
-            p.index = i
-        return node        
+                children.append(self._deserialize(p))
+        return  Node(serialized['n'],serialized['t'],children)
 
     def setParent(self,node:Node,parent:Node=None,index:int=0):
-        node.parent = parent
-        node.index = index
+        if parent is not None:
+            node.id = parent.id +'.'+str(index)
+            node.parent = parent
+            node.index = index
+            node.level = parent.level +1  
+        else:
+            node.id = '0'
+            node.parent = None
+            node.index = 0
+            node.level = 0 
+
         if  len(node.children)>0:
             for i,p in enumerate(node.children):
-                self.setParent(p,node,i)       
-
+                self.setParent(p,node,i) 
+        return node;              
 # Facade   
 class Exp(metaclass=Singleton):
     def __init__(self):
@@ -414,7 +416,7 @@ class Exp(metaclass=Singleton):
             self.nodeManager.setParent(node)
             return node
         except Exception as error:
-            raise ExpressionError('expression: '+expression+' error: '+str(error))
+            raise ExpressionException('expression: '+expression+' error: '+str(error))
 
     def compile(self,value)->Operand:
         try:
@@ -424,11 +426,11 @@ class Exp(metaclass=Singleton):
             elif isinstance(value,str):
                 node = self.parse(value)
             else:
-               raise ExpressionError('not possible to compile')      
+               raise ExpressionException('not possible to compile')      
 
             return self.sourceManager.compile(node)
         except Exception as error:
-            raise ExpressionError('node: '+node.name+' error: '+str(error))  
+            raise ExpressionException('node: '+node.name+' error: '+str(error))  
 
     def run(self,value,context:dict={},token:Token=None)-> any : 
         try:
@@ -441,12 +443,12 @@ class Exp(metaclass=Singleton):
                 node = self.parse(value)
                 operand =self.sourceManager.compile(node) 
             else:
-               raise ExpressionError('not possible to run')  
+               raise ExpressionException('not possible to run')  
 
             # return self.sourceManager.run(operand,context)
             return self.sourceManager.eval(operand,context,token)
         except Exception as error:
-            raise ExpressionError('operand: '+operand.name+' error: '+str(error))               
+            raise ExpressionException('operand: '+operand.name+' error: '+str(error))               
 
     def eval(self,operand:Operand,context:dict={},token:Token=None)-> any : 
         return self.sourceManager.eval(operand,context,token)
@@ -465,7 +467,7 @@ class Exp(metaclass=Singleton):
         elif type == 'Node':
             return self.nodeManager.deserialize(serialized)
         else:
-            raise ExpressionError('type: '+type+' not support')           
+            raise ExpressionException('type: '+type+' not support')           
  
     def vars(self,value)->dict:
         if isinstance(value,Node):
@@ -564,7 +566,7 @@ class Parser():
             del _parser             
             return node  
         except Exception as error:
-            raise ExpressionError('expression: '+expression+' error: '+str(error))      
+            raise ExpressionException('expression: '+expression+' error: '+str(error))      
  
 class _Parser():
     def __init__(self,mgr:Parser,expression:str):
@@ -785,7 +787,7 @@ class _Parser():
             else:    
                 name= self.getValue()
             if self.current==':':self.index+=1
-            else:raise ExpressionError('attribute '+name+' without value')
+            else:raise ExpressionException('attribute '+name+' without value')
             value= self.getExpression(_break=',}')
             attribute = Node(name,'keyValue',[value])
             attributes.append(attribute)
@@ -841,7 +843,7 @@ class _Parser():
                 return Node(name,'arrowFunction',[parent]) 
             else:    
                 if self.current=='=' and self.next == '>':self.index+=2
-                else:raise ExpressionError('map without body')
+                else:raise ExpressionException('map without body')
                 variable= Node(variableName,'variable')
                 body= self.getExpression(_break=')')
                 return Node(name,'arrowFunction',[parent,variable,body])        
@@ -872,5 +874,4 @@ class _Parser():
                 attributes.append(attribute)
             return Node('object','object',attributes)
    
-
-                            
+                           

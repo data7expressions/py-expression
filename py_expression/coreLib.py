@@ -290,11 +290,6 @@ class CoreLib(Library):
             return list[index]
 
     class And(Operator):
-        @property
-        def value(self):
-            if not self._children[0].value : return False
-            return self._children[1].value
-
         def solve(self,values,token:Token=None):
             if len(values) == 0:
                 value = self._children[0].eval(token)
@@ -304,11 +299,6 @@ class CoreLib(Library):
                 return self._children[1].eval(token)   
 
     class Or(Operator):
-        @property
-        def value(self): 
-            if self._children[0].value : return True
-            return self._children[1].value
-
         def solve(self,values,token:Token=None):
             if len(values) == 0:
                 value = self._children[0].eval(token)
@@ -318,15 +308,6 @@ class CoreLib(Library):
                 return self._children[1].eval(token)    
 
     class Assigment(Operator):
-        @property
-        def value(self):
-            if self._function is None:
-                self._children[0].value = self._children[1].value
-                return self._children[0].value
-            else:
-                self._children[0].value= self._function(self._children[0].value,self._children[1].value)
-                return self._children[0].value
-
         def solve(self,values,token:Token=None):
             if len(values) == 0:
                values.append(self._children[0].eval(token))
@@ -1032,19 +1013,9 @@ class CoreLib(Library):
         def remove(list:list[Operand],item:Operand): pass
     
     class ArrayForeach(ArrowFunction):   
-        @property
-        def value(self):
-            list= self._children[0]
-            variable= self._children[1]
-            body= self._children[2]
-            for p in list.value:
-                variable.value = p
-                body.value
-
         def solve(self,values,token:Token=None):
             if len(values) == 0:
                values.append(self._children[0].eval(token))
-            # add index of item in list
             values.append(0)    
             for i,p in enumerate(values[0]):
                 if i>=values[1]:
@@ -1053,21 +1024,9 @@ class CoreLib(Library):
                     values[1] = i                   
 
     class ArrayMap(ArrowFunction):
-        @property
-        def value(self):
-            result=[]
-            list= self._children[0]
-            variable= self._children[1]
-            body= self._children[2]
-            for p in list.value:
-                variable.value = p
-                result.append(body.value)
-            return result
-
         def solve(self,values,token:Token=None):
             if len(values) == 0:
                values.append(self._children[0].eval(token))
-            # add index of item in list
             values.append(0)    
             for i,p in enumerate(values[0]):
                 if i>=values[1]:
@@ -1077,20 +1036,9 @@ class CoreLib(Library):
             return values[2:]            
             
     class ArrayFirst(ArrowFunction):
-        @property
-        def value(self):
-            list= self._children[0]
-            variable= self._children[1]
-            body= self._children[2]
-            for p in list.value:
-                variable.value = p
-                if body.value : return p
-            return None
-
         def solve(self,values,token:Token=None):
             if len(values) == 0:
                values.append(self._children[0].eval(token))
-            # add index of item in list
             values.append(0)    
             for i,p in enumerate(values[0]):
                 if i>=values[1]:
@@ -1099,24 +1047,11 @@ class CoreLib(Library):
             return None    
 
     class ArrayLast(ArrowFunction):
-        @property
-        def value(self):
-            list= self._children[0]
-            variable= self._children[1]
-            body= self._children[2]
-            value = list.value
-            value.reverse()
-            for p in value:
-                variable.value = p
-                if body.value : return p
-            return None
-
         def solve(self,values,token:Token=None):
             if len(values) == 0:
                list = self._children[0].eval(token)
                list.reverse() 
                values.append(list)
-            # add index of item in list
             values.append(0)    
             for i,p in enumerate(values[0]):
                 if i>=values[1]:
@@ -1125,22 +1060,10 @@ class CoreLib(Library):
             return None      
 
     class ArrayFilter(ArrowFunction):
-        @property
-        def value(self):
-            result=[]
-            list= self._children[0]
-            variable= self._children[1]
-            body= self._children[2]
-            for p in list.value:
-                variable.value = p
-                if body.value: result.append(p)
-            return result
-
         def solve(self,values,token:Token=None):
             if len(values) == 0:
                list = self._children[0].eval(token)
                values.append(list)
-            # add index of item in list
             values.append(0)    
             for i,p in enumerate(values[0]):
                 if i>=values[1]:
@@ -1150,25 +1073,6 @@ class CoreLib(Library):
             return values[2:]       
 
     class ArrayReverse(ArrowFunction):
-        @property
-        def value(self):
-            if len(self._children)==1:
-                list= self._children[0]
-                value = list.value
-                value.reverse()
-                return value
-            else:
-                result=[]
-                list= self._children[0]
-                variable= self._children[1]
-                method= self._children[2]
-                for p in list.value:
-                    variable.value = p
-                    result.append({'ord':method.value,'p':p})
-                result.sort((lambda p: p['ord']))
-                result.reverse()    
-                return map(lambda p: p['p'],result)
-
         def solve(self,values,token:Token=None):
             if len(values) == 0:
                list = self._children[0].eval(token)
@@ -1192,24 +1096,6 @@ class CoreLib(Library):
             return map(lambda p: p['p'],result)                                  
                 
     class ArraySort(ArrowFunction):
-        @property
-        def value(self):
-            if len(self._children)==1:
-                list= self._children[0]
-                value = list.value
-                value.reverse()
-                return value
-            else:
-                result=[]
-                list= self._children[0]
-                variable= self._children[1]
-                method= self._children[2]
-                for p in list.value:
-                    variable.value = p
-                    result.append({'ord':method.value,'p':p})
-                result.sort((lambda p: p['ord']))
-                return map(lambda p: p['p'],result)
-
         def solve(self,values,token:Token=None):
             if len(values) == 0:
                list = self._children[0].eval(token)
@@ -1231,14 +1117,6 @@ class CoreLib(Library):
             return map(lambda p: p['p'],result)           
                 
     class ArrayPush(ArrowFunction):
-        @property
-        def value(self):       
-            list= self._children[0]
-            elemnent= self._children[1]
-            value = list.value
-            value.append(elemnent)
-            return value
-
         def solve(self,values,token:Token=None):
             if len(values) == 0:
                list = self._children[0].eval(token)
@@ -1251,16 +1129,6 @@ class CoreLib(Library):
             return values[0]
 
     class ArrayPop(ArrowFunction):
-        @property
-        def value(self):         
-            list= self._children[0]
-            index =None
-            if len(self._children)>1:
-                index= self._children[1].value
-            else:
-                index = len(self._children) -1        
-            return list.value.pop(index)
-
         def solve(self,values,token:Token=None):
             if len(values) == 0:
                list = self._children[0].eval(token)
@@ -1276,12 +1144,6 @@ class CoreLib(Library):
             return values[0].pop(values[1])   
 
     class ArrayRemove(ArrowFunction):
-        @property
-        def value(self):        
-            list= self._children[0]
-            element= self._children[1]
-            list.value.remove(element.value)
-
         def solve(self,values,token:Token=None):
             if len(values) == 0:
                list = self._children[0].eval(token)

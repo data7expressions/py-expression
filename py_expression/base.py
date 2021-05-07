@@ -8,8 +8,8 @@ class Singleton(type):
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
 
-class ModelError(Exception):pass
-class ExpressionError(Exception):pass
+class ModelException(Exception):pass
+class ExpressionException(Exception):pass
 
 class Model():
     def __init__(self):
@@ -52,7 +52,7 @@ class Model():
                     return operator[cardinality]
             return None        
         except:
-            raise ModelError('error with operator: '+name)     
+            raise ModelException('error with operator: '+name)     
 
     def getFunctionMetadata(self,name:str):
         try:
@@ -60,7 +60,7 @@ class Model():
                 return self._functions[name]
             return None
         except:
-            raise ModelError('error with function: '+name)        
+            raise ModelException('error with function: '+name)        
         
 class Library():
     def __init__(self,name):
@@ -95,7 +95,7 @@ class Library():
                 list[p]=enum[p].value
             self._enums[key] =list
         else:
-            raise ModelError('enum not supported: '+key)    
+            raise ModelException('enum not supported: '+key)    
 
     def addOperator(self,name:str,category:str,source,priority:int=-1,custom=None,customFunction=None):
         if name not in self._operators.keys():
@@ -199,15 +199,7 @@ class ChildContextable(Contextable):pass
 
 class Token():
     def __init__(self):
-        self._value = None
         self._path = {}
-
-    @property
-    def value(self): 
-        return self._value
-    @value.setter
-    def value(self,value):
-        self._value =value  
 
     @property
     def path(self): 
@@ -351,11 +343,6 @@ class Operand():
     def children(self):
         return self._children 
 
-    @property
-    def value(self): pass
-    @value.setter
-    def value(self,value):pass
-
     def eval(self,token:Token=None):
         values=None
         if token is None:
@@ -384,45 +371,25 @@ class Constant(Operand):
     @property
     def type(self): 
         return self._type  
-    @property
-    def value(self): 
-        return self._name 
 
-    def eval(self,token:Token=None):
-        return self._name     
+    def solve(self,values,token:Token=None):
+        return self._name
 
 class Variable(Operand,Contextable):
     def __init__(self,name:str,children:list[Operand]=[]):
         Operand.__init__(self,name,children)
 
-    @property
-    def value(self): 
+    def solve(self,values,token:Token=None):
         return self.context.get(self._name)
-    @value.setter
-    def value(self,value):
-        self.context.set(self._name,value) 
 
-    def eval(self,token:Token=None):
-        return self.context.get(self._name)
     def set(self,value,token:Token=None):
         self.context.set(self._name,value)    
     
 class KeyValue(Operand):
-    @property
-    def value(self):
-        return self._children[0].value
-
-    def eval(self,token:Token=None):
-        return self._children[0].eval(token)      
+    def solve(self,values,token:Token=None):
+        return self._children[0].eval(token)          
 
 class Array(Operand):
-    @property
-    def value(self):
-        list= []
-        for p in self._children:
-            list.append(p.value)
-        return list 
-
     def solve(self,values,token:Token=None):
         for i, p in enumerate(self._children): 
             if i >= len(values):
@@ -431,13 +398,6 @@ class Array(Operand):
         return values       
 
 class Object(Operand):
-    @property
-    def value(self):
-        dic= {}
-        for p in self._children:
-            dic[p.name]=p.value
-        return dic
-
     def solve(self,values,token:Token=None):
         
         for i, p in enumerate(self._children): 
@@ -453,14 +413,7 @@ class Operator(Operand):
     def __init__(self,name:str,children:list[Operand]=[],function=None):
         super(Operator,self).__init__(name,children) 
         self._function = function
-
-    @property
-    def value(self):       
-        values= []
-        for p in self._children:
-            values.append(p.value)
-        return self._function(*values)
-   
+  
     def solve(self,values,token:Token=None):
         for i, p in enumerate(self._children): 
             if i >= len(values):
@@ -473,13 +426,6 @@ class Function(Operand):
         super(Function,self).__init__(name,children) 
         self._function = function
 
-    @property
-    def value(self):       
-        values= []
-        for p in self._children:
-            values.append(p.value)
-        return self._function(*values)
-
     def solve(self,values,token:Token=None):
         for i, p in enumerate(self._children): 
             if i >= len(values):
@@ -490,20 +436,6 @@ class Function(Operand):
 class ArrowFunction(Function,ChildContextable):pass
 
 class ContextFunction(Function):
-    @property
-    def value(self):  
-        values=[] 
-        parent = self._children[0]
-        value = parent.value
-        if isinstance(value,object) and hasattr(value, self._name):
-            function=getattr(value, self._name)
-            for p in self._children[1:]:
-                values.append(p.value)
-            return function(*values)     
-        else:    
-            raise ExpressionError('function: '+self._name +' not found in '+parent.name)
-
-
     def solve(self,values,token:Token=None):
         if len(values) == 0:
             parent = self._children[0]
@@ -516,14 +448,9 @@ class ContextFunction(Function):
                     values.append(value)
             return function(*values[1:])     
         else:    
-            raise ExpressionError('function: '+self._name +' not found in '+parent.name) 
+            raise ExpressionException('function: '+self._name +' not found in '+parent.name) 
 
 class Block(Operand):
-    @property
-    def value(self):         
-        for p in self._children:
-            p.value
-
     def solve(self,values,token:Token=None):
         for i, p in enumerate(self._children): 
             if i >= len(values):
@@ -532,13 +459,6 @@ class Block(Operand):
         return values          
                 
 class If(Operand):
-    @property
-    def value(self):         
-        if self._children[0].value:
-           self._children[1].value
-        elif len(self._children) > 2 and self._children[2] is not None:       
-            self._children[2].value
-
     def solve(self,values,token:Token=None):
         if len(values)== 0:
             values.append(self._children[0].eval(token))
@@ -550,12 +470,6 @@ class If(Operand):
         return values         
          
 class While(Operand):
-    @property
-    def value(self):
-        while self._children[0].value:
-           self._children[1].value
-
-
     def solve(self,values,token:Token=None):
         if len(values)== 0:
             values.append(self._children[0].eval(token))
