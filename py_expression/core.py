@@ -36,12 +36,8 @@ class SourceManager():
         for p in node.children:
             child = self.nodeToOperand(p)
             children.append(child)
-        operand = self.createOperand(node.name,node.type,children)
-        for i,p in enumerate(operand.children):
-            p.parent = operand
-            p.index = i
-            p.level = operand.level +1
-        return operand 
+        return self.createOperand(node.name,node.type,children)
+
 
     def reduce(self,operand:Operand):
         """ if all the children are constant, reduce the expression a constant """
@@ -61,6 +57,22 @@ class SourceManager():
                 for i, p in enumerate(operand.children):
                    operand.children[i]=self.reduce(p)
         return operand  
+
+    def setParent(self,operand:Operand,index:int=0,parent:Operand=None):        
+        if parent is not None:
+            operand.id = parent.id +'.'+str(index)
+            operand.parent = parent
+            operand.index = index
+            operand.level = parent.level +1  
+        else:
+            operand.id = '0'
+            operand.parent = None
+            operand.index = 0
+            operand.level = 0 
+        
+        for i,p in enumerate(operand.children):
+            self.setParent(p,i,operand)           
+        return operand 
 
     def createOperand(self,name:str,type:str,children:list[Operand])->Operand:
         if type == 'constant':
@@ -139,6 +151,7 @@ class SourceManager():
     def compile(self,node:Node):
         operand =self.nodeToOperand(node)
         operand =self.reduce(operand)
+        operand =self.setParent(operand)
         return operand
 
     def run(self,operand:Operand,context:dict={})-> any :  
@@ -242,62 +255,22 @@ class SourceManager():
         return {'n':operand.name,'t':type(operand).__name__,'c':children} 
 
     def deserialize(self,serialized:dict)-> Operand:
+        operand = self._deserialize(serialized)
+        operand =self.setParent(operand)
+        return operand
+
+    def _deserialize(self,serialized:dict)-> Operand:
         children = []
         if 'c' in serialized:
             for p in serialized['c']:
-                children.append(self.deserialize(p))
-        operand = self.createOperand(serialized['n'],serialized['t'],children)
-        for i,p in enumerate(operand.children):
-            p.parent = operand
-            p.index = i
-            p.level = operand.level +1
-        return operand   
+                children.append(self._deserialize(p))
+        return self.createOperand(serialized['n'],serialized['t'],children)
 
     def eval(self,operand:Operand,context:dict={},token:Token=None)-> any :  
         if context is not None:
             self.setContext(operand,Context(context))
         return operand.eval(token)
 
-    # def degugger(self,operand:Operand,context:dict={})-> Debug:
-    #     if context is not None:
-    #         self.setContext(operand,Context(context))
-    #     return self._degugger(operand) 
-
-    # def _degugger(self,operand:Operand)-> Debug:
-    #     children = []                
-    #     for p in operand.children:
-    #         children.append(self._degugger(p))
-    #     return Debug(operand,children)    
-
-    # def degug(self,debuggeable:Debug,token:Token):
-    #     debuggeable.debug(token,0)        
-
-    # def debug(self,token:Token,level): 
-    #     if len(token.path) <= level:
-    #         if len(self.children)== 0:
-    #             token.value= self.value 
-    #         else:
-    #             token.path.append(0)
-    #             self.children[0].debug(token,level+1)   
-    #     else:
-    #         idx = token.path[level]
-    #         # si es el anteultimo nodo 
-    #         if len(token.path) -1 == level:           
-    #             if len(self.children) > idx+1:
-    #                token.path[level] = idx+1
-    #                self.children[idx+1].debug(token,level+1)
-    #             else:
-    #                token.path.pop() 
-    #                token.value= self.value       
-    #         else:
-    #             self.children[idx].debug(token,level+1)  
-
-    # def getOperandByPath(self,operand:Operand,path)->Operand:
-    #     search = operand
-    #     for p in path:
-    #         if len(search.children) <= p:return None
-    #         search = search.children[p]
-    #     return search    
         
 class NodeManager():
     def __init__(self,model):
@@ -457,7 +430,7 @@ class Exp(metaclass=Singleton):
         except Exception as error:
             raise ExpressionError('node: '+node.name+' error: '+str(error))  
 
-    def run(self,value,context:dict={})-> any : 
+    def run(self,value,context:dict={},token:Token=None)-> any : 
         try:
             operand=None
             if isinstance(value,Operand):
@@ -471,7 +444,7 @@ class Exp(metaclass=Singleton):
                raise ExpressionError('not possible to run')  
 
             # return self.sourceManager.run(operand,context)
-            return self.sourceManager.eval(operand,context)
+            return self.sourceManager.eval(operand,context,token)
         except Exception as error:
             raise ExpressionError('operand: '+operand.name+' error: '+str(error))               
 
@@ -651,7 +624,6 @@ class _Parser():
                 break
         if not isbreak: expression=Node(operator,'operator',[operand1,operand2])
         return expression  
-                 
 
     def getOperand(self)-> Node:        
         isNegative=False
@@ -776,11 +748,9 @@ class _Parser():
         if self.index+2 < self.length:
             triple = self.current+self.next+self.buffer[self.index+2]
             if triple in self.mgr.tripleOperators :op=triple
-            # if triple in ['**=','//=','<<=','>>=']:op=triple
         if op is None and  self.index+1 < self.length:
             double = self.current+self.next
             if double in self.mgr.doubleOperators  :op=double
-            # if double in ['**','//','>=','<=','!=','==','+=','-=','*=','/=','%=','&&','||','|=','^=','<<','>>']  :op=double
         if op is None:op=self.current 
         self.index+=len(op)
         return op

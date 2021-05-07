@@ -1190,8 +1190,7 @@ class CoreLib(Library):
             result.sort((lambda p: p['ord']))
             result.reverse()    
             return map(lambda p: p['p'],result)                                  
-                  
-
+                
     class ArraySort(ArrowFunction):
         @property
         def value(self):

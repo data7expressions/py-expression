@@ -144,6 +144,32 @@ class TestExpression(unittest.TestCase):
         context = {"a":[1,2,3,4,5],"b":0}
         self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).map(p=> p*2).reverse()',context),[8,6,4])
 
+    def test_token(self): 
+
+        self.assertEqual(exp.run('2**b+a',{"a":1,"b":2},Token()),5) 
+        self.assertEqual(exp.run('c.b',{"a":"1","b":2,"c":{"a":4,"b":5}},Token()),5)
+
+        text='a=4; '\
+             'b=a+2; '\
+            ' output=a*b; ' 
+        context = {}
+        exp.run(text,context,Token())
+        self.assertEqual(context['output'],24)
+
+        context = {}
+        exp.run(('if(1==2){'
+                   '    output=2'
+                   '}else {'
+                   '    output=3'
+                   '}'),context,Token())
+        self.assertEqual(context['output'],3)
+
+        
+        context = {"a":[1,2,3,4,5],"b":0}
+        self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).reverse()',context,Token()),[4,3,2])
+        context = {"a":[1,2,3,4,5],"b":0}
+        self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).map(p=> p*2).reverse()',context,Token()),[8,6,4]) 
+
     def test_info(self):
         node = exp.parse('strCount("expression","e")>= a+1')
         self.assertEqual(exp.vars(node),{'a': 'any'})
@@ -192,8 +218,7 @@ class TestExpression(unittest.TestCase):
         exp.run(operand,context)
         self.assertEqual(context['output'],12) 
 
-# context = {"a":[1,2,3,4,5],"b":0}
-# print(exp.run('a.filter(p=> p>1 && p<5).map(p=> p*2)',context))
+
 unittest.main()
 
 # operand=exp.compile('(a+1)*(a-1)')

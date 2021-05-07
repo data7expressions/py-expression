@@ -61,8 +61,7 @@ class Model():
             return None
         except:
             raise ModelError('error with function: '+name)        
-          
-
+        
 class Library():
     def __init__(self,name):
         self._name = name
@@ -198,11 +197,10 @@ class Contextable():
 
 class ChildContextable(Contextable):pass
 
-
 class Token():
     def __init__(self):
         self._value = None
-        self._path = []
+        self._path = {}
 
     @property
     def value(self): 
@@ -228,7 +226,6 @@ class Step():
     @property
     def values(self): 
         return self._values
-
 
 class Node():
     def __init__(self,name,type,children=[]): 
@@ -305,11 +302,11 @@ class Node():
     def __imod__(self, other):return Node('%=','operator',[other,self])
     def __ipow__(self, other):return Node('**=','operator',[other,self])   
 
-
 class Operand():
     def __init__(self,name:str,children:list['Operand']=[]):
         self._name = name        
         self._children  = children
+        self._id = None
         self._parent = None
         self._index = 0
         self._level = 0
@@ -320,6 +317,13 @@ class Operand():
     @name.setter
     def name(self,value):
         self._name =value    
+
+    @property
+    def id(self):
+        return self._id
+    @id.setter
+    def id(self,value):
+        self._id =value    
 
     @property
     def parent(self):
@@ -357,71 +361,20 @@ class Operand():
         if token is None:
             values= []
         else:
-            if len(token.path) <= self.level:
-                token.path.append(Step(self._name,self._index,self._level))
-            values = token.path[self.level].values
+            if not self._id in token.path:
+                step = Step(self._name,self._index,self._level)
+                values = step.values
+                token.path[self._id] = step
+            else:
+                values = token.path[self.self._id].values  
+
         result=self.solve(values,token)
-        if token is not None: token.path.pop()
+
+        if token is not None:
+            del token.path[self._id]            
         return result 
 
     def solve(self,values,token:Token=None):pass
-
-# class Process():
-#     def __init__(self,operand:Operand):
-#         self.operand = operand
-
-#     def execute(self):
-#         self 
-
-# class Debug():
-#     def __init__(self,operand:Operand,children:list['Debug']=[]):
-#         self.operand = operand
-#         self.children  = children   
-
-#     def debug(self,token:Token,level): 
-#         if len(token.path) <= level:
-#             if len(self.children)== 0:
-#                 token.value= self.operand.value
-#             else:
-#                 token.path.append(0)
-#                 self.children[0].debug(token,level+1)   
-#         else:
-#             idx = token.path[level]
-#             # si es el anteultimo nodo 
-#             if len(token.path) -1 == level:           
-#                 if len(self.children) > idx+1:
-#                    token.path[level] = idx+1
-#                    self.children[idx+1].debug(token,level+1)
-#                 else:
-#                    token.path.pop() 
-#                    token.value= self.operand.value      
-#             else:
-#                 self.children[idx].debug(token,level+1)  
-
-# class Debug():
-#     def __init__(self,operand:Operand,children:list['Debug']=[]):
-#         self.operand = operand
-#         self.children  = children   
-
-#     def debug(self,token:Token,level): 
-#         if len(token.path) <= level:
-#             if len(self.children)== 0:
-#                 token.value= self.operand.value
-#             else:
-#                 token.path.append(0)
-#                 self.children[0].debug(token,level+1)   
-#         else:
-#             idx = token.path[level]
-#             # si es el anteultimo nodo 
-#             if len(token.path) -1 == level:           
-#                 if len(self.children) > idx+1:
-#                    token.path[level] = idx+1
-#                    self.children[idx+1].debug(token,level+1)
-#                 else:
-#                    token.path.pop() 
-#                    token.value= self.operand.value      
-#             else:
-#                 self.children[idx].debug(token,level+1)  
 
 class Constant(Operand):
     def __init__(self,name,children=[]):
@@ -514,8 +467,7 @@ class Operator(Operand):
                 value = p.eval(token)    
                 values.append(value)
         return self._function(*values)                 
-                               
-
+                              
 class Function(Operand):
     def __init__(self,name:str,children:list[Operand]=[],function=None):
         super(Function,self).__init__(name,children) 
@@ -565,10 +517,6 @@ class ContextFunction(Function):
             return function(*values[1:])     
         else:    
             raise ExpressionError('function: '+self._name +' not found in '+parent.name) 
-
-        
-
-         
 
 class Block(Operand):
     @property
