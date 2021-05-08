@@ -413,7 +413,8 @@ class Array(Operand):
     def solve(self,values,token:Token=None)->Value:
         for i, p in enumerate(self._children): 
             if i >= len(values):
-                value = p.eval(token)    
+                value = p.eval(token)
+                if value.isBreak: return value   
                 values.append(value.value)
         return Value(values)       
 
@@ -422,7 +423,8 @@ class Object(Operand):
         
         for i, p in enumerate(self._children): 
             if i >= len(values):
-                value = p.eval(token)    
+                value = p.eval(token)
+                if value.isBreak: return value     
                 values.append(value.value)
         dic= {}
         for i,value in enumerate(values):
@@ -437,7 +439,8 @@ class Operator(Operand):
     def solve(self,values,token:Token=None)->Value:
         for i, p in enumerate(self._children): 
             if i >= len(values):
-                value = p.eval(token)    
+                value = p.eval(token)
+                if value.isBreak: return value     
                 values.append(value.value)
         return Value(self._function(*values))                 
                               
@@ -449,7 +452,8 @@ class Function(Operand):
     def solve(self,values,token:Token=None)->Value:
         for i, p in enumerate(self._children): 
             if i >= len(values):
-                value = p.eval(token)    
+                value = p.eval(token)
+                if value.isBreak: return value     
                 values.append(value.value)
         return Value(self._function(*values))   
 
@@ -458,13 +462,15 @@ class ArrowFunction(Function,ChildContextable):pass
 class ContextFunction(Function):
     def solve(self,values,token:Token=None)->Value:
         if len(values) == 0:
-            parent = self._children[0]
-            values.append(parent.eval(token))
+            value = self._children[0].eval(token)
+            if value.isBreak: return value 
+            values.append()
         if isinstance(values[0],object) and hasattr(values[0], self._name):
             function=getattr(values[0], self._name)
             for i,p in enumerate(self._children[1:]):
                 if i >= len(values):
                     value = p.eval(token)
+                    if value.isBreak: return value 
                     values.append(value.value)
             return Value(function(*values[1:]))     
         else:    
@@ -474,7 +480,8 @@ class Block(Operand):
     def solve(self,values,token:Token=None)->Value:
         for i, p in enumerate(self._children): 
             if i >= len(values):
-                value = p.eval(token)    
+                value = p.eval(token)
+                if value.isBreak: return value     
                 values.append(value.value)
         return Value(values)          
                 
@@ -482,13 +489,16 @@ class If(Operand):
     def solve(self,values,token:Token=None)->Value:
         if len(values)== 0:
             value = self._children[0].eval(token)
+            if value.isBreak: return value
             values.append(value.value)
 
         if values[0]:
             value = self._children[1].eval(token)
+            if value.isBreak: return value
             values.append(value.value) 
         elif len(self._children) > 2 and self._children[2] is not None:
             value = self._children[2].eval(token)
+            if value.isBreak: return value
             values.append(value.value)         
         return Value(values)         
          
@@ -496,15 +506,18 @@ class While(Operand):
     def solve(self,values,token:Token=None)->Value:
         if len(values)== 0:
             value = self._children[0].eval(token)
+            if value.isBreak: return value
             values.append(value.value)
 
         while values[0]:
             if len(values) < 2:
                 value = self._children[1].eval(token)
+                if value.isBreak: return value
                 values.append(value.value)
 
             values = []
             value = self._children[0].eval(token)
+            if value.isBreak: return value
             values.append(value.value)
 
         return Value(None)          

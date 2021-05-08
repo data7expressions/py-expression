@@ -298,6 +298,7 @@ class CoreLib(Library):
             def solve(self,values,token:Token=None)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
+                    if value.isBreak: return value
                     if not value.value : return Value(False)
                     values.append(value.value)                
                 if len(values) == 1:
@@ -307,6 +308,7 @@ class CoreLib(Library):
             def solve(self,values,token:Token=None)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
+                    if value.isBreak: return value
                     if value.value : return Value(True)
                     values.append(value)                
                 if len(values) == 1:
@@ -315,10 +317,12 @@ class CoreLib(Library):
         class Assigment(Operator):
             def solve(self,values,token:Token=None)->Value:
                 if len(values) == 0:
-                    value = self._children[0].eval(token)  
+                    value = self._children[0].eval(token)
+                    if value.isBreak: return value  
                     values.append(value.value)
                 if len(values) ==1:
                     value = self._children[1].eval(token)
+                    if value.isBreak: return value
                     values.append(value.value)
                     value = values[1] if self._function is None else self._function(values[0],values[1])
                     self._children[0].set(value,token)
@@ -1022,25 +1026,29 @@ class CoreLib(Library):
             def solve(self,values,token:Token=None)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
-                    values.append(value.value)
-                values.append(0)    
-                for i,p in enumerate(values[0]):
-                    if i>=values[1]:
-                        self._children[1].set(p,token)
-                        value = self._children[2].eval(token)                    
-                        values[1] = i
-                return Value()        
-
-        class ArrayMap(ArrowFunction):
-            def solve(self,values,token:Token=None)->Value:
-                if len(values) == 0:
-                    value = self._children[0].eval(token) 
+                    if value.isBreak: return value
                     values.append(value.value)
                 values.append(0)    
                 for i,p in enumerate(values[0]):
                     if i>=values[1]:
                         self._children[1].set(p,token)
                         value = self._children[2].eval(token)
+                        if value.isBreak: return value                    
+                        values[1] = i
+                return Value()        
+
+        class ArrayMap(ArrowFunction):
+            def solve(self,values,token:Token=None)->Value:
+                if len(values) == 0:
+                    value = self._children[0].eval(token)
+                    if value.isBreak: return value 
+                    values.append(value.value)
+                values.append(0)    
+                for i,p in enumerate(values[0]):
+                    if i>=values[1]:
+                        self._children[1].set(p,token)
+                        value = self._children[2].eval(token)
+                        if value.isBreak: return value
                         values.append(value.value)
                         values[1] = i 
                 return Value(values[2:])  
@@ -1048,20 +1056,23 @@ class CoreLib(Library):
         class ArrayFirst(ArrowFunction):
             def solve(self,values,token:Token=None)->Value:
                 if len(values) == 0:
-                    value = self._children[0].eval(token)  
+                    value = self._children[0].eval(token)
+                    if value.isBreak: return value  
                     values.append(value.value)
                 values.append(0)    
                 for i,p in enumerate(values[0]):
                     if i>=values[1]:
                         self._children[1].set(p,token)
                         value = self._children[2].eval(token)
+                        if value.isBreak: return value
                         if value.value: return Value(p)                    
                 return Value(None)
 
         class ArrayLast(ArrowFunction):
             def solve(self,values,token:Token=None)->Value:
                 if len(values) == 0:
-                    value = self._children[0].eval(token) 
+                    value = self._children[0].eval(token)
+                    if value.isBreak: return value 
                     value.value.reverse() 
                     values.append(value.value)
                 values.append(0)    
@@ -1069,19 +1080,22 @@ class CoreLib(Library):
                     if i>=values[1]:
                         self._children[1].set(p,token)
                         value = self._children[2].eval(token)
+                        if value.isBreak: return value
                         if value.value: return Value(p)                    
                 return Value(None)      
 
         class ArrayFilter(ArrowFunction):
             def solve(self,values,token:Token=None)->Value:
                 if len(values) == 0:
-                    value = self._children[0].eval(token) 
+                    value = self._children[0].eval(token)
+                    if value.isBreak: return value 
                     values.append(value.value)
                 values.append(0)    
                 for i,p in enumerate(values[0]):
                     if i>=values[1]:
                         self._children[1].set(p,token)
                         value = self._children[2].eval(token)
+                        if value.isBreak: return value
                         if value.value: values.append(p) 
                         values[1] = i                   
                 return Value(values[2:])       
@@ -1089,7 +1103,8 @@ class CoreLib(Library):
         class ArrayReverse(ArrowFunction):
             def solve(self,values,token:Token=None)->Value:
                 if len(values) == 0:
-                    value = self._children[0].eval(token) 
+                    value = self._children[0].eval(token)
+                    if value.isBreak: return value 
                     value.value.reverse() 
                     values.append(value.value)
 
@@ -1101,6 +1116,7 @@ class CoreLib(Library):
                     if i>=values[1]:
                         self._children[1].set(p,token)
                         value = self._children[2].eval(token)
+                        if value.isBreak: return value
                         values.append({'ord':value.value,'p':p}) 
                         values[1] = i
 
@@ -1112,7 +1128,8 @@ class CoreLib(Library):
         class ArraySort(ArrowFunction):
             def solve(self,values,token:Token=None)->Value:
                 if len(values) == 0:
-                    value = self._children[0].eval(token) 
+                    value = self._children[0].eval(token)
+                    if value.isBreak: return value 
                     values.append(value.value)
 
                 if len(self._children)==1:
@@ -1123,6 +1140,7 @@ class CoreLib(Library):
                     if i>=values[1]:
                         self._children[1].set(p,token)
                         value = self._children[2].eval(token)
+                        if value.isBreak: return value
                         values.append({'ord':value.value,'p':p}) 
                         values[1] = i
 
@@ -1133,10 +1151,12 @@ class CoreLib(Library):
         class ArrayPush(ArrowFunction):
             def solve(self,values,token:Token=None)->Value:
                 if len(values) == 0:
-                    value = self._children[0].eval(token) 
+                    value = self._children[0].eval(token)
+                    if value.isBreak: return value 
                     values.append(value.value)
                 if len(values) == 1:
                     value = self._children[1].eval(token)
+                    if value.isBreak: return value
                     values.append(value.value)
 
                 values[0].append(values[1])
@@ -1146,10 +1166,12 @@ class CoreLib(Library):
             def solve(self,values,token:Token=None)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
+                    if value.isBreak: return value
                     values.append(value.value)
                 if len(values) == 1:   
                     if len(self._children)>1:
                         value = self._children[1].eval(token)
+                        if value.isBreak: return value
                         values.append(value.value)
                     else:
                         index = len(self._children) -1 
@@ -1161,9 +1183,11 @@ class CoreLib(Library):
             def solve(self,values,token:Token=None)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
+                    if value.isBreak: return value
                     values.append(value.value)
                 if len(values) == 1: 
                     value = self._children[1].eval(token)
+                    if value.isBreak: return value
                     values.append(value.value)
                 return Value(values[0].remove(values[1]) )      
 
