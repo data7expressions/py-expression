@@ -218,6 +218,32 @@ class TestExpression(unittest.TestCase):
         exp.run(operand,context)
         self.assertEqual(context['output'],12) 
 
+# operand=exp.compile('(a+1)*(a-1)')
+# context = {'a':3}
+# token= Token()
+# result = exp.run(operand,context,token)
+# print(token.stack)
+
+# context = {"a":"1","b":2,"c":{"a":4,"b":5}}
+# exp.run('a=8',context)
+# print(context['a'])
+
+# print(exp.run('a>b',{"a":1,"b":2}))
+
+# token= Token()
+# context = {}
+# exp.run(('i=0;'
+#          'while(i<=6){'
+#          '  output=i*2;'
+#          '  if(output%2==0){ signal("signal_1"); }'
+#          '  else { signal("signal_2"); }'
+#          '  i=i+1;'
+#          '}'),context,token)
+# print(context['output'],12)
+# print(token) 
+
+# print(exp.run('3>2'),3>2)
+
 
 unittest.main()
 
@@ -226,24 +252,24 @@ unittest.main()
 # token= Token()
 # result = exp.eval(operand,context,token)
 # print(result)
-# print(token.path)
+# print(token.stack)
 # exp.debug(operand,token,context)
-# print(token.path)
+# print(token.stack)
 # print(token.value)
 # exp.debug(operand,token,context)
-# print(token.path)
+# print(token.stack)
 # print(token.value)
 # exp.debug(operand,token,context)
-# print(token.path)
+# print(token.stack)
 # print(token.value)
 # exp.debug(operand,token,context)
-# print(token.path)
+# print(token.stack)
 # print(token.value)
 # exp.debug(operand,token,context)
-# print(token.path)
+# print(token.stack)
 # print(token.value)
 # exp.debug(operand,token,context)
-# print(token.path)
+# print(token.stack)
 # print(token.value)
 
 

@@ -183,6 +183,12 @@ class CoreLib(Library):
         self.addFunction('pop',self.Array.pop,self.ArrayPop)
         self.addFunction('remove',self.Array.remove,self.ArrayRemove)
 
+
+    # def signalFunctions(self):
+    #     self.addFunction('signal',self.Signal.signal )
+    #     self.addFunction('wait',self.Signal.wait)
+
+
     class Operators():
         @staticmethod
         def addition(a:any,b:any)->any:
@@ -293,31 +299,34 @@ class CoreLib(Library):
         def solve(self,values,token:Token=None):
             if len(values) == 0:
                 value = self._children[0].eval(token)
-                if not value : return False
-                values.append(value)                
+                if not value.value : return False
+                values.append(value.value)                
             if len(values) == 1:
-                return self._children[1].eval(token)   
+                value= self._children[1].eval(token)  
+                return value.value 
 
     class Or(Operator):
         def solve(self,values,token:Token=None):
             if len(values) == 0:
                 value = self._children[0].eval(token)
-                if value : return True
+                if value.value : return True
                 values.append(value)                
             if len(values) == 1:
-                return self._children[1].eval(token)    
+                value= self._children[1].eval(token)
+                return value.value    
 
     class Assigment(Operator):
         def solve(self,values,token:Token=None):
             if len(values) == 0:
-               values.append(self._children[0].eval(token))
+               value = self._children[0].eval(token)  
+               values.append(value.value)
             if len(values) ==1:
                 value = self._children[1].eval(token)
-                values.append(value)
+                values.append(value.value)
                 value = values[1] if self._function is None else self._function(values[0],values[1])
                 self._children[0].set(value,token)
                 return value                      
-
+    
     class General():
         @staticmethod
         def nvl(a:any,b:any)->any: 
@@ -327,6 +336,12 @@ class CoreLib(Library):
         @staticmethod
         def sleep(secs:float=1000): 
             return t.sleep(secs)
+
+    class Signal():
+        @staticmethod
+        def signal(key:str,timeout:float=None)->any: pass        
+        @staticmethod
+        def wait(secs:float=1000)->any: pass                   
 
     class String():
         # https://docs.python.org/2.5/lib/string-methods.html
@@ -1011,73 +1026,92 @@ class CoreLib(Library):
         def pop(list:list[Operand],item:Operand): pass
         @staticmethod
         def remove(list:list[Operand],item:Operand): pass
+
+        # class ArrayForeach(ArrowFunction):   
+        #     def solve(self,values,token:Token=None):
+        #         if len(values) == 0:
+        #             value = self._children[0].eval(token)
+        #             values.append(value.value)
+        #         values.append(0)    
+        #         for i,p in enumerate(values[0]):
+        #             if i>=values[1]:
+        #                 self._children[1].set(p,token)
+        #                 value = self._children[2].eval(token)                    
+        #                 values[1] = i  
     
     class ArrayForeach(ArrowFunction):   
         def solve(self,values,token:Token=None):
             if len(values) == 0:
-               values.append(self._children[0].eval(token))
+               value = self._children[0].eval(token)
+               values.append(value.value)
             values.append(0)    
             for i,p in enumerate(values[0]):
                 if i>=values[1]:
                     self._children[1].set(p,token)
-                    self._children[2].eval(token)
+                    value = self._children[2].eval(token)                    
                     values[1] = i                   
 
     class ArrayMap(ArrowFunction):
         def solve(self,values,token:Token=None):
             if len(values) == 0:
-               values.append(self._children[0].eval(token))
+               value = self._children[0].eval(token) 
+               values.append(value.value)
             values.append(0)    
             for i,p in enumerate(values[0]):
                 if i>=values[1]:
                     self._children[1].set(p,token)
-                    values.append(self._children[2].eval(token))
+                    value = self._children[2].eval(token)
+                    values.append(value.value)
                     values[1] = i 
             return values[2:]            
             
     class ArrayFirst(ArrowFunction):
         def solve(self,values,token:Token=None):
             if len(values) == 0:
-               values.append(self._children[0].eval(token))
+               value = self._children[0].eval(token)  
+               values.append(value.value)
             values.append(0)    
             for i,p in enumerate(values[0]):
                 if i>=values[1]:
                     self._children[1].set(p,token)
-                    if self._children[2].eval(token): return p                    
+                    value = self._children[2].eval(token)
+                    if value.value: return p                    
             return None    
 
     class ArrayLast(ArrowFunction):
         def solve(self,values,token:Token=None):
             if len(values) == 0:
-               list = self._children[0].eval(token)
-               list.reverse() 
-               values.append(list)
+               value = self._children[0].eval(token) 
+               value.value.reverse() 
+               values.append(value.value)
             values.append(0)    
             for i,p in enumerate(values[0]):
                 if i>=values[1]:
                     self._children[1].set(p,token)
-                    if self._children[2].eval(token): return p                    
+                    value = self._children[2].eval(token)
+                    if value.value: return p                    
             return None      
 
     class ArrayFilter(ArrowFunction):
         def solve(self,values,token:Token=None):
             if len(values) == 0:
-               list = self._children[0].eval(token)
-               values.append(list)
+               value = self._children[0].eval(token) 
+               values.append(value.value)
             values.append(0)    
             for i,p in enumerate(values[0]):
                 if i>=values[1]:
                     self._children[1].set(p,token)
-                    if self._children[2].eval(token): values.append(p) 
+                    value = self._children[2].eval(token)
+                    if value.value: values.append(p) 
                     values[1] = i                   
             return values[2:]       
 
     class ArrayReverse(ArrowFunction):
         def solve(self,values,token:Token=None):
             if len(values) == 0:
-               list = self._children[0].eval(token)
-               list.reverse() 
-               values.append(list)
+               value = self._children[0].eval(token) 
+               value.value.reverse() 
+               values.append(value.value)
 
             if len(self._children)==1:
                 return values[0]   
@@ -1087,7 +1121,7 @@ class CoreLib(Library):
                 if i>=values[1]:
                     self._children[1].set(p,token)
                     value = self._children[2].eval(token)
-                    values.append({'ord':value,'p':p}) 
+                    values.append({'ord':value.value,'p':p}) 
                     values[1] = i
 
             result = values[2:]  
@@ -1098,8 +1132,8 @@ class CoreLib(Library):
     class ArraySort(ArrowFunction):
         def solve(self,values,token:Token=None):
             if len(values) == 0:
-               list = self._children[0].eval(token)
-               values.append(list)
+               value = self._children[0].eval(token) 
+               values.append(value.value)
 
             if len(self._children)==1:
                 return values[0]   
@@ -1109,7 +1143,7 @@ class CoreLib(Library):
                 if i>=values[1]:
                     self._children[1].set(p,token)
                     value = self._children[2].eval(token)
-                    values.append({'ord':value,'p':p}) 
+                    values.append({'ord':value.value,'p':p}) 
                     values[1] = i
 
             result = values[2:]  
@@ -1119,11 +1153,11 @@ class CoreLib(Library):
     class ArrayPush(ArrowFunction):
         def solve(self,values,token:Token=None):
             if len(values) == 0:
-               list = self._children[0].eval(token)
-               values.append(list)
+               value = self._children[0].eval(token) 
+               values.append(value.value)
             if len(values) == 1:
-               elemnent = self._children[1].eval(token)
-               values.append(elemnent)
+               value = self._children[1].eval(token)
+               values.append(value.value)
 
             values[0].append(values[1])
             return values[0]
@@ -1131,12 +1165,12 @@ class CoreLib(Library):
     class ArrayPop(ArrowFunction):
         def solve(self,values,token:Token=None):
             if len(values) == 0:
-               list = self._children[0].eval(token)
-               values.append(list)
+               value = self._children[0].eval(token)
+               values.append(value.value)
             if len(values) == 1:   
                 if len(self._children)>1:
-                    index = self._children[1].eval(token)
-                    values.append(index)
+                    value = self._children[1].eval(token)
+                    values.append(value.value)
                 else:
                     index = len(self._children) -1 
                     values.append(index)
@@ -1146,11 +1180,11 @@ class CoreLib(Library):
     class ArrayRemove(ArrowFunction):
         def solve(self,values,token:Token=None):
             if len(values) == 0:
-               list = self._children[0].eval(token)
-               values.append(list)
+               value = self._children[0].eval(token)
+               values.append(value.value)
             if len(values) == 1: 
-                element = self._children[1].eval(token)
-                values.append(element)
+                value = self._children[1].eval(token)
+                values.append(value.value)
             return values[0].remove(values[1])       
 
     

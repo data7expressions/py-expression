@@ -10,6 +10,7 @@ class Singleton(type):
 
 class ModelException(Exception):pass
 class ExpressionException(Exception):pass
+class Debug(Exception):pass
 
 class Model():
     def __init__(self):
@@ -199,14 +200,14 @@ class ChildContextable(Contextable):pass
 
 class Token():
     def __init__(self):
-        self._path = {}
+        self._stack = {}
 
     @property
-    def path(self): 
-        return self._path
-    @path.setter
-    def path(self,value):
-        self._path =value         
+    def stack(self): 
+        return self._stack
+    @stack.setter
+    def stack(self,value):
+        self._stack =value         
 
 class Step():
     def __init__(self,name,index,level):
@@ -218,6 +219,17 @@ class Step():
     @property
     def values(self): 
         return self._values
+
+class Value():
+    def __init__(self,value):
+        self._value= value 
+
+    @property
+    def value(self):
+        return self._value
+    @value.setter
+    def value(self,value):
+        self._value =value 
 
 class Node():
     def __init__(self,name,type,children=[]): 
@@ -345,21 +357,18 @@ class Operand():
 
     def eval(self,token:Token=None):
         values=None
-        if token is None:
-            values= []
+        # add element to stack if not exist and get values
+        if not self._id in token.stack:
+            step = Step(self._name,self._index,self._level)
+            values = step.values
+            token.stack[self._id] = step
         else:
-            if not self._id in token.path:
-                step = Step(self._name,self._index,self._level)
-                values = step.values
-                token.path[self._id] = step
-            else:
-                values = token.path[self.self._id].values  
-
+            values = token.stack[self.self._id].values  
+        # solve operation
         result=self.solve(values,token)
-
-        if token is not None:
-            del token.path[self._id]            
-        return result 
+        # remove stack
+        del token.stack[self._id]            
+        return Value(result) 
 
     def solve(self,values,token:Token=None):pass
 
@@ -387,14 +396,15 @@ class Variable(Operand,Contextable):
     
 class KeyValue(Operand):
     def solve(self,values,token:Token=None):
-        return self._children[0].eval(token)          
+        value = self._children[0].eval(token)
+        return value.value       
 
 class Array(Operand):
     def solve(self,values,token:Token=None):
         for i, p in enumerate(self._children): 
             if i >= len(values):
                 value = p.eval(token)    
-                values.append(value)
+                values.append(value.value)
         return values       
 
 class Object(Operand):
@@ -403,7 +413,7 @@ class Object(Operand):
         for i, p in enumerate(self._children): 
             if i >= len(values):
                 value = p.eval(token)    
-                values.append(value)
+                values.append(value.value)
         dic= {}
         for i,value in enumerate(values):
             dic[self._children[i].name]=value
@@ -418,7 +428,7 @@ class Operator(Operand):
         for i, p in enumerate(self._children): 
             if i >= len(values):
                 value = p.eval(token)    
-                values.append(value)
+                values.append(value.value)
         return self._function(*values)                 
                               
 class Function(Operand):
@@ -430,7 +440,7 @@ class Function(Operand):
         for i, p in enumerate(self._children): 
             if i >= len(values):
                 value = p.eval(token)    
-                values.append(value)
+                values.append(value.value)
         return self._function(*values)   
 
 class ArrowFunction(Function,ChildContextable):pass
@@ -445,7 +455,7 @@ class ContextFunction(Function):
             for i,p in enumerate(self._children[1:]):
                 if i >= len(values):
                     value = p.eval(token)
-                    values.append(value)
+                    values.append(value.value)
             return function(*values[1:])     
         else:    
             raise ExpressionException('function: '+self._name +' not found in '+parent.name) 
@@ -455,31 +465,37 @@ class Block(Operand):
         for i, p in enumerate(self._children): 
             if i >= len(values):
                 value = p.eval(token)    
-                values.append(value)
+                values.append(value.value)
         return values          
                 
 class If(Operand):
     def solve(self,values,token:Token=None):
         if len(values)== 0:
-            values.append(self._children[0].eval(token))
+            value = self._children[0].eval(token)
+            values.append(value.value)
 
         if values[0]:
-            values.append(self._children[1].eval(token)) 
+            value = self._children[1].eval(token)
+            values.append(value.value) 
         elif len(self._children) > 2 and self._children[2] is not None:
-            values.append(self._children[2].eval(token))         
+            value = self._children[2].eval(token)
+            values.append(value.value)         
         return values         
          
 class While(Operand):
     def solve(self,values,token:Token=None):
         if len(values)== 0:
-            values.append(self._children[0].eval(token))
+            value = self._children[0].eval(token)
+            values.append(value.value)
 
         while values[0]:
             if len(values) < 2:
-                values.append(self._children[1].eval(token))
+                value = self._children[1].eval(token)
+                values.append(value.value)
 
             values = []
-            values.append(self._children[0].eval(token))      
+            value = self._children[0].eval(token)
+            values.append(value.value)      
            
 
        

@@ -36,9 +36,11 @@ class SourceManager():
         for p in node.children:
             child = self.nodeToOperand(p)
             children.append(child)
-        return self.createOperand(node.name,node.type,children)
+        operand = self.createOperand(node.name,node.type,children)
+        operand.id = node.id
+        return operand
 
-    def reduce(self,operand:Operand):
+    def reduce(self,operand:Operand,token:Token):
         """ if all the children are constant, reduce the expression a constant """
         if isinstance(operand,Operator):        
             allConstants=True              
@@ -47,14 +49,14 @@ class SourceManager():
                     allConstants=False
                     break
             if  allConstants:
-                value = operand.eval()                
-                constant= Constant(value)
+                value = operand.eval(token)                
+                constant= Constant(value.value)
                 constant.parent = operand.parent
                 constant.index = operand.index
                 return constant
             else:
                 for i, p in enumerate(operand.children):
-                   operand.children[i]=self.reduce(p)
+                   operand.children[i]=self.reduce(p,token)
         return operand  
 
     def setParent(self,operand:Operand,index:int=0,parent:Operand=None):        
@@ -149,7 +151,7 @@ class SourceManager():
 
     def compile(self,node:Node):
         operand =self.nodeToOperand(node)
-        operand =self.reduce(operand)
+        operand =self.reduce(operand,Token())
         operand =self.setParent(operand)
         return operand
 
@@ -259,10 +261,14 @@ class SourceManager():
                 children.append(self._deserialize(p))
         return self.createOperand(serialized['n'],serialized['t'],children)
 
-    def eval(self,operand:Operand,context:dict={},token:Token=None)-> any :  
+    def eval(self,operand:Operand,context:dict,token:Token)-> Value :  
         if context is not None:
             self.setContext(operand,Context(context))
-        return operand.eval(token)
+        try:    
+            return operand.eval(token)
+        except Debug:
+            return None      
+
         
 class NodeManager():
     def __init__(self,model):
@@ -418,13 +424,13 @@ class Exp(metaclass=Singleton):
         except Exception as error:
             raise ExpressionException('expression: '+expression+' error: '+str(error))
 
-    def compile(self,value)->Operand:
+    def compile(self,expression)->Operand:
         try:
             node=None
-            if isinstance(value,Node):
-                node=value                
-            elif isinstance(value,str):
-                node = self.parse(value)
+            if isinstance(expression,Node):
+                node=expression                
+            elif isinstance(expression,str):
+                node = self.parse(expression)
             else:
                raise ExpressionException('not possible to compile')      
 
@@ -432,27 +438,23 @@ class Exp(metaclass=Singleton):
         except Exception as error:
             raise ExpressionException('node: '+node.name+' error: '+str(error))  
 
-    def run(self,value,context:dict={},token:Token=None)-> any : 
+    def run(self,expression,context:dict={},token:Token=Token())-> any : 
         try:
             operand=None
-            if isinstance(value,Operand):
-                operand=value
-            elif isinstance(value,Node):                
-                operand =self.sourceManager.compile(value)                   
-            elif isinstance(value,str):
-                node = self.parse(value)
+            if isinstance(expression,Operand):
+                operand=expression
+            elif isinstance(expression,Node):                
+                operand =self.sourceManager.compile(expression)                   
+            elif isinstance(expression,str):
+                node = self.parse(expression)
                 operand =self.sourceManager.compile(node) 
             else:
                raise ExpressionException('not possible to run')  
 
-            # return self.sourceManager.run(operand,context)
-            return self.sourceManager.eval(operand,context,token)
+            value= self.sourceManager.eval(operand,context,token)
+            return value.value
         except Exception as error:
-            raise ExpressionException('operand: '+operand.name+' error: '+str(error))               
-
-    def eval(self,operand:Operand,context:dict={},token:Token=None)-> any : 
-        return self.sourceManager.eval(operand,context,token)
-
+            raise ExpressionException('operand: '+operand.name+' error: '+str(error))    
 
     def serialize(self,value)-> dict:        
         if isinstance(value,Node):
