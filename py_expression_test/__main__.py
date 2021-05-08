@@ -243,8 +243,8 @@ class TestExpression(unittest.TestCase):
 # print(token) 
 
 # print(exp.run('3>2'),3>2)
-
-
+# context = {"a":[1,2,3,4,5],"b":0}
+# print(exp.run('a.filter(p=> p>1 && p<5).reverse()',context,Token()),[4,3,2])
 unittest.main()
 
 # operand=exp.compile('(a+1)*(a-1)')

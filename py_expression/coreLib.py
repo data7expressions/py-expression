@@ -51,25 +51,25 @@ class CoreLib(Library):
         self.addOperator('>=','comparison',self.Operators.greaterThanOrEqual,3)
         self.addOperator('<=','comparison',self.Operators.lessThanOrEqual,3)
 
-        self.addOperator('&&','logical',self.Operators._and,2,self.And)
-        self.addOperator('||','logical',self.Operators._or,2,self.Or)
+        self.addOperator('&&','logical',self.Operators._and,2,self.Operators.And)
+        self.addOperator('||','logical',self.Operators._or,2,self.Operators.Or)
         self.addOperator('!','logical',self.Operators._not,4)
 
         self.addOperator('[]','list',self.Operators.item)
         
-        self.addOperator('=','assignment',self.Operators.assigment,1,self.Assigment)
-        self.addOperator('+=','assignment',self.Operators.assigmentAddition,1,self.Assigment,self.Operators.addition)
-        self.addOperator('-=','assignment',self.Operators.assigmentSubtraction,1,self.Assigment,self.Operators.subtraction)
-        self.addOperator('*=','assignment',self.Operators.assigmentMultiplication,1,self.Assigment,self.Operators.multiplication)
-        self.addOperator('/=','assignment',self.Operators.assigmentDivision,1,self.Assigment,self.Operators.division)
-        self.addOperator('**=','assignment',self.Operators.assigmentExponentiation,1,self.Assigment,self.Operators.exponentiation)
-        self.addOperator('//=','assignment',self.Operators.assigmentFloorDivision,1,self.Assigment,self.Operators.floorDivision)
-        self.addOperator('%=','assignment',self.Operators.assigmentMod,1,self.Assigment,self.Operators.mod)
-        self.addOperator('&=','assignment',self.Operators.assigmentBitAnd,1,self.Assigment,self.Operators.bitAnd)
-        self.addOperator('|=','assignment',self.Operators.assigmentBitOr,1,self.Assigment,self.Operators.bitOr)
-        self.addOperator('^=','assignment',self.Operators.assigmentBitXor,1,self.Assigment,self.Operators.bitXor)
-        self.addOperator('<<=','assignment',self.Operators.assigmentLeftShift,1,self.Assigment,self.Operators.leftShift)
-        self.addOperator('>>=','assignment',self.Operators.assigmentRightShift,1,self.Assigment,self.Operators.rightShift)        
+        self.addOperator('=','assignment',self.Operators.assigment,1,self.Operators.Assigment)
+        self.addOperator('+=','assignment',self.Operators.assigmentAddition,1,self.Operators.Assigment,self.Operators.addition)
+        self.addOperator('-=','assignment',self.Operators.assigmentSubtraction,1,self.Operators.Assigment,self.Operators.subtraction)
+        self.addOperator('*=','assignment',self.Operators.assigmentMultiplication,1,self.Operators.Assigment,self.Operators.multiplication)
+        self.addOperator('/=','assignment',self.Operators.assigmentDivision,1,self.Operators.Assigment,self.Operators.division)
+        self.addOperator('**=','assignment',self.Operators.assigmentExponentiation,1,self.Operators.Assigment,self.Operators.exponentiation)
+        self.addOperator('//=','assignment',self.Operators.assigmentFloorDivision,1,self.Operators.Assigment,self.Operators.floorDivision)
+        self.addOperator('%=','assignment',self.Operators.assigmentMod,1,self.Operators.Assigment,self.Operators.mod)
+        self.addOperator('&=','assignment',self.Operators.assigmentBitAnd,1,self.Operators.Assigment,self.Operators.bitAnd)
+        self.addOperator('|=','assignment',self.Operators.assigmentBitOr,1,self.Operators.Assigment,self.Operators.bitOr)
+        self.addOperator('^=','assignment',self.Operators.assigmentBitXor,1,self.Operators.Assigment,self.Operators.bitXor)
+        self.addOperator('<<=','assignment',self.Operators.assigmentLeftShift,1,self.Operators.Assigment,self.Operators.leftShift)
+        self.addOperator('>>=','assignment',self.Operators.assigmentRightShift,1,self.Operators.Assigment,self.Operators.rightShift)        
 
     def generalFunctions(self):
         self.addFunction('nvl',self.General.nvl )
@@ -172,17 +172,16 @@ class CoreLib(Library):
         self.addFunction('pathJoin',self.IO.pathJoin)
 
     def arrayFunctions(self): 
-        self.addFunction('foreach',self.Array.foreach,self.ArrayForeach,True)
-        self.addFunction('map',self.Array.map,self.ArrayMap,True)
-        self.addFunction('filter',self.Array.filter,self.ArrayFilter,True)
-        self.addFunction('reverse',self.Array.reverse,self.ArrayReverse,True)
-        self.addFunction('first',self.Array.first,self.ArrayFirst,True)
-        self.addFunction('last',self.Array.last,self.ArrayLast,True)
-        self.addFunction('sort',self.Array.sort,self.ArraySort,True)
-        self.addFunction('push',self.Array.push,self.ArrayPush)
-        self.addFunction('pop',self.Array.pop,self.ArrayPop)
-        self.addFunction('remove',self.Array.remove,self.ArrayRemove)
-
+        self.addFunction('foreach',self.Array.foreach,self.Array.ArrayForeach,True)
+        self.addFunction('map',self.Array.map,self.Array.ArrayMap,True)
+        self.addFunction('filter',self.Array.filter,self.Array.ArrayFilter,True)
+        self.addFunction('reverse',self.Array.reverse,self.Array.ArrayReverse,True)
+        self.addFunction('first',self.Array.first,self.Array.ArrayFirst,True)
+        self.addFunction('last',self.Array.last,self.Array.ArrayLast,True)
+        self.addFunction('sort',self.Array.sort,self.Array.ArraySort,True)
+        self.addFunction('push',self.Array.push,self.Array.ArrayPush)
+        self.addFunction('pop',self.Array.pop,self.Array.ArrayPop)
+        self.addFunction('remove',self.Array.remove,self.Array.ArrayRemove)
 
     # def signalFunctions(self):
     #     self.addFunction('signal',self.Signal.signal )
@@ -295,38 +294,36 @@ class CoreLib(Library):
         def item(list:list[any],index:int):
             return list[index]
 
-    class And(Operator):
-        def solve(self,values,token:Token=None):
-            if len(values) == 0:
-                value = self._children[0].eval(token)
-                if not value.value : return False
-                values.append(value.value)                
-            if len(values) == 1:
-                value= self._children[1].eval(token)  
-                return value.value 
+        class And(Operator):
+            def solve(self,values,token:Token=None)->Value:
+                if len(values) == 0:
+                    value = self._children[0].eval(token)
+                    if not value.value : return Value(False)
+                    values.append(value.value)                
+                if len(values) == 1:
+                    return self._children[1].eval(token) 
 
-    class Or(Operator):
-        def solve(self,values,token:Token=None):
-            if len(values) == 0:
-                value = self._children[0].eval(token)
-                if value.value : return True
-                values.append(value)                
-            if len(values) == 1:
-                value= self._children[1].eval(token)
-                return value.value    
+        class Or(Operator):
+            def solve(self,values,token:Token=None)->Value:
+                if len(values) == 0:
+                    value = self._children[0].eval(token)
+                    if value.value : return Value(True)
+                    values.append(value)                
+                if len(values) == 1:
+                    return self._children[1].eval(token)
 
-    class Assigment(Operator):
-        def solve(self,values,token:Token=None):
-            if len(values) == 0:
-               value = self._children[0].eval(token)  
-               values.append(value.value)
-            if len(values) ==1:
-                value = self._children[1].eval(token)
-                values.append(value.value)
-                value = values[1] if self._function is None else self._function(values[0],values[1])
-                self._children[0].set(value,token)
-                return value                      
-    
+        class Assigment(Operator):
+            def solve(self,values,token:Token=None)->Value:
+                if len(values) == 0:
+                    value = self._children[0].eval(token)  
+                    values.append(value.value)
+                if len(values) ==1:
+                    value = self._children[1].eval(token)
+                    values.append(value.value)
+                    value = values[1] if self._function is None else self._function(values[0],values[1])
+                    self._children[0].set(value,token)
+                    return Value(value)     
+  
     class General():
         @staticmethod
         def nvl(a:any,b:any)->any: 
@@ -336,13 +333,7 @@ class CoreLib(Library):
         @staticmethod
         def sleep(secs:float=1000): 
             return t.sleep(secs)
-
-    class Signal():
-        @staticmethod
-        def signal(key:str,timeout:float=None)->any: pass        
-        @staticmethod
-        def wait(secs:float=1000)->any: pass                   
-
+       
     class String():
         # https://docs.python.org/2.5/lib/string-methods.html
         @staticmethod
@@ -1027,164 +1018,171 @@ class CoreLib(Library):
         @staticmethod
         def remove(list:list[Operand],item:Operand): pass
 
-        # class ArrayForeach(ArrowFunction):   
-        #     def solve(self,values,token:Token=None):
-        #         if len(values) == 0:
-        #             value = self._children[0].eval(token)
-        #             values.append(value.value)
-        #         values.append(0)    
-        #         for i,p in enumerate(values[0]):
-        #             if i>=values[1]:
-        #                 self._children[1].set(p,token)
-        #                 value = self._children[2].eval(token)                    
-        #                 values[1] = i  
-    
-    class ArrayForeach(ArrowFunction):   
-        def solve(self,values,token:Token=None):
-            if len(values) == 0:
-               value = self._children[0].eval(token)
-               values.append(value.value)
-            values.append(0)    
-            for i,p in enumerate(values[0]):
-                if i>=values[1]:
-                    self._children[1].set(p,token)
-                    value = self._children[2].eval(token)                    
-                    values[1] = i                   
-
-    class ArrayMap(ArrowFunction):
-        def solve(self,values,token:Token=None):
-            if len(values) == 0:
-               value = self._children[0].eval(token) 
-               values.append(value.value)
-            values.append(0)    
-            for i,p in enumerate(values[0]):
-                if i>=values[1]:
-                    self._children[1].set(p,token)
-                    value = self._children[2].eval(token)
+        class ArrayForeach(ArrowFunction):   
+            def solve(self,values,token:Token=None)->Value:
+                if len(values) == 0:
+                    value = self._children[0].eval(token)
                     values.append(value.value)
-                    values[1] = i 
-            return values[2:]            
-            
-    class ArrayFirst(ArrowFunction):
-        def solve(self,values,token:Token=None):
-            if len(values) == 0:
-               value = self._children[0].eval(token)  
-               values.append(value.value)
-            values.append(0)    
-            for i,p in enumerate(values[0]):
-                if i>=values[1]:
-                    self._children[1].set(p,token)
-                    value = self._children[2].eval(token)
-                    if value.value: return p                    
-            return None    
+                values.append(0)    
+                for i,p in enumerate(values[0]):
+                    if i>=values[1]:
+                        self._children[1].set(p,token)
+                        value = self._children[2].eval(token)                    
+                        values[1] = i
+                return Value()        
 
-    class ArrayLast(ArrowFunction):
-        def solve(self,values,token:Token=None):
-            if len(values) == 0:
-               value = self._children[0].eval(token) 
-               value.value.reverse() 
-               values.append(value.value)
-            values.append(0)    
-            for i,p in enumerate(values[0]):
-                if i>=values[1]:
-                    self._children[1].set(p,token)
-                    value = self._children[2].eval(token)
-                    if value.value: return p                    
-            return None      
+        class ArrayMap(ArrowFunction):
+            def solve(self,values,token:Token=None)->Value:
+                if len(values) == 0:
+                    value = self._children[0].eval(token) 
+                    values.append(value.value)
+                values.append(0)    
+                for i,p in enumerate(values[0]):
+                    if i>=values[1]:
+                        self._children[1].set(p,token)
+                        value = self._children[2].eval(token)
+                        values.append(value.value)
+                        values[1] = i 
+                return Value(values[2:])  
 
-    class ArrayFilter(ArrowFunction):
-        def solve(self,values,token:Token=None):
-            if len(values) == 0:
-               value = self._children[0].eval(token) 
-               values.append(value.value)
-            values.append(0)    
-            for i,p in enumerate(values[0]):
-                if i>=values[1]:
-                    self._children[1].set(p,token)
-                    value = self._children[2].eval(token)
-                    if value.value: values.append(p) 
-                    values[1] = i                   
-            return values[2:]       
+        class ArrayFirst(ArrowFunction):
+            def solve(self,values,token:Token=None)->Value:
+                if len(values) == 0:
+                    value = self._children[0].eval(token)  
+                    values.append(value.value)
+                values.append(0)    
+                for i,p in enumerate(values[0]):
+                    if i>=values[1]:
+                        self._children[1].set(p,token)
+                        value = self._children[2].eval(token)
+                        if value.value: return Value(p)                    
+                return Value(None)
 
-    class ArrayReverse(ArrowFunction):
-        def solve(self,values,token:Token=None):
-            if len(values) == 0:
-               value = self._children[0].eval(token) 
-               value.value.reverse() 
-               values.append(value.value)
+        class ArrayLast(ArrowFunction):
+            def solve(self,values,token:Token=None)->Value:
+                if len(values) == 0:
+                    value = self._children[0].eval(token) 
+                    value.value.reverse() 
+                    values.append(value.value)
+                values.append(0)    
+                for i,p in enumerate(values[0]):
+                    if i>=values[1]:
+                        self._children[1].set(p,token)
+                        value = self._children[2].eval(token)
+                        if value.value: return Value(p)                    
+                return Value(None)      
 
-            if len(self._children)==1:
-                return values[0]   
-            
-            values.append(0)    
-            for i,p in enumerate(values[0]):
-                if i>=values[1]:
-                    self._children[1].set(p,token)
-                    value = self._children[2].eval(token)
-                    values.append({'ord':value.value,'p':p}) 
-                    values[1] = i
+        class ArrayFilter(ArrowFunction):
+            def solve(self,values,token:Token=None)->Value:
+                if len(values) == 0:
+                    value = self._children[0].eval(token) 
+                    values.append(value.value)
+                values.append(0)    
+                for i,p in enumerate(values[0]):
+                    if i>=values[1]:
+                        self._children[1].set(p,token)
+                        value = self._children[2].eval(token)
+                        if value.value: values.append(p) 
+                        values[1] = i                   
+                return Value(values[2:])       
 
-            result = values[2:]  
-            result.sort((lambda p: p['ord']))
-            result.reverse()    
-            return map(lambda p: p['p'],result)                                  
+        class ArrayReverse(ArrowFunction):
+            def solve(self,values,token:Token=None)->Value:
+                if len(values) == 0:
+                    value = self._children[0].eval(token) 
+                    value.value.reverse() 
+                    values.append(value.value)
+
+                if len(self._children)==1:
+                    return Value(values[0])   
                 
-    class ArraySort(ArrowFunction):
-        def solve(self,values,token:Token=None):
-            if len(values) == 0:
-               value = self._children[0].eval(token) 
-               values.append(value.value)
+                values.append(0)    
+                for i,p in enumerate(values[0]):
+                    if i>=values[1]:
+                        self._children[1].set(p,token)
+                        value = self._children[2].eval(token)
+                        values.append({'ord':value.value,'p':p}) 
+                        values[1] = i
 
-            if len(self._children)==1:
-                return values[0]   
-            
-            values.append(0)    
-            for i,p in enumerate(values[0]):
-                if i>=values[1]:
-                    self._children[1].set(p,token)
-                    value = self._children[2].eval(token)
-                    values.append({'ord':value.value,'p':p}) 
-                    values[1] = i
-
-            result = values[2:]  
-            result.sort((lambda p: p['ord']))
-            return map(lambda p: p['p'],result)           
+                result = values[2:]  
+                result.sort((lambda p: p['ord']))
+                result.reverse()    
+                return Value(map(lambda p: p['p'],result))                                  
                 
-    class ArrayPush(ArrowFunction):
-        def solve(self,values,token:Token=None):
-            if len(values) == 0:
-               value = self._children[0].eval(token) 
-               values.append(value.value)
-            if len(values) == 1:
-               value = self._children[1].eval(token)
-               values.append(value.value)
+        class ArraySort(ArrowFunction):
+            def solve(self,values,token:Token=None)->Value:
+                if len(values) == 0:
+                    value = self._children[0].eval(token) 
+                    values.append(value.value)
 
-            values[0].append(values[1])
-            return values[0]
+                if len(self._children)==1:
+                    return Value(values[0])   
+                
+                values.append(0)    
+                for i,p in enumerate(values[0]):
+                    if i>=values[1]:
+                        self._children[1].set(p,token)
+                        value = self._children[2].eval(token)
+                        values.append({'ord':value.value,'p':p}) 
+                        values[1] = i
 
-    class ArrayPop(ArrowFunction):
-        def solve(self,values,token:Token=None):
-            if len(values) == 0:
-               value = self._children[0].eval(token)
-               values.append(value.value)
-            if len(values) == 1:   
-                if len(self._children)>1:
+                result = values[2:]  
+                result.sort((lambda p: p['ord']))
+                return Value(map(lambda p: p['p'],result))           
+                
+        class ArrayPush(ArrowFunction):
+            def solve(self,values,token:Token=None)->Value:
+                if len(values) == 0:
+                    value = self._children[0].eval(token) 
+                    values.append(value.value)
+                if len(values) == 1:
                     value = self._children[1].eval(token)
                     values.append(value.value)
-                else:
-                    index = len(self._children) -1 
-                    values.append(index)
 
-            return values[0].pop(values[1])   
+                values[0].append(values[1])
+                return Value(values[0])
 
-    class ArrayRemove(ArrowFunction):
-        def solve(self,values,token:Token=None):
-            if len(values) == 0:
-               value = self._children[0].eval(token)
-               values.append(value.value)
-            if len(values) == 1: 
-                value = self._children[1].eval(token)
-                values.append(value.value)
-            return values[0].remove(values[1])       
+        class ArrayPop(ArrowFunction):
+            def solve(self,values,token:Token=None)->Value:
+                if len(values) == 0:
+                    value = self._children[0].eval(token)
+                    values.append(value.value)
+                if len(values) == 1:   
+                    if len(self._children)>1:
+                        value = self._children[1].eval(token)
+                        values.append(value.value)
+                    else:
+                        index = len(self._children) -1 
+                        values.append(index)
 
-    
+                return Value(values[0].pop(values[1]))   
+
+        class ArrayRemove(ArrowFunction):
+            def solve(self,values,token:Token=None)->Value:
+                if len(values) == 0:
+                    value = self._children[0].eval(token)
+                    values.append(value.value)
+                if len(values) == 1: 
+                    value = self._children[1].eval(token)
+                    values.append(value.value)
+                return Value(values[0].remove(values[1]) )      
+
+                                    
+    class Signal():
+        @staticmethod
+        def signal(key:str,timeout:float=None)->any: pass        
+        @staticmethod
+        def wait(secs:float=1000)->any: pass
+
+        # class Signal(Function):
+        #     def solve(self,values,token:Token=None)->Value:
+
+        #         Value(,True)    
+
+        #         if len(values) == 0:
+        #             value = self._children[0].eval(token)
+        #             if not value.value : return False
+        #             values.append(value.value)                
+        #         if len(values) == 1:
+        #             value= self._children[1].eval(token)  
+        #             return value.value    

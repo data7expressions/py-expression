@@ -268,7 +268,6 @@ class SourceManager():
             return operand.eval(token)
         except Debug:
             return None      
-
         
 class NodeManager():
     def __init__(self,model):
