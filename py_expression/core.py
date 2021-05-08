@@ -119,7 +119,7 @@ class SourceManager():
                     return Operator(name,children,function)
             return None        
         except:
-            raise ModelError('error with operator: '+name)  
+            raise ModelException('error with operator: '+name)  
 
     def createFunction(self,name:str,children:list[Operand])->Function:
         try:            
@@ -133,7 +133,7 @@ class SourceManager():
                     return Function(name,children,function)
             return None
         except:
-            raise ModelError('error with function: '+name) 
+            raise ModelException('error with function: '+name) 
 
     def createArrowFunction(self,name:str,children:list[Operand]):
         try:            
@@ -147,7 +147,7 @@ class SourceManager():
                     return ArrowFunction(name,children,function)
             return None
         except:
-            raise ModelError('error with function: '+name)              
+            raise ModelException('error with function: '+name)              
 
     def compile(self,node:Node):
         operand =self.nodeToOperand(node)
@@ -549,7 +549,7 @@ class Parser():
             metadata = self._model.getOperatorMetadata(name,cardinality)
             return metadata["priority"] if metadata is not None else -1
         except:
-            raise ModelError('error to priority : '+name)   
+            raise ModelException('error to priority : '+name)   
   
     def isEnum(self,name):    
         return self._model.isEnum(name) 

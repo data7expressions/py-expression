@@ -474,7 +474,7 @@ class ContextFunction(Function):
                     values.append(value.value)
             return Value(function(*values[1:]))     
         else:    
-            raise ExpressionException('function: '+self._name +' not found in '+parent.name) 
+            raise ExpressionException('function: '+self._name +' not found in') 
 
 class Block(Operand):
     def solve(self,values,token:Token=None)->Value:
