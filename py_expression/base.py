@@ -1,4 +1,6 @@
-from enum import Enum 
+from enum import Enum
+import uuid
+from datetime import date,datetime,time,timedelta 
 import inspect
 
 class Singleton(type):
@@ -200,14 +202,51 @@ class ChildContextable(Contextable):pass
 
 class Token():
     def __init__(self):
+        self._id= str(uuid.uuid4())
         self._stack = {}
+        self._isBreak= False
+        self._listeners = [] 
+        self._signals = [] 
+
+    @property
+    def id(self): 
+        return self._id
 
     @property
     def stack(self): 
         return self._stack
     @stack.setter
     def stack(self,value):
-        self._stack =value         
+        self._stack =value 
+    
+    @property
+    def listeners(self):
+        return self._listeners 
+
+    def addListener(self,value):
+        self._isBreak = True 
+        self._listeners.append(value)
+
+    def clearListeners(self):
+        self._isBreak = False 
+        self._listeners = []    
+
+    @property
+    def signals(self):
+        return self._signals 
+
+    def addSignal(self,value):
+        self._signals.append(value)
+
+    def clearSignals(self):
+        self._signals = []     
+
+    @property
+    def isBreak(self):
+        return self._isBreak  
+    @isBreak.setter
+    def isBreak(self,value):
+        self._isBreak =value             
 
 class Step():
     def __init__(self,name,index,level):
@@ -221,20 +260,15 @@ class Step():
         return self._values
 
 class Value():
-    def __init__(self,value=None,isBreak:bool=False):
+    def __init__(self,value=None):
         self._value= value
-        self._isBreak= isBreak  
 
     @property
     def value(self):
         return self._value
     @value.setter
     def value(self,value):
-        self._value =value 
-
-    @property
-    def isBreak(self):
-        return self._isBreak    
+        self._value =value      
 
 class Node():
     def __init__(self,name,type,children=[]): 
@@ -311,6 +345,29 @@ class Node():
     def __imod__(self, other):return Node('%=','operator',[other,self])
     def __ipow__(self, other):return Node('**=','operator',[other,self])   
 
+class Signal():
+    def __init__(self,key:str,datetime:datetime=None):
+        self._key= key
+        self._datetime= datetime
+
+    @property
+    def key(self)->str:
+        return self._key
+
+    @property
+    def datetime(self)->datetime:
+        return self._datetime    
+
+class WaitSignal(Signal):
+    def __init__(self,name:str,secs:float=None):
+        super(WaitSignal,self).__init__(name) 
+        self._secs = secs  
+
+    @property
+    def secs(self):
+        return self._secs 
+
+
 class Operand():
     def __init__(self,name:str,children:list['Operand']=[]):
         self._name = name        
@@ -360,7 +417,7 @@ class Operand():
     def children(self):
         return self._children 
 
-    def eval(self,token:Token=None)->Value:
+    def eval(self,token:Token)->Value:
         values=None
         # add element to stack if not exist and get values
         if not self._id in token.stack:
@@ -372,14 +429,14 @@ class Operand():
         # solve operation
         result=self.solve(values,token)
 
-        if result.isBreak:
+        if token.isBreak:
             return result
         else:    
             # remove stack
             del token.stack[self._id]            
             return result 
 
-    def solve(self,values,token:Token=None)->Value:pass
+    def solve(self,values,token:Token)->Value:pass
 
 
 
@@ -392,39 +449,39 @@ class Constant(Operand):
     def type(self): 
         return self._type  
 
-    def solve(self,values,token:Token=None)->Value:
+    def solve(self,values,token:Token)->Value:
         return Value(self._name)
 
 class Variable(Operand,Contextable):
     def __init__(self,name:str,children:list[Operand]=[]):
         Operand.__init__(self,name,children)
 
-    def solve(self,values,token:Token=None)->Value:
+    def solve(self,values,token:Token)->Value:
         return Value(self.context.get(self._name))
 
-    def set(self,value,token:Token=None):
+    def set(self,value,token:Token):
         self.context.set(self._name,value)    
     
 class KeyValue(Operand):
-    def solve(self,values,token:Token=None)->Value:
+    def solve(self,values,token:Token)->Value:
         return self._children[0].eval(token)
 
 class Array(Operand):
-    def solve(self,values,token:Token=None)->Value:
+    def solve(self,values,token:Token)->Value:
         for i, p in enumerate(self._children): 
             if i >= len(values):
                 value = p.eval(token)
-                if value.isBreak: return value   
+                if token.isBreak: return value   
                 values.append(value.value)
         return Value(values)       
 
 class Object(Operand):
-    def solve(self,values,token:Token=None)->Value:
+    def solve(self,values,token:Token)->Value:
         
         for i, p in enumerate(self._children): 
             if i >= len(values):
                 value = p.eval(token)
-                if value.isBreak: return value     
+                if token.isBreak: return value     
                 values.append(value.value)
         dic= {}
         for i,value in enumerate(values):
@@ -436,11 +493,11 @@ class Operator(Operand):
         super(Operator,self).__init__(name,children) 
         self._function = function
   
-    def solve(self,values,token:Token=None)->Value:
+    def solve(self,values,token:Token)->Value:
         for i, p in enumerate(self._children): 
             if i >= len(values):
                 value = p.eval(token)
-                if value.isBreak: return value     
+                if token.isBreak: return value     
                 values.append(value.value)
         return Value(self._function(*values))                 
                               
@@ -449,75 +506,75 @@ class Function(Operand):
         super(Function,self).__init__(name,children) 
         self._function = function
 
-    def solve(self,values,token:Token=None)->Value:
+    def solve(self,values,token:Token)->Value:
         for i, p in enumerate(self._children): 
             if i >= len(values):
                 value = p.eval(token)
-                if value.isBreak: return value     
+                if token.isBreak: return value     
                 values.append(value.value)
         return Value(self._function(*values))   
 
 class ArrowFunction(Function,ChildContextable):pass
 
 class ContextFunction(Function):
-    def solve(self,values,token:Token=None)->Value:
+    def solve(self,values,token:Token)->Value:
         if len(values) == 0:
             value = self._children[0].eval(token)
-            if value.isBreak: return value 
+            if token.isBreak: return value 
             values.append()
         if isinstance(values[0],object) and hasattr(values[0], self._name):
             function=getattr(values[0], self._name)
             for i,p in enumerate(self._children[1:]):
                 if i >= len(values):
                     value = p.eval(token)
-                    if value.isBreak: return value 
+                    if token.isBreak: return value 
                     values.append(value.value)
             return Value(function(*values[1:]))     
         else:    
             raise ExpressionException('function: '+self._name +' not found in') 
 
 class Block(Operand):
-    def solve(self,values,token:Token=None)->Value:
+    def solve(self,values,token:Token)->Value:
         for i, p in enumerate(self._children): 
             if i >= len(values):
                 value = p.eval(token)
-                if value.isBreak: return value     
+                if token.isBreak: return value     
                 values.append(value.value)
         return Value(values)          
                 
 class If(Operand):
-    def solve(self,values,token:Token=None)->Value:
+    def solve(self,values,token:Token)->Value:
         if len(values)== 0:
             value = self._children[0].eval(token)
-            if value.isBreak: return value
+            if token.isBreak: return value
             values.append(value.value)
 
         if values[0]:
             value = self._children[1].eval(token)
-            if value.isBreak: return value
+            if token.isBreak: return value
             values.append(value.value) 
         elif len(self._children) > 2 and self._children[2] is not None:
             value = self._children[2].eval(token)
-            if value.isBreak: return value
+            if token.isBreak: return value
             values.append(value.value)         
         return Value(values)         
          
 class While(Operand):
-    def solve(self,values,token:Token=None)->Value:
+    def solve(self,values,token:Token)->Value:
         if len(values)== 0:
             value = self._children[0].eval(token)
-            if value.isBreak: return value
+            if token.isBreak: return value
             values.append(value.value)
 
         while values[0]:
             if len(values) < 2:
                 value = self._children[1].eval(token)
-                if value.isBreak: return value
+                if token.isBreak: return value
                 values.append(value.value)
 
             values = []
             value = self._children[0].eval(token)
-            if value.isBreak: return value
+            if token.isBreak: return value
             values.append(value.value)
 
         return Value(None)          

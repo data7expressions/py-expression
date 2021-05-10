@@ -21,6 +21,7 @@ class CoreLib(Library):
        self.datetimeFunctions()
        self.ioFunctions()
        self.arrayFunctions()
+       self.signalFunctions()
 
     def initEnums(self): 
         self.addEnum('DayOfWeek',{"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":0}) 
@@ -183,10 +184,10 @@ class CoreLib(Library):
         self.addFunction('pop',self.Array.pop,self.Array.ArrayPop)
         self.addFunction('remove',self.Array.remove,self.Array.ArrayRemove)
 
-    # def signalFunctions(self):
-    #     self.addFunction('signal',self.Signal.signal )
-    #     self.addFunction('wait',self.Signal.wait)
-
+    def signalFunctions(self):
+        self.addFunction('listen',self.Signal.listen,self.Signal.Listen )
+        self.addFunction('wait',self.Signal.wait,self.Signal.Wait)
+        self.addFunction('listeners',self.Signal.listen,self.Signal.Listeners )
 
     class Operators():
         @staticmethod
@@ -295,34 +296,34 @@ class CoreLib(Library):
             return list[index]
 
         class And(Operator):
-            def solve(self,values,token:Token=None)->Value:
+            def solve(self,values,token:Token)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
-                    if value.isBreak: return value
+                    if token.isBreak: return value
                     if not value.value : return Value(False)
                     values.append(value.value)                
                 if len(values) == 1:
                     return self._children[1].eval(token) 
 
         class Or(Operator):
-            def solve(self,values,token:Token=None)->Value:
+            def solve(self,values,token:Token)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
-                    if value.isBreak: return value
+                    if token.isBreak: return value
                     if value.value : return Value(True)
                     values.append(value)                
                 if len(values) == 1:
                     return self._children[1].eval(token)
 
         class Assigment(Operator):
-            def solve(self,values,token:Token=None)->Value:
+            def solve(self,values,token:Token)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
-                    if value.isBreak: return value  
+                    if token.isBreak: return value  
                     values.append(value.value)
                 if len(values) ==1:
                     value = self._children[1].eval(token)
-                    if value.isBreak: return value
+                    if token.isBreak: return value
                     values.append(value.value)
                     value = values[1] if self._function is None else self._function(values[0],values[1])
                     self._children[0].set(value,token)
@@ -1023,56 +1024,56 @@ class CoreLib(Library):
         def remove(list:list[Operand],item:Operand): pass
 
         class ArrayForeach(ArrowFunction):   
-            def solve(self,values,token:Token=None)->Value:
+            def solve(self,values,token:Token)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
-                    if value.isBreak: return value
+                    if token.isBreak: return value
                     values.append(value.value)
                 values.append(0)    
                 for i,p in enumerate(values[0]):
                     if i>=values[1]:
                         self._children[1].set(p,token)
                         value = self._children[2].eval(token)
-                        if value.isBreak: return value                    
+                        if token.isBreak: return value                    
                         values[1] = i
                 return Value()        
 
         class ArrayMap(ArrowFunction):
-            def solve(self,values,token:Token=None)->Value:
+            def solve(self,values,token:Token)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
-                    if value.isBreak: return value 
+                    if token.isBreak: return value 
                     values.append(value.value)
                 values.append(0)    
                 for i,p in enumerate(values[0]):
                     if i>=values[1]:
                         self._children[1].set(p,token)
                         value = self._children[2].eval(token)
-                        if value.isBreak: return value
+                        if token.isBreak: return value
                         values.append(value.value)
                         values[1] = i 
                 return Value(values[2:])  
 
         class ArrayFirst(ArrowFunction):
-            def solve(self,values,token:Token=None)->Value:
+            def solve(self,values,token:Token)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
-                    if value.isBreak: return value  
+                    if token.isBreak: return value  
                     values.append(value.value)
                 values.append(0)    
                 for i,p in enumerate(values[0]):
                     if i>=values[1]:
                         self._children[1].set(p,token)
                         value = self._children[2].eval(token)
-                        if value.isBreak: return value
+                        if token.isBreak: return value
                         if value.value: return Value(p)                    
                 return Value(None)
 
         class ArrayLast(ArrowFunction):
-            def solve(self,values,token:Token=None)->Value:
+            def solve(self,values,token:Token)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
-                    if value.isBreak: return value 
+                    if token.isBreak: return value 
                     value.value.reverse() 
                     values.append(value.value)
                 values.append(0)    
@@ -1080,31 +1081,31 @@ class CoreLib(Library):
                     if i>=values[1]:
                         self._children[1].set(p,token)
                         value = self._children[2].eval(token)
-                        if value.isBreak: return value
+                        if token.isBreak: return value
                         if value.value: return Value(p)                    
                 return Value(None)      
 
         class ArrayFilter(ArrowFunction):
-            def solve(self,values,token:Token=None)->Value:
+            def solve(self,values,token:Token)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
-                    if value.isBreak: return value 
+                    if token.isBreak: return value 
                     values.append(value.value)
                 values.append(0)    
                 for i,p in enumerate(values[0]):
                     if i>=values[1]:
                         self._children[1].set(p,token)
                         value = self._children[2].eval(token)
-                        if value.isBreak: return value
+                        if token.isBreak: return value
                         if value.value: values.append(p) 
                         values[1] = i                   
                 return Value(values[2:])       
 
         class ArrayReverse(ArrowFunction):
-            def solve(self,values,token:Token=None)->Value:
+            def solve(self,values,token:Token)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
-                    if value.isBreak: return value 
+                    if token.isBreak: return value 
                     value.value.reverse() 
                     values.append(value.value)
 
@@ -1116,7 +1117,7 @@ class CoreLib(Library):
                     if i>=values[1]:
                         self._children[1].set(p,token)
                         value = self._children[2].eval(token)
-                        if value.isBreak: return value
+                        if token.isBreak: return value
                         values.append({'ord':value.value,'p':p}) 
                         values[1] = i
 
@@ -1126,10 +1127,10 @@ class CoreLib(Library):
                 return Value(map(lambda p: p['p'],result))                                  
                 
         class ArraySort(ArrowFunction):
-            def solve(self,values,token:Token=None)->Value:
+            def solve(self,values,token:Token)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
-                    if value.isBreak: return value 
+                    if token.isBreak: return value 
                     values.append(value.value)
 
                 if len(self._children)==1:
@@ -1140,7 +1141,7 @@ class CoreLib(Library):
                     if i>=values[1]:
                         self._children[1].set(p,token)
                         value = self._children[2].eval(token)
-                        if value.isBreak: return value
+                        if token.isBreak: return value
                         values.append({'ord':value.value,'p':p}) 
                         values[1] = i
 
@@ -1149,29 +1150,29 @@ class CoreLib(Library):
                 return Value(map(lambda p: p['p'],result))           
                 
         class ArrayPush(ArrowFunction):
-            def solve(self,values,token:Token=None)->Value:
+            def solve(self,values,token:Token)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
-                    if value.isBreak: return value 
+                    if token.isBreak: return value 
                     values.append(value.value)
                 if len(values) == 1:
                     value = self._children[1].eval(token)
-                    if value.isBreak: return value
+                    if token.isBreak: return value
                     values.append(value.value)
 
                 values[0].append(values[1])
                 return Value(values[0])
 
         class ArrayPop(ArrowFunction):
-            def solve(self,values,token:Token=None)->Value:
+            def solve(self,values,token:Token)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
-                    if value.isBreak: return value
+                    if token.isBreak: return value
                     values.append(value.value)
                 if len(values) == 1:   
                     if len(self._children)>1:
                         value = self._children[1].eval(token)
-                        if value.isBreak: return value
+                        if token.isBreak: return value
                         values.append(value.value)
                     else:
                         index = len(self._children) -1 
@@ -1180,33 +1181,85 @@ class CoreLib(Library):
                 return Value(values[0].pop(values[1]))   
 
         class ArrayRemove(ArrowFunction):
-            def solve(self,values,token:Token=None)->Value:
+            def solve(self,values,token:Token)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
-                    if value.isBreak: return value
+                    if token.isBreak: return value
                     values.append(value.value)
                 if len(values) == 1: 
                     value = self._children[1].eval(token)
-                    if value.isBreak: return value
+                    if token.isBreak: return value
                     values.append(value.value)
                 return Value(values[0].remove(values[1]) )      
-
                                     
     class Signal():
         @staticmethod
-        def signal(key:str,timeout:float=None)->any: pass        
+        def listen(key:str)->any: pass 
         @staticmethod
-        def wait(secs:float=1000)->any: pass
+        def wait(datetime:datetime)->any: pass
+        @staticmethod
+        def listeners(keys:list[str],time:datetime=None)->str: pass 
 
-        # class Signal(Function):
-        #     def solve(self,values,token:Token=None)->Value:
+        class Listen(Function):
+            def solve(self,values,token:Token)->Value:
+                if len(values) == 0:                                    
+                    value = self._children[0].eval(token)
+                    if token.isBreak: return value
+                    values.append(value.value)
+                    signal = Signal(values[0])
+                    token.addListener(signal)
+                    return Value()
+                else:
+                    if values[0] in token.signals:
+                        token.clearListeners()
+                    return Value()               
 
-        #         Value(,True)    
+        class Wait(Function):
+            def solve(self,values,token:Token)->Value:
+                key = 'wait:'+token.id
+                if len(values) == 0: 
+                    value = self._children[0].eval(token)
+                    if token.isBreak: return value
+                    values.append(value.value) 
+                    signal = Signal(key,values[0])
+                    token.addListener(signal)
+                    return Value()
+                else:
+                    if key in token.signals:
+                        token.clearListeners()
+                    return Value() 
 
-        #         if len(values) == 0:
-        #             value = self._children[0].eval(token)
-        #             if not value.value : return False
-        #             values.append(value.value)                
-        #         if len(values) == 1:
-        #             value= self._children[1].eval(token)  
-        #             return value.value    
+        class Listeners(Function):
+            def solve(self,values,token:Token)->Value:
+                timekey = 'time:'+token.id
+                if len(values) == 0:                                    
+                    value = self._children[0].eval(token)
+                    if token.isBreak: return value
+                    values.append(value.value)
+                    for key in values[0]:     
+                        signal = Signal(key)
+                        token.addListener(signal) 
+                    if len(self._children)== 1:
+                       return Value()      
+                if len(self._children)== 2 and len(values) == 1:
+                    value = self._children[1].eval(token)
+                    if token.isBreak: return value
+                    values.append(value.value)
+                    signal = Signal(timekey,values[1])
+                    token.addListener(signal)
+                    return Value()                     
+                else:
+                    for key in values[0]: 
+                        if key in token.signals:
+                            token.clearListeners()
+                            return Value(key)
+                    if timekey in token.signals:
+                        token.clearListeners()
+                        return Value('time')
+                    return Value()                
+                    
+                    
+                         
+                
+                                
+                

@@ -2,8 +2,24 @@ import unittest
 from py_expression.base import *
 from py_expression.core import Exp,Token
 from enum import Enum
+from os import path
 
 exp = Exp()
+
+
+def load(_path):
+    dir_path = path.dirname(path.realpath(__file__))
+    fullpath = path.join(dir_path,_path)
+    with open(fullpath, 'r') as stream:
+        try:
+            text = stream.read()
+            stream.close()
+            return text          
+        except Exception as ex:
+            print(ex) 
+
+
+
 
 class TestExpression(unittest.TestCase):
 
@@ -218,33 +234,33 @@ class TestExpression(unittest.TestCase):
         exp.run(operand,context)
         self.assertEqual(context['output'],12) 
 
-# operand=exp.compile('(a+1)*(a-1)')
-# context = {'a':3}
-# token= Token()
-# result = exp.run(operand,context,token)
-# print(token.stack)
+    def test_signals(self):
+        expression = load('test/signal-01.js')
+        token= Token()
+        context = {}
 
-# context = {"a":"1","b":2,"c":{"a":4,"b":5}}
-# exp.run('a=8',context)
-# print(context['a'])
+        exp.run(expression,context,token)
+        token.clearSignals()     
+        self.assertEqual(context['i'],0)
 
-# print(exp.run('a>b',{"a":1,"b":2}))
+        token.addSignal('signal_1')        
+        exp.run(expression,context,token)
+        token.clearSignals()     
+        self.assertEqual(context['i'],1)
+        
+        token.addSignal('wait:'+token.id)
+        exp.run(expression,context,token)
+        token.clearSignals()  
+        self.assertEqual(context['i'],2)
+        
+        token.addSignal('signal_2')
+        exp.run(expression,context,token)
+        token.clearSignals()     
+        self.assertEqual(context['i'],3)     
 
-# token= Token()
-# context = {}
-# exp.run(('i=0;'
-#          'while(i<=6){'
-#          '  output=i*2;'
-#          '  if(output%2==0){ signal("signal_1"); }'
-#          '  else { signal("signal_2"); }'
-#          '  i=i+1;'
-#          '}'),context,token)
-# print(context['output'],12)
-# print(token) 
 
-# print(exp.run('3>2'),3>2)
-# context = {"a":[1,2,3,4,5],"b":0}
-# print(exp.run('a.filter(p=> p>1 && p<5).reverse()',context,Token()),[4,3,2])
+
+
 unittest.main()
 
 # operand=exp.compile('(a+1)*(a-1)')
