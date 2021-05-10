@@ -543,6 +543,30 @@ class Block(Operand):
         return Value(values)          
                 
 class If(Operand):
+    def solve(self,values,token:Token)->Value:        
+        if len(values)== 0:
+            # evaluate if condition
+            value = self._children[0].eval(token)
+            if token.isBreak: return value
+            values.append(value.value)
+
+        if len(values)== 1:
+            if values[0]:
+                # if condition is true evaluate block if
+                value = self._children[1].eval(token)
+                if token.isBreak: return value
+                values.append(value.value)
+
+        # if had elif or else , evaluale them
+        while len(self._children) > len(values):            
+            index = len(values)
+            value = self._children[index].eval(token)
+            if token.isBreak: return value
+            values.append(value.value)   
+
+        return Value(None)
+
+class ElIf(Operand):
     def solve(self,values,token:Token)->Value:
         if len(values)== 0:
             value = self._children[0].eval(token)
@@ -553,11 +577,16 @@ class If(Operand):
             value = self._children[1].eval(token)
             if token.isBreak: return value
             values.append(value.value) 
-        elif len(self._children) > 2 and self._children[2] is not None:
-            value = self._children[2].eval(token)
-            if token.isBreak: return value
-            values.append(value.value)         
-        return Value(values)         
+                 
+        return Value(None)
+
+class Else(Operand):
+    def solve(self,values,token:Token)->Value:        
+        value = self._children[0].eval(token)
+        if token.isBreak: return value
+        values.append(value.value)
+        return Value(None)                 
+        
          
 class While(Operand):
     def solve(self,values,token:Token)->Value:
@@ -577,7 +606,17 @@ class While(Operand):
             if token.isBreak: return value
             values.append(value.value)
 
-        return Value(None)          
+        return Value(None)   
+
+class For(Operand):
+    def solve(self,values,token:Token)->Value:
+        pass
+    # TODO
+
+class ForIn(Operand):
+    def solve(self,values,token:Token)->Value:
+        pass
+    # TODO
            
 
        

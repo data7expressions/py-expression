@@ -258,10 +258,12 @@ class TestExpression(unittest.TestCase):
         token.clearSignals()     
         self.assertEqual(context['i'],3)     
 
+expression = load('test/blockControl-01.js')
+print(exp.minify(expression))
+node = exp.parse(expression)
+print(exp.serialize(node))
 
-
-
-unittest.main()
+# unittest.main()
 
 # operand=exp.compile('(a+1)*(a-1)')
 # context = {'a':3}

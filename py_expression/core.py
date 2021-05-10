@@ -101,8 +101,16 @@ class SourceManager():
             return  Block(name,children)
         elif type == 'if':
             return  If(name,children)
+        elif type == 'elif':
+            return  ElIf(name,children)
+        elif type == 'else':
+            return  Else(name,children)          
         elif type == 'while':
             return  While(name,children)
+        elif type == 'for':
+            return  For(name,children)
+        elif type == 'forIn':
+            return  ForIn(name,children)         
         else:
             raise ExpressionException('node: '+name +' not supported') 
 
@@ -369,28 +377,71 @@ class NodeManager():
         return  Node(serialized['n'],serialized['t'],children)
 
     def setParent(self,node:Node,parent:Node=None,index:int=0):
-        if parent is not None:
-            node.id = parent.id +'.'+str(index)
-            node.parent = parent
-            node.index = index
-            node.level = parent.level +1  
-        else:
-            node.id = '0'
-            node.parent = None
-            node.index = 0
-            node.level = 0 
+        try:
+            if parent is not None:
+                node.id = parent.id +'.'+str(index)
+                node.parent = parent
+                node.index = index
+                node.level = parent.level +1  
+            else:
+                node.id = '0'
+                node.parent = None
+                node.index = 0
+                node.level = 0 
 
-        if  len(node.children)>0:
-            for i,p in enumerate(node.children):
-                self.setParent(p,node,i) 
+            if  len(node.children)>0:
+                for i,p in enumerate(node.children):
+                    self.setParent(p,node,i) 
+        except Exception as error:
+            raise ExpressionException('expression: error: '+str(error))        
         return node;              
+
+class Minifier():
+    def __init__(self,rules=[]): 
+       self.rules = rules
+
+    def minify(self,expression)->str:
+        isString=False
+        quotes=None
+        buffer = list(expression)
+        length=len(buffer)
+        result =[]
+        i=0
+        while i < length:
+            p =buffer[i]        
+            if isString and p == quotes: isString=False 
+            elif not isString and (p == '\'' or p=='"'):
+                isString=True
+                quotes=p
+            if isString:
+                result.append(p)
+            elif  p == ' ' :
+                for rule in self.rules:
+                    if len(rule)+i<length and self.nextIs(buffer,i,rule):
+                        for q in list(rule):    
+                            result.append(q)
+                        i+=len(rule)-1
+                        break          
+            elif (p!='\n' and p!='\r' and p!='\t' ):
+               result.append(p)
+            i+=1   
+        return result
+
+    def nextIs(self,buffer,index,key):
+        arr = list(key)        
+        for i, p in enumerate(arr):
+            if buffer[index+i] != p:
+                return False
+        return True        
+    
 # Facade   
 class Exp(metaclass=Singleton):
     def __init__(self):
        self.model = Model()
+       self.minifier = Minifier([' in ',' if'])
        self.parser = Parser(self.model)
        self.nodeManager = NodeManager(self.model)
-       self.sourceManager = SourceManager(self.model)   
+       self.sourceManager = SourceManager(self.model)        
        self.addLibrary(CoreLib())        
 
     def addLibrary(self,library):
@@ -400,24 +451,13 @@ class Exp(metaclass=Singleton):
     def refresh(self):
         self.parser.refresh()    
     
-    def minify(self,expression:str)->str:
-        isString=False
-        quotes=None
-        result =[]
-        buffer = list(expression)
-        for p in buffer:
-            if isString and p == quotes: isString=False 
-            elif not isString and (p == '\'' or p=='"'):
-                isString=True
-                quotes=p
-            if (p != ' ' and p!='\n' and p!='\r' and p!='\t' ) or isString:
-               result.append(p)
-        return result
-    
+    def minify(self,expression:str)->list[str]:
+        return self.minifier.minify(expression) 
+  
     def parse(self,expression:str)->Node:
         try:
             minified = self.minify(expression) 
-            node= self.parser.parse(minified)
+            node= self.parser.parse(minified)            
             self.nodeManager.setParent(node)
             return node
         except Exception as error:
@@ -597,7 +637,14 @@ class _Parser():
         return self.buffer[self.index+1]
     @property
     def end(self):
-        return self.index >= self.length   
+        return self.index >= self.length 
+
+    def nextIs(self,key):
+        arr = list(key)        
+        for i, p in enumerate(arr):
+            if self.buffer[self.index+i] != p:
+                return False
+        return True         
 
     def getExpression(self,operand1=None,operator=None,_break='')->Node:
         expression = None
@@ -654,7 +701,10 @@ class _Parser():
                 operand = self.getIfBlock()
             elif value=='while' and self.current == '(': 
                 self.index+=1
-                operand = self.getWhileBlock()            
+                operand = self.getWhileBlock()   
+            elif value=='for' and self.current == '(': 
+                self.index+=1
+                operand = self.getForBlock()
             elif not self.end and self.current == '(':
                 self.index+=1
                 if '.' in value:
@@ -669,7 +719,18 @@ class _Parser():
 
             elif not self.end and self.current == '[':
                 self.index+=1    
-                operand = self.getIndexOperand(value)              
+                operand = self.getIndexOperand(value) 
+
+            elif value=='break':                
+                operand = Node('break','break')
+            elif value=='continue':                
+                operand = Node('continue','continue')
+            elif value=='return':                
+                operand = Node('return','return')        
+            elif value=='true':                
+                operand = Node(True,'constant')
+            elif value=='false':                
+                operand = Node(False,'constant')
             elif self.mgr.reInt.match(value): 
                 if isNegative:
                     value = int(value)* -1
@@ -689,11 +750,7 @@ class _Parser():
                     isBitNot= False      
                 else:
                     value =float(value)
-                operand = Node(value,'constant')
-            elif value=='true':                
-                operand = Node(True,'constant')
-            elif value=='false':                
-                operand = Node(False,'constant')
+                operand = Node(value,'constant')            
             elif self.mgr.isEnum(value):                
                 operand= self.getEnum(value)
             else:
@@ -804,27 +861,37 @@ class _Parser():
             if line is not None :lines.append(line)
             if self.previous=='}':
                 break        
-        return Node('block','block',lines)     
+        return Node('block','block',lines) 
 
-    def getIfBlock(self):
-        condition= self.getExpression(_break=')')
+    def getControlBolck(self):
         if  self.current == '{':
             self.index+=1  
             block= self.getBlock()
         else:
-            block= self.getExpression(_break=';') 
+            block= self.getExpression(_break=';')
+        return block            
 
-        nextValue=self.getValue(increment=False)
-        elseblock=None
-        if nextValue=='else':
-            self.index+=len(nextValue)
-            if  self.current == '{':
-                self.index+=1  
-                elseblock= self.getBlock()
-            else:
-                elseblock= self.getExpression(_break=';') 
+    def getIfBlock(self):
+        childs = []
+        condition= self.getExpression(_break=')')
+        childs.append(condition)
+        block = self.getControlBolck()
+        childs.append(block)
 
-        return Node('if','if',[condition,block,elseblock]) 
+        while self.nextIs('else if('):
+            self.index+=len('else if(')
+            condition= self.getExpression(_break=')')
+            block = self.getControlBolck()
+            elifNode = Node('elif','elif',[condition,block])
+            childs.append(elifNode)
+
+        if self.nextIs('else'):
+            self.index+=len('else')
+            block = self.getControlBolck()
+            elseNode = Node('else','else',[block])            
+            childs.append(elseNode)     
+        
+        return Node('if','if',childs)   
 
     def getWhileBlock(self):
         condition= self.getExpression(_break=')')
@@ -832,9 +899,29 @@ class _Parser():
             self.index+=1  
             block= self.getBlock()
         else:
-            block= self.getExpression(_break=';') 
+            block= self.getExpression(_break=';')
+        return Node('while','while',[condition,block])
 
-        return Node('while','while',[condition,block])   
+    def getForBlock(self):
+        first= self.getExpression(_break='; ')
+        if self.current==';':
+            condition= self.getExpression(_break=';')
+            increment= self.getExpression(_break=')')
+            if  self.current == '{':
+                self.index+=1  
+                block= self.getBlock()
+            else:
+                block= self.getExpression(_break=';')
+            return Node('for','for',[first,condition,increment,block])   
+        elif self.nextIs('in '):
+            self.index+=3
+            list= self.getExpression(_break=')')
+            if  self.current == '{':
+                self.index+=1  
+                block= self.getBlock()
+            else:
+                block= self.getExpression(_break=';')
+            return Node('forIn','forIn',[first,list,block])       
 
     def getChildFunction(self,name,parent):        
         if name in self.mgr.arrowFunction:
@@ -874,5 +961,7 @@ class _Parser():
                 attribute = Node(name,'keyValue',[Node(_value,'constant')])
                 attributes.append(attribute)
             return Node('object','object',attributes)
+
+         
    
                            

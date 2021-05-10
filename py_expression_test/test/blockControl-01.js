@@ -1,10 +1,11 @@
-
-
-list = [1,2,3,4,5,6,7,8,9];
-b=1;
-for(a in list){
-    b = a*b
-    if(b >10){
-        break;
-    }
+for(x in [1,2]){
+    if(x>2){
+        print(3)
+    } else if (x > 1){
+        print(2)
+    } else  if(x > 0){
+        print(1)
+    } else {
+        print(0)
+    }    
 }
