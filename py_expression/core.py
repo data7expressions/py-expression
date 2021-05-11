@@ -60,20 +60,23 @@ class SourceManager():
         return operand  
 
     def setParent(self,operand:Operand,index:int=0,parent:Operand=None):        
-        if parent is not None:
-            operand.id = parent.id +'.'+str(index)
-            operand.parent = parent
-            operand.index = index
-            operand.level = parent.level +1  
-        else:
-            operand.id = '0'
-            operand.parent = None
-            operand.index = 0
-            operand.level = 0 
-        
-        for i,p in enumerate(operand.children):
-            self.setParent(p,i,operand)           
-        return operand 
+        try:
+            if parent is not None:
+                operand.id = parent.id +'.'+str(index)
+                operand.parent = parent
+                operand.index = index
+                operand.level = parent.level +1  
+            else:
+                operand.id = '0'
+                operand.parent = None
+                operand.index = 0
+                operand.level = 0 
+            
+            for i,p in enumerate(operand.children):
+                self.setParent(p,i,operand)           
+            return operand
+        except Exception as error:
+            raise ExpressionException('set parent: '+operand.name+' error: '+str(error))     
 
     def createOperand(self,name:str,type:str,children:list[Operand])->Operand:
         if type == 'constant':
@@ -125,9 +128,9 @@ class SourceManager():
                 else:
                     function= implementation['function']
                     return Operator(name,children,function)
-            return None        
-        except:
-            raise ModelException('error with operator: '+name)  
+            return None
+        except Exception as error:
+            raise ExpressionException('create operator: '+name+' error: '+str(error))              
 
     def createFunction(self,name:str,children:list[Operand])->Function:
         try:            
@@ -140,8 +143,9 @@ class SourceManager():
                     function= implementation['function']
                     return Function(name,children,function)
             return None
-        except:
-            raise ModelException('error with function: '+name) 
+        except Exception as error:
+            raise ExpressionException('cretae function: '+name+' error: '+str(error))    
+       
 
     def createArrowFunction(self,name:str,children:list[Operand]):
         try:            
@@ -154,8 +158,9 @@ class SourceManager():
                     function= implementation['function']
                     return ArrowFunction(name,children,function)
             return None
-        except:
-            raise ModelException('error with function: '+name)              
+        except Exception as error:
+            raise ExpressionException('create arrow function: '+name+' error: '+str(error))    
+        
 
     def compile(self,node:Node):
         operand =self.nodeToOperand(node)
@@ -274,8 +279,8 @@ class SourceManager():
             self.setContext(operand,Context(context))
         try:    
             return operand.eval(token)
-        except Debug:
-            return None      
+        except Exception as error:
+            raise ExpressionException('eval: '+Operand.name+' error: '+str(error)) 
         
 class NodeManager():
     def __init__(self,model):
@@ -393,7 +398,8 @@ class NodeManager():
                 for i,p in enumerate(node.children):
                     self.setParent(p,node,i) 
         except Exception as error:
-            raise ExpressionException('expression: error: '+str(error))        
+            raise ExpressionException('set parent: '+node.name+' error: '+str(error)) 
+       
         return node;              
 
 class Minifier():
@@ -588,8 +594,8 @@ class Parser():
         try:
             metadata = self._model.getOperatorMetadata(name,cardinality)
             return metadata["priority"] if metadata is not None else -1
-        except:
-            raise ModelException('error to priority : '+name)   
+        except Exception as error:
+            raise ExpressionException('priority: '+name+' error: '+str(error)) 
   
     def isEnum(self,name):    
         return self._model.isEnum(name) 
