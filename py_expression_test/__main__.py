@@ -293,12 +293,17 @@ class TestExpression(unittest.TestCase):
 # node = exp.parse(expression)
 # print(exp.serialize(node))
 
-expression = load('test/function-01.js')
-print(exp.minify(expression))
-node = exp.parse(expression)
-print(exp.serialize(node))
+# expression = load('test/function-01.js')
+# print(exp.minify(expression))
+# node = exp.parse(expression)
+# print(exp.serialize(node))
 
-# unittest.main()
+# expression = load('test/function-02.js')
+# print(exp.minify(expression))
+# node = exp.parse(expression)
+# print(exp.serialize(node))
+
+unittest.main()
 
 # operand=exp.compile('(a+1)*(a-1)')
 # context = {'a':3}

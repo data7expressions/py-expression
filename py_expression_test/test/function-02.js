@@ -8,4 +8,4 @@ function resursive(a=5){
        return resursive(a+1);
     };    
 }
-result = resursive(3) 
+result = resursive(3); 
