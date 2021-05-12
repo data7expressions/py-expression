@@ -200,7 +200,7 @@ class SourceManager():
                 otherOperand= operand.parent.children[otherIndex]
                 if isinstance(otherOperand,Constant):
                     return otherOperand.type
-                elif isinstance(otherOperand,Function):    
+                elif isinstance(otherOperand,FunctionRef):    
                     metadata =self.getFunctionMetadata(otherOperand.name)
                     return metadata['return']
                 elif isinstance(otherOperand,Operator):    
@@ -210,7 +210,7 @@ class SourceManager():
                     return 'any'
             else:        
                 return metadata['args'][operand.index]['type']
-        elif isinstance(operand.parent,Function):
+        elif isinstance(operand.parent,FunctionRef):
             name = operand.parent.name.replace('.','',1) if operand.parent.name.starWith('.') else  operand.parent.name
             metadata =self._model.getFunctionMetadata(name)
             return metadata['args'][operand.index]['type'] 
