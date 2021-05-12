@@ -288,10 +288,10 @@ class TestExpression(unittest.TestCase):
         serialized2 = {'id': '0', 'n': 'block', 't': 'block', 'c': [{'id': '0.0', 'n': '=', 't': 'operator', 'c': [{'id': '0.0.0', 'n': 'a', 't': 'variable', 'c': []}, {'id': '0.0.1', 'n': 'x', 't': 'constant', 'c': []}]}, {'id': '0.1', 'n': 'switch', 't': 'switch', 'c': [{'id': '0.1.0', 'n': 'a', 't': 'variable', 'c': []}, {'id': '0.1.1', 'n': 'options', 't': 'options', 'c': [{'id': '0.1.1.0', 'n': 'x', 't': 'case', 'c': [{'id': '0.1.1.0.0', 'n': 'block', 't': 'block', 'c': [{'id': '0.1.1.0.0.0', 'n': '=', 't': 'operator', 'c': [{'id': '0.1.1.0.0.0.0', 'n': 'i', 't': 'variable', 'c': []}, {'id': '0.1.1.0.0.0.1', 'n': 1, 't': 'constant', 'c': []}]}, {'id': '0.1.1.0.0.1', 'n': 'break', 't': 'break', 'c': []}]}]}, {'id': '0.1.1.1', 'n': 'y', 't': 'case', 'c': [{'id': '0.1.1.1.0', 'n': 'block', 't': 'block', 'c': [{'id': '0.1.1.1.0.0', 'n': '=', 't': 'operator', 'c': [{'id': '0.1.1.1.0.0.0', 'n': 'i', 't': 'variable', 'c': []}, {'id': '0.1.1.1.0.0.1', 'n': 2, 't': 'constant', 'c': []}]}, {'id': '0.1.1.1.0.1', 'n':'break', 't': 'break', 'c': []}]}]}, {'id': '0.1.1.2', 'n': 'z', 't': 'case', 'c': [{'id': '0.1.1.2.0', 'n': 'block', 't': 'block', 'c': [{'id': '0.1.1.2.0.0', 'n': '=', 't': 'operator', 'c': [{'id': '0.1.1.2.0.0.0', 'n': 'i', 't': 'variable', 'c': []}, {'id': '0.1.1.2.0.0.1', 'n': 3, 't': 'constant', 'c': []}]}, {'id': '0.1.1.2.0.1', 'n': 'break', 't': 'break', 'c': []}]}]}, {'id': '0.1.1.3', 'n': 'default', 't': 'default', 'c': [{'id': '0.1.1.3.0', 'n': 'block', 't': 'block', 'c': [{'id': '0.1.1.3.0.0', 'n': '=', 't': 'operator', 'c': [{'id': '0.1.1.3.0.0.0', 'n': 'i', 't': 'variable', 'c': []}, {'id': '0.1.1.3.0.0.1', 'n': 4, 't': 'constant', 'c': []}]}, {'id': '0.1.1.3.0.1', 'n': 'break', 't': 'break', 'c': []}]}]}]}]}]}
         self.assertEqual(serialized,serialized2)
 
-# expression = load('test/blockControl-01.js')
-# # print(exp.minify(expression))
-# node = exp.parse(expression)
-# print(exp.serialize(node))
+expression = load('test/exception-01.js')
+print(exp.minify(expression))
+node = exp.parse(expression)
+print(exp.serialize(node))
 
 
 unittest.main()

@@ -136,6 +136,8 @@ class _Parser():
         isNot=False
         isBitNot=False
         operand=None
+        while self.current == ' ' and not self.end: self.index+=1
+        if self.end: return None
         char = self.current
         if char == '-':
            isNegative=True
@@ -176,10 +178,13 @@ class _Parser():
                     args=  self.getArgs(end=')')
                     operand= Node(value,'functionRef',args)                
 
+            elif value=='try' and self.current == '{':
+                operand = self.getTryCatchBlock()
             elif not self.end and self.current == '[':
                 self.index+=1    
                 operand = self.getIndexOperand(value) 
-
+            elif value=='throw':   
+                operand = self.getThrow()
             elif value=='break':                
                 operand = Node('break','break')
             elif value=='continue':                
@@ -405,8 +410,6 @@ class _Parser():
         options= Node('options','options',childs)
         return Node('switch','switch',[value,options])     
 
-
-
     def getWhileBlock(self):
         condition= self.getExpression(_break=')')
         if  self.current == '{':
@@ -455,6 +458,25 @@ class _Parser():
             args=  self.getArgs(end=')')
             args.insert(0,parent)
             return  Node(name,'childFunction',args)
+
+    def getTryCatchBlock(self):
+        childs = []              
+        tryBlock = self.getControlBolck()
+        childs.append(tryBlock)
+        if self.nextIs('catch'):
+            self.index+=len('catch')
+            if self.current == '(':
+                self.index+=1
+                variable= self.getExpression(_break=')')
+            catchBlock = self.getControlBolck()
+            catch = Node('catch','catch',[variable,catchBlock])
+            childs.append(catch)
+        if self.current == ';':self.index+=1
+        return Node('try','try',childs)    
+
+    def getThrow(self): 
+        exception= self.getExpression(_break=';')
+        return Node('throw','throw',[exception])            
 
     def getIndexOperand(self,name):
         idx= self.getExpression(_break=']')
