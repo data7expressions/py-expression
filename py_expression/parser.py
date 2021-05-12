@@ -154,7 +154,10 @@ class _Parser():
 
         if char.isalnum():    
             value=  self.getValue()
-            if value=='if' and self.current == '(': 
+            if value=='function' and self.current == ' ': 
+                self.index+=1
+                operand = self.getFunction()
+            elif value=='if' and self.current == '(': 
                 self.index+=1
                 operand = self.getIfBlock()
             elif value=='for' and self.current == '(': 
@@ -185,12 +188,12 @@ class _Parser():
                 operand = self.getIndexOperand(value) 
             elif value=='throw':   
                 operand = self.getThrow()
+            elif value=='return':   
+                operand = self.getReturn()    
             elif value=='break':                
                 operand = Node('break','break')
             elif value=='continue':                
                 operand = Node('continue','continue')
-            elif value=='return':                
-                operand = Node('return','return')        
             elif value=='true':                
                 operand = Node(True,'constant')
             elif value=='false':                
@@ -442,6 +445,14 @@ class _Parser():
                 block= self.getExpression(_break=';')
             return Node('forIn','forIn',[first,list,block])       
 
+    def getFunction(self):
+        name=  self.getValue()
+        if self.current == '(': self.index+=1
+        listArgs=  self.getArgs(end=')')
+        block = self.getControlBolck()
+        args =Node('args','args',listArgs) 
+        return Node(name,'function',[args,block]) 
+
     def getChildFunction(self,name,parent):        
         if name in self.mgr.arrowFunction:
             variableName= self.getValue()
@@ -458,6 +469,10 @@ class _Parser():
             args=  self.getArgs(end=')')
             args.insert(0,parent)
             return  Node(name,'childFunction',args)
+
+    def getReturn(self): 
+        value= self.getExpression(_break=';')
+        return Node('return','return',[value])  
 
     def getTryCatchBlock(self):
         childs = []              
