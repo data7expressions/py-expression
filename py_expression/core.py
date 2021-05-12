@@ -91,13 +91,13 @@ class SourceManager():
             return Object(name,children)
         elif type == 'operator':
             return self.createOperator(name,children)
-        elif type == 'function':
-            return self.createFunction(name,children)
+        elif type == 'functionRef':
+            return self.createFunctionRef(name,children)
         elif type == 'arrowFunction':
             return self.createArrowFunction(name,children)
-        elif type == 'childFunction':
+        elif type == 'childFunctionRef':
             if name in self.model.functions:
-                return self.createFunction(name,children)
+                return self.createFunctionRef(name,children)
             else:
                return ContextFunction(name,children)
         elif type == 'block':
@@ -132,7 +132,7 @@ class SourceManager():
         except Exception as error:
             raise ExpressionException('create operator: '+name+' error: '+str(error))              
 
-    def createFunction(self,name:str,children:list[Operand])->Function:
+    def createFunctionRef(self,name:str,children:list[Operand])->FunctionRef:
         try:            
             metadata = self._model.getFunctionMetadata(name)
             if metadata['lib'] in self._libraries:
@@ -141,10 +141,10 @@ class SourceManager():
                     return implementation['custom'](name,children) 
                 else:
                     function= implementation['function']
-                    return Function(name,children,function)
+                    return FunctionRef(name,children,function)
             return None
         except Exception as error:
-            raise ExpressionException('cretae function: '+name+' error: '+str(error))    
+            raise ExpressionException('cretae function ref: '+name+' error: '+str(error))    
        
 
     def createArrowFunction(self,name:str,children:list[Operand]):
@@ -243,10 +243,10 @@ class SourceManager():
 
     def functions(self,operand:Operand)->dict:
         list = {}
-        if isinstance(operand,Function):
+        if isinstance(operand,FunctionRef):
             list[operand.name] = {}
         for p in operand.children:
-            if isinstance(p,Function):
+            if isinstance(p,FunctionRef):
                 list[p.name] = {}
             elif len(p.children)>0:
                 subList= self.functions(p)
@@ -307,7 +307,7 @@ class NodeManager():
                 otherOperand= node.parent.children[otherIndex]
                 if otherOperand.type == 'constant':
                     return type(otherOperand.name).__name__ 
-                elif otherOperand.type == 'function':    
+                elif otherOperand.type == 'functionRef':    
                     metadata =self._model.getFunctionMetadata(otherOperand.name)
                     return metadata['return']
                 elif otherOperand.type == 'operator':    
@@ -317,7 +317,7 @@ class NodeManager():
                     return 'any'
             else:        
                 return metadata['args'][node.index]['type']
-        elif node.parent.type == 'function':            
+        elif node.parent.type == 'functionRef':            
             metadata =self._model.getFunctionMetadata(node.parent.name)
             return metadata['args'][node.index]['type'] 
 
@@ -350,10 +350,10 @@ class NodeManager():
 
     def functions(self,node:Node)->dict:
         list = {}
-        if node.type == 'function':
+        if node.type == 'functionRef':
             list[node.name] = {}
         for p in node.children:
-            if p.type == 'function':
+            if p.type == 'functionRef':
                 list[p.name] = {}
             elif len(p.children)>0:
                 subList= self.functions(p)
@@ -715,7 +715,7 @@ class _Parser():
                     operand= self.getChildFunction(name,variable)
                 else:
                     args=  self.getArgs(end=')')
-                    operand= Node(value,'function',args)                
+                    operand= Node(value,'functionRef',args)                
 
             elif not self.end and self.current == '[':
                 self.index+=1    

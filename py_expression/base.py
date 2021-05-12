@@ -501,9 +501,9 @@ class Operator(Operand):
                 values.append(value.value)
         return Value(self._function(*values))                 
                               
-class Function(Operand):
+class FunctionRef(Operand):
     def __init__(self,name:str,children:list[Operand]=[],function=None):
-        super(Function,self).__init__(name,children) 
+        super(FunctionRef,self).__init__(name,children) 
         self._function = function
 
     def solve(self,values,token:Token)->Value:
@@ -514,9 +514,9 @@ class Function(Operand):
                 values.append(value.value)
         return Value(self._function(*values))   
 
-class ArrowFunction(Function,ChildContextable):pass
+class ArrowFunction(FunctionRef,ChildContextable):pass
 
-class ContextFunction(Function):
+class ContextFunction(FunctionRef):
     def solve(self,values,token:Token)->Value:
         if len(values) == 0:
             value = self._children[0].eval(token)

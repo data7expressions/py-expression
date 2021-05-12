@@ -1200,7 +1200,7 @@ class CoreLib(Library):
         @staticmethod
         def listeners(keys:list[str],time:datetime=None)->str: pass 
 
-        class Listen(Function):
+        class Listen(FunctionRef):
             def solve(self,values,token:Token)->Value:
                 if len(values) == 0:                                    
                     value = self._children[0].eval(token)
@@ -1214,7 +1214,7 @@ class CoreLib(Library):
                         token.clearListeners()
                     return Value()               
 
-        class Wait(Function):
+        class Wait(FunctionRef):
             def solve(self,values,token:Token)->Value:
                 key = 'wait:'+token.id
                 if len(values) == 0: 
@@ -1229,7 +1229,7 @@ class CoreLib(Library):
                         token.clearListeners()
                     return Value() 
 
-        class Listeners(Function):
+        class Listeners(FunctionRef):
             def solve(self,values,token:Token)->Value:
                 timekey = 'time:'+token.id
                 if len(values) == 0:                                    
