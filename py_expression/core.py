@@ -403,8 +403,8 @@ class NodeManager():
         return node;              
 
 class Minifier():
-    def __init__(self,rules=[]): 
-       self.rules = rules
+    def __init__(self):
+       self.reAlphanumeric = re.compile('[a-zA-Z0-9_.]+$')
 
     def minify(self,expression)->str:
         isString=False
@@ -422,29 +422,20 @@ class Minifier():
             if isString:
                 result.append(p)
             elif  p == ' ' :
-                for rule in self.rules:
-                    if len(rule)+i<length and self.nextIs(buffer,i,rule):
-                        for q in list(rule):    
-                            result.append(q)
-                        i+=len(rule)-1
-                        break          
+                # solo deberia dejar los espacios cuando es entre caracteres alfanumericos. 
+                # por ejemplo en el caso de "} if" no deberia quedar un espacio 
+                if i+1 < length and self.reAlphanumeric.match(buffer[i-1]) and self.reAlphanumeric.match(buffer[i+1]):
+                    result.append(p)                
             elif (p!='\n' and p!='\r' and p!='\t' ):
                result.append(p)
             i+=1   
         return result
-
-    def nextIs(self,buffer,index,key):
-        arr = list(key)        
-        for i, p in enumerate(arr):
-            if buffer[index+i] != p:
-                return False
-        return True        
     
 # Facade   
 class Exp(metaclass=Singleton):
     def __init__(self):
        self.model = Model()
-       self.minifier = Minifier([' in ',' if'])
+       self.minifier = Minifier()
        self.parser = Parser(self.model)
        self.nodeManager = NodeManager(self.model)
        self.sourceManager = SourceManager(self.model)        
@@ -660,7 +651,7 @@ class _Parser():
             if operand1 is None and operator is None: 
                 operand1=  self.getOperand()
                 operator= self.getOperator()
-                if operator is None or operator in _break: 
+                if operator is None or operator == ' ' or operator in _break: 
                     expression = operand1
                     isbreak= True
                     break
@@ -705,12 +696,15 @@ class _Parser():
             if value=='if' and self.current == '(': 
                 self.index+=1
                 operand = self.getIfBlock()
+            elif value=='for' and self.current == '(': 
+                self.index+=1
+                operand = self.getForBlock()    
             elif value=='while' and self.current == '(': 
                 self.index+=1
                 operand = self.getWhileBlock()   
-            elif value=='for' and self.current == '(': 
+            elif value=='switch' and self.current == '(': 
                 self.index+=1
-                operand = self.getForBlock()
+                operand = self.getSwitchBlock()
             elif not self.end and self.current == '(':
                 self.index+=1
                 if '.' in value:
@@ -800,7 +794,7 @@ class _Parser():
         if increment:
             while not self.end and self.mgr.reAlphanumeric.match(self.current):
                 buff.append(self.current)
-                self.index+=1
+                self.index+=1            
         else:
             index = self.index
             while not self.end and self.mgr.reAlphanumeric.match(self.buffer[index]):
@@ -809,7 +803,7 @@ class _Parser():
         return ''.join(buff)
 
     def getOperator(self):
-        if self.end:return None 
+        if self.end:return None
         op=None
         if self.index+2 < self.length:
             triple = self.current+self.next+self.buffer[self.index+2]
@@ -898,6 +892,61 @@ class _Parser():
             childs.append(elseNode)     
         
         return Node('if','if',childs)   
+        
+    def getSwitchBlock(self):
+        
+        value= self.getExpression(_break=')')
+        if self.current == '{': self.index+=1          
+
+        if self.nextIs('case'):next='case'
+        elif self.nextIs('default:'):next='default:'
+
+        childs = []
+        while next=='case':
+            self.index+=len('case')
+            if self.current == '\'' or self.current == '"':
+                char = self.current
+                self.index+=1
+                compare=  self.getString(char)
+            else:    
+                compare= self.getValue()
+
+            if self.current == ':':self.index+=1
+            lines=[]
+            while True:
+                line= self.getExpression(_break=';')
+                if line is not None :lines.append(line)
+                if self.nextIs('case'):
+                    next='case'
+                    break
+                elif self.nextIs('default:'): 
+                    next = 'default:'
+                    break
+                elif self.current == '}':
+                    next = 'end'
+                    break
+
+            block= Node('block','block',lines)
+            case = Node(compare,'case',[block])
+            childs.append(case) 
+
+        if next=='default:':
+            self.index+=len('default:')
+            lines=[]
+            while True:
+                line= self.getExpression(_break=';')
+                if line is not None :lines.append(line)
+                if self.current == '}': break
+            block= Node('block','block',lines)
+            default = Node('default','default',[block])
+            childs.append(default) 
+        
+        if self.current == '}': self.index+=1
+
+        options= Node('options','options',childs)
+        return Node('switch','switch',[value,options])     
+
+
 
     def getWhileBlock(self):
         condition= self.getExpression(_break=')')
@@ -909,8 +958,8 @@ class _Parser():
         return Node('while','while',[condition,block])
 
     def getForBlock(self):
-        first= self.getExpression(_break='; ')
-        if self.current==';':
+        first= self.getExpression(_break=';')
+        if self.previous==';':
             condition= self.getExpression(_break=';')
             increment= self.getExpression(_break=')')
             if  self.current == '{':
@@ -919,8 +968,10 @@ class _Parser():
             else:
                 block= self.getExpression(_break=';')
             return Node('for','for',[first,condition,increment,block])   
-        elif self.nextIs('in '):
-            self.index+=3
+        elif self.nextIs('in'):
+            self.index+=2
+            # si hay espacios luego del in debe eliminarlos
+            while self.current == ' ':self.index+=1
             list= self.getExpression(_break=')')
             if  self.current == '{':
                 self.index+=1  

@@ -268,7 +268,17 @@ print(exp.minify(expression))
 node = exp.parse(expression)
 print(exp.serialize(node))
 
-# unittest.main()
+expression = load('test/blockControl-03.js')
+print(exp.minify(expression))
+node = exp.parse(expression)
+print(exp.serialize(node))
+
+expression = load('test/blockControl-04.js')
+print(exp.minify(expression))
+node = exp.parse(expression)
+print(exp.serialize(node))
+
+unittest.main()
 
 # operand=exp.compile('(a+1)*(a-1)')
 # context = {'a':3}

@@ -555,14 +555,18 @@ class If(Operand):
                 # if condition is true evaluate block if
                 value = self._children[1].eval(token)
                 if token.isBreak: return value
-                values.append(value.value)
+                values.append(value.value)                
 
         # if had elif or else , evaluale them
-        while len(self._children) > len(values):            
-            index = len(values)
-            value = self._children[index].eval(token)
-            if token.isBreak: return value
-            values.append(value.value)   
+        if not values[0]:
+            index=2
+            while len(self._children) > len(values):            
+                value = self._children[index].eval(token)
+                if token.isBreak: return value
+                # en el caso que un elif se haya ejecutado no debe seguir con los posteriores
+                if value.value: break
+                values.append(value.value)
+                index+=1   
 
         return Value(None)
 
@@ -578,14 +582,14 @@ class ElIf(Operand):
             if token.isBreak: return value
             values.append(value.value) 
                  
-        return Value(None)
+        return Value(values[0])
 
 class Else(Operand):
     def solve(self,values,token:Token)->Value:        
         value = self._children[0].eval(token)
         if token.isBreak: return value
         values.append(value.value)
-        return Value(None)                 
+        return Value(True)                 
         
          
 class While(Operand):
