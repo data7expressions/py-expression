@@ -30,13 +30,13 @@ class CoreLib(Library):
 
         self.addOperator('+','arithmetic',self.Operators.addition,4)
         self.addOperator('-','arithmetic',self.Operators.subtraction,4)
+        self.addOperator('-','arithmetic',self.Operators.negative,8)
         self.addOperator('*','arithmetic',self.Operators.multiplication,5)
         self.addOperator('/','arithmetic',self.Operators.division,5)
         self.addOperator('**','arithmetic',self.Operators.exponentiation,6)
         self.addOperator('//','arithmetic',self.Operators.floorDivision,6)
         self.addOperator('%','arithmetic',self.Operators.mod,7)
-
-        self.addOperator('-','arithmetic',self.Operators.negative,8)
+        
 
         self.addOperator('&','bitwise',self.Operators.bitAnd,4)
         self.addOperator('|','bitwise',self.Operators.bitOr,4)

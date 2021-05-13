@@ -28,7 +28,7 @@ class Process01 extends Process
     constructor(a,b){
         this.a = a;
         this.b =b;
-        super(this.start)
+        super(this.start);
     }
     start(){
         if(this.a>this.b){    
@@ -46,7 +46,7 @@ class Process01 extends Process
         this.end();
     }
     end(){
-        this.result =result
+        this.result =result;
         return;
     }
 
