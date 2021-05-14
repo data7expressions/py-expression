@@ -26,9 +26,9 @@ result = await(dataExec($DbCnx,sentence,{a:1}));
 
 // Filter using subquery 
 callback = dataExec($DbCnx,()=> Product.select(p=> {category=p.category.name,total=sum(p.cost)})
-        .where( p=> p.category != a && !exists(Blacklist.where(q=> q.categoryId == p.categoryId))  )                     
-        .having(p=> p.total > 100 )
-        .sort(p=> desc(p.category) ) 
+                                        .where( p=> p.category != a && !exists(Blacklist.where(q=> q.categoryId == p.categoryId))  )                     
+                                        .having(p=> p.total > 100 )
+                                        .sort(p=> desc(p.category) ) 
 ,{a:1});
 
 

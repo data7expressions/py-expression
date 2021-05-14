@@ -12,7 +12,6 @@ class Singleton(type):
 
 class ModelException(Exception):pass
 class ExpressionException(Exception):pass
-class Debug(Exception):pass
 
 class Model():
     def __init__(self):
@@ -590,7 +589,6 @@ class Else(Operand):
         if token.isBreak: return value
         values.append(value.value)
         return Value(True)                 
-        
          
 class While(Operand):
     def solve(self,values,token:Token)->Value:
