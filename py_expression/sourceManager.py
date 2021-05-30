@@ -162,11 +162,7 @@ class SourceManager():
             raise ExpressionException('create arrow function: '+name+' error: '+str(error))    
         
 
-    def compile(self,node:Node):
-        operand =self.nodeToOperand(node)
-        operand =self.reduce(operand,Token())
-        operand =self.setParent(operand)
-        return operand
+    
 
     def setContext(self,operand:Operand,context:Context):
         current = context
@@ -274,6 +270,12 @@ class SourceManager():
                 children.append(self._deserialize(p))
         return self.createOperand(serialized['n'],serialized['t'],children)
 
+    def compile(self,node:Node):
+        operand =self.nodeToOperand(node)
+        operand =self.reduce(operand,Token())
+        operand =self.setParent(operand)
+        return operand
+        
     def eval(self,operand:Operand,context:dict,token:Token)-> Value :  
         if context is not None:
             self.setContext(operand,Context(context))
