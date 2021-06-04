@@ -15,7 +15,7 @@ Besides the operators, functions, variables, objects and arrays that are support
     - Constants
     - Functions
     - Objects
-    - Arrayas
+    - Arrays
     - Enums
 - Simplify math operations where operands are constant
 - It allows to extend the model by adding or overwriting operators, functions and enums 
