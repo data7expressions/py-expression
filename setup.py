@@ -11,7 +11,7 @@ setup(
   description = 'parser and solve expressions',
   long_description=long_description,
   long_description_content_type='text/markdown',  # This is important!
-  url = 'https://github.com/FlavioLionelRita/py-expression', # use the URL to the github repo
+  url = 'https://github.com/FlavioLionelRita/py-expression', # use the URL to the gitHub repo
   download_url = 'https://github.com/FlavioLionelRita/py-expression/tarball/1.3.3',
   keywords = ['parser', 'expression'],
   classifiers = [],
