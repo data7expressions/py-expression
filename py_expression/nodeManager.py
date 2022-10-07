@@ -6,7 +6,7 @@ class NodeManager():
     def __init__(self,model):
        self._model = model    
           
-    def vars(self,node:Node)->dict:
+    def vars(self,node:Node):
         list = {}
         if node.type == 'variable':
             list[node.name] = self.operandType(node)
@@ -21,22 +21,22 @@ class NodeManager():
     def operandType(self,node:Node)->str:
         """ """
         if node.parent.type == 'operator':
-            metadata = self._model.getOperatorMetadata(node.parent.name,len(node.parent.children))
-            if metadata['category'] == 'comparison':
-                otherIndex = 1 if node.index == 0 else 0
-                otherOperand= node.parent.children[otherIndex]
-                if otherOperand.type == 'constant':
-                    return type(otherOperand.name).__name__ 
-                elif otherOperand.type == 'functionRef':    
-                    metadata =self._model.getFunctionMetadata(otherOperand.name)
-                    return metadata['return']
-                elif otherOperand.type == 'operator':    
-                    metadata =self._model.getOperatorMetadata(otherOperand.name,len(otherOperand.children))
-                    return metadata['return']    
-                else:
-                    return 'any'
-            else:        
-                return metadata['args'][node.index]['type']
+            metadata = self._model.getOperator(node.parent.name,len(node.parent.children))
+            # if metadata['category'] == 'comparison':
+            #     otherIndex = 1 if node.index == 0 else 0
+            #     otherOperand= node.parent.children[otherIndex]
+            #     if otherOperand.type == 'constant':
+            #         return type(otherOperand.name).__name__ 
+            #     elif otherOperand.type == 'functionRef':    
+            #         metadata =self._model.getFunction(otherOperand.name)
+            #         return metadata['return']
+            #     elif otherOperand.type == 'operator':    
+            #         metadata =self._model.getOperator(otherOperand.name,len(otherOperand.children))
+            #         return metadata['return']    
+            #     else:
+            #         return 'any'
+            # else:        
+            return metadata['args'][node.index]['type']
         elif node.parent.type == 'functionRef':            
             metadata =self._model.getFunctionMetadata(node.parent.name)
             return metadata['args'][node.index]['type'] 
@@ -53,20 +53,6 @@ class NodeManager():
                     subList= self.constants(p)
                     list = {**list, **subList}
         return list
-    
-    def operators(self,node:Node)->dict:
-        list = {}
-        if node.type ==  'operator':
-            metadata = self._model.getOperatorMetadata(node.name,len(node.children)) 
-            list[node.name] = metadata['category']
-        for p in node.children:
-            if p.type == 'operator':
-                metadata = self._model.getOperatorMetadata(p.name,len(p.children)); 
-                list[p.name] =  metadata['category']
-            elif len(p.children)>0:
-                subList= self.operators(p)
-                list = {**list, **subList}
-        return list
 
     def functions(self,node:Node)->dict:
         list = {}
@@ -82,6 +68,14 @@ class NodeManager():
         for key in list:
             list[key] = self._model.functions[key]
         return list
+      
+    def operators(self,node:Node)->Array:
+      list = []
+      if node.type == 'operator':	
+        list.append(node.name)
+      for p in node.children:
+        list = list + self.operators(p)
+      return list  
 
     def serialize(self,node:Node)-> dict:
         children = []                
@@ -114,10 +108,11 @@ class NodeManager():
                 node.index = 0
                 node.level = 0 
 
-            if  len(node.children)>0:
+            if  node.children and len(node.children)>0:
                 for i,p in enumerate(node.children):
-                    self.setParent(p,node,i) 
+                    if p is not None:
+                        self.setParent(p,node,i) 
         except Exception as error:
-            raise ExpressionException('set parent: '+node.name+' error: '+str(error)) 
+            raise Exception('set parent: '+node.name+' error: '+str(error)) 
        
         return node;              

@@ -5,37 +5,18 @@ from .coreLib import CoreLib
 class SourceManager():
     def __init__(self,model):
         self._model=model
-        self._libraries={}
 
     @property
     def model(self):
-        return self._model
-
-    @property
-    def libraries(self):
-        return self._libraries     
-
-    def addLibrary(self,library):
-        self._libraries[library.name] =library
-
-        for name in library.enums:
-            self._model.addEnum(name,library.enums[name])
-
-        for name in library.operators:
-            operator= library.operators[name]
-            for cardinality in operator:
-                data = operator[cardinality]
-                self._model.addOperator(name,cardinality,data['metadata'])    
-
-        for name in library.functions:
-            data = library.functions[name]
-            self._model.addFunction(name,data['metadata'])        
+        return self._model         
   
     def nodeToOperand(self,node:Node)->Operand:
         children = []
-        for p in node.children:
-            child = self.nodeToOperand(p)
-            children.append(child)
+        if node.children is not None:
+            for p in node.children:
+                if p is not None:
+                    child = self.nodeToOperand(p)
+                    children.append(child)
         operand = self.createOperand(node.name,node.type,children)
         operand.id = node.id
         return operand
@@ -76,7 +57,7 @@ class SourceManager():
                 self.setParent(p,i,operand)           
             return operand
         except Exception as error:
-            raise ExpressionException('set parent: '+operand.name+' error: '+str(error))     
+            raise Exception('set parent: '+operand.name+' error: '+str(error))     
 
     def createOperand(self,name:str,type:str,children:list[Operand])->Operand:
         if type == 'constant':
@@ -94,7 +75,7 @@ class SourceManager():
         elif type == 'functionRef':
             return self.createFunctionRef(name,children)
         elif type == 'arrowFunction':
-            return self.createArrowFunction(name,children)
+            return self.createFunctionRef(name,children)
         elif type == 'childFunctionRef':
             if name in self.model.functions:
                 return self.createFunctionRef(name,children)
@@ -115,62 +96,54 @@ class SourceManager():
         elif type == 'forIn':
             return  ForIn(name,children)         
         else:
-            raise ExpressionException('node: '+name +' not supported') 
+            raise Exception('node: '+name +' not supported') 
 
     def createOperator(self,name:str,children:list[Operand])->Operator:
         try:
             cardinality =len(children)
-            metadata = self._model.getOperatorMetadata(name,cardinality)
-            if metadata['lib'] in self._libraries:
-                implementation= self._libraries[metadata['lib']].operators[name][cardinality]
-                if implementation['custom'] is not None:                    
-                    return implementation['custom'](name,children,implementation['customFunction']) 
-                else:
-                    function= implementation['function']
-                    return Operator(name,children,function)
-            return None
+            metadata = self._model.getOperator(name,cardinality)
+            if metadata['custom'] is not None:                    
+                return metadata['custom'](name,children,metadata['customFunction']) 
+            else:                
+                return Operator(name,children,metadata['function'])
         except Exception as error:
-            raise ExpressionException('create operator: '+name+' error: '+str(error))              
+            raise Exception('create operator: '+name+' error: '+str(error))              
 
     def createFunctionRef(self,name:str,children:list[Operand])->FunctionRef:
         try:            
-            metadata = self._model.getFunctionMetadata(name)
-            if metadata['lib'] in self._libraries:
-                implementation= self._libraries[metadata['lib']].functions[name]
-                if implementation['custom'] is not None:                   
-                    return implementation['custom'](name,children) 
-                else:
-                    function= implementation['function']
-                    return FunctionRef(name,children,function)
-            return None
+            metadata = self._model.getFunction(name) 
+            if metadata['custom'] is not None:                   
+                return metadata['custom'](name,children) 
+            else:
+                return FunctionRef(name,children,metadata['function'])
         except Exception as error:
-            raise ExpressionException('cretae function ref: '+name+' error: '+str(error))    
+            raise Exception('create function ref: '+name+' error: '+str(error))    
        
 
-    def createArrowFunction(self,name:str,children:list[Operand]):
-        try:            
-            metadata = self._model.getFunctionMetadata(name)
-            if metadata['lib'] in self._libraries:
-                implementation= self._libraries[metadata['lib']].functions[name]
-                if implementation['custom'] is not None:                    
-                    return implementation['custom'](name,children) 
-                else:
-                    function= implementation['function']
-                    return ArrowFunction(name,children,function)
-            return None
-        except Exception as error:
-            raise ExpressionException('create arrow function: '+name+' error: '+str(error))    
+    # def createArrowFunction(self,name:str,children:list[Operand]):
+    #     try:            
+    #         metadata = self._model.getFunctionMetadata(name)
+    #         if metadata['lib'] in self._libraries:
+    #             implementation= self._libraries[metadata['lib']].functions[name]
+    #             if implementation['custom'] is not None:                    
+    #                 return implementation['custom'](name,children) 
+    #             else:
+    #                 function= implementation['function']
+    #                 return ArrowFunction(name,children,function)
+    #         return None
+    #     except Exception as error:
+    #         raise Exception('create arrow function: '+name+' error: '+str(error))    
         
 
     
 
     def setContext(self,operand:Operand,context:Context):
         current = context
-        if issubclass(operand.__class__,ChildContextable):
+        if issubclass(operand.__class__,ChildContextAble):
             childContext=current.newContext()
             operand.context = childContext
             current = childContext
-        elif issubclass(operand.__class__,Contextable):
+        elif issubclass(operand.__class__,ContextAble):
             operand.context = current       
         for p in operand.children:
             self.setContext(p,current) 
@@ -190,25 +163,25 @@ class SourceManager():
     def operandType(self,operand:Operand)->str:
         """ """
         if isinstance(operand.parent,Operator):
-            metadata = self._model.getOperatorMetadata(operand.parent.name,len(operand.parent.children))
-            if metadata['category'] == 'comparison':
-                otherIndex = 1 if operand.index == 0 else 0
-                otherOperand= operand.parent.children[otherIndex]
-                if isinstance(otherOperand,Constant):
-                    return otherOperand.type
-                elif isinstance(otherOperand,FunctionRef):    
-                    metadata =self.getFunctionMetadata(otherOperand.name)
-                    return metadata['return']
-                elif isinstance(otherOperand,Operator):    
-                    metadata =self._model.getOperatorMetadata(otherOperand.name,len(otherOperand.children))
-                    return metadata['return']    
-                else:
-                    return 'any'
-            else:        
-                return metadata['args'][operand.index]['type']
+            metadata = self._model.getOperator(operand.parent.name,len(operand.parent.children))
+            # if metadata['category'] == 'comparison':
+            #     otherIndex = 1 if operand.index == 0 else 0
+            #     otherOperand= operand.parent.children[otherIndex]
+            #     if isinstance(otherOperand,Constant):
+            #         return otherOperand.type
+            #     elif isinstance(otherOperand,FunctionRef):    
+            #         metadata =self.getFunctionMetadata(otherOperand.name)
+            #         return metadata['return']
+            #     elif isinstance(otherOperand,Operator):    
+            #         metadata =self._model.getOperatorMetadata(otherOperand.name,len(otherOperand.children))
+            #         return metadata['return']    
+            #     else:
+            #         return 'any'
+            # else:        
+            return metadata['args'][operand.index]['type']
         elif isinstance(operand.parent,FunctionRef):
             name = operand.parent.name.replace('.','',1) if operand.parent.name.starWith('.') else  operand.parent.name
-            metadata =self._model.getFunctionMetadata(name)
+            metadata =self._model.getFunction(name)
             return metadata['args'][operand.index]['type'] 
 
     def constants(self,operand:Operand)->dict:
@@ -223,19 +196,27 @@ class SourceManager():
                 list = {**list, **subList}
         return list
     
-    def operators(self,operand:Operand)->dict:
-        list = {}
-        if isinstance(operand,Operator):
-            metadata = self._model.getOperatorMetadata(operand.name,len(operand.children)) 
-            list[operand.name] = metadata['category']
-        for p in operand.children:
-            if isinstance(p,Operator):
-                metadata = self._model.getOperatorMetadata(p.name,len(p.children)); 
-                list[p.name] =  metadata['category']
-            elif len(p.children)>0:
-                subList= self.operators(p)
-                list = {**list, **subList}
-        return list
+    def operators(self,operand:Operand)->Array:
+      list = []
+      if isinstance(operand,Operator):	
+        list.append(operand.name)
+      for p in operand.children:
+        list = list + self.operators(p)
+      return list 
+  
+    # def operators(self,operand:Operand)->dict:
+    #     list = {}
+    #     if isinstance(operand,Operator):
+    #         metadata = self._model.getOperator(operand.name,len(operand.children)) 
+    #         list[operand.name] = metadata['category']
+    #     for p in operand.children:
+    #         if isinstance(p,Operator):
+    #             metadata = self._model.getOperator(p.name,len(p.children)); 
+    #             list[p.name] =  metadata['category']
+    #         elif len(p.children)>0:
+    #             subList= self.operators(p)
+    #             list = {**list, **subList}
+    #     return list
 
     def functions(self,operand:Operand)->dict:
         list = {}
@@ -282,5 +263,5 @@ class SourceManager():
         try:    
             return operand.eval(token)
         except Exception as error:
-            raise ExpressionException('eval: '+Operand.name+' error: '+str(error)) 
+            raise Exception('eval: '+Operand.name+' error: '+str(error)) 
   

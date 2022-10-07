@@ -9,8 +9,9 @@ class Parser():
        self.reFloat = re.compile('(\d+(\.\d*)?|\.\d+)([eE]\d+)?')
        self._tripleOperators = []
        self._doubleOperators = [] 
-       self._assigmentOperators = []
-       self._arrowFunction = []         
+       self._assignmentOperators = []
+       self._arrowFunction = []
+       self.refresh()         
    
     def refresh(self):
         for key in self._model.operators.keys():
@@ -19,8 +20,9 @@ class Parser():
 
             operator = self._model.operators[key]
             if 2 in operator.keys():
-               if operator[2]['category'] == 'assignment':
-                  self._assigmentOperators.append(key)
+            #    if operator[2]['category'] == 'assignment':
+               if operator[2]['priority'] == 1: 
+                  self._assignmentOperators.append(key)
 
         for key in self._model.functions.keys():
             metadata = self._model.functions[key]
@@ -42,10 +44,10 @@ class Parser():
 
     def priority(self,name:str,cardinality:int)->int:
         try:
-            metadata = self._model.getOperatorMetadata(name,cardinality)
+            metadata = self._model.getOperator(name,cardinality)
             return metadata["priority"] if metadata is not None else -1
         except Exception as error:
-            raise ExpressionException('priority: '+name+' error: '+str(error)) 
+            raise Exception('priority: '+name+' error: '+str(error)) 
   
     def isEnum(self,name):    
         return self._model.isEnum(name) 
@@ -63,7 +65,7 @@ class Parser():
             del _parser             
             return node  
         except Exception as error:
-            raise ExpressionException('expression: '+expression+' error: '+str(error))      
+            raise Exception('expression: '+expression+' error: '+str(error))      
  
 class _Parser():
     def __init__(self,mgr:Parser,expression:str):
@@ -105,20 +107,20 @@ class _Parser():
     def getExpression(self,operand1=None,operator=None,_break='')->Node:
         expression = None
         operand2 = None
-        isbreak = False               
+        isBreak = False               
         while not self.end:
             if operand1 is None and operator is None: 
                 operand1=  self.getOperand()
                 operator= self.getOperator()
                 if operator is None or operator == ' ' or operator in _break: 
                     expression = operand1
-                    isbreak= True
+                    isBreak= True
                     break
             operand2=  self.getOperand()
             nextOperator= self.getOperator()
             if nextOperator is None or nextOperator in _break:
                 expression= Node(operator,'operator',[operand1,operand2])
-                isbreak= True
+                isBreak= True
                 break
             elif self.priority(operator)>=self.priority(nextOperator):
                 operand1=Node(operator,'operator',[operand1,operand2])
@@ -126,9 +128,9 @@ class _Parser():
             else:
                 operand2 = self.getExpression(operand1=operand2,operator=nextOperator,_break=_break)
                 expression= Node(operator,'operator',[operand1,operand2])
-                isbreak= True
+                isBreak= True
                 break
-        if not isbreak: expression=Node(operator,'operator',[operand1,operand2])
+        if not isBreak: expression=Node(operator,'operator',[operand1,operand2])
         return expression  
 
     def getOperand(self)-> Node:        
@@ -312,7 +314,7 @@ class _Parser():
             else:    
                 name= self.getValue()
             if self.current==':':self.index+=1
-            else:raise ExpressionException('attribute '+name+' without value')
+            else:raise Exception('attribute '+name+' without value')
             value= self.getExpression(_break=',}')
             attribute = Node(name,'keyValue',[value])
             attributes.append(attribute)
@@ -330,7 +332,7 @@ class _Parser():
                 break        
         return Node('block','block',lines) 
 
-    def getControlBolck(self):
+    def getControlBlock(self):
         if  self.current == '{':
             self.index+=1  
             block= self.getBlock()
@@ -339,26 +341,26 @@ class _Parser():
         return block            
 
     def getIfBlock(self):
-        childs = []
+        children = []
         condition= self.getExpression(_break=')')
-        childs.append(condition)
-        block = self.getControlBolck()
-        childs.append(block)
+        children.append(condition)
+        block = self.getControlBlock()
+        children.append(block)
 
         while self.nextIs('else if('):
             self.index+=len('else if(')
             condition= self.getExpression(_break=')')
-            block = self.getControlBolck()
+            block = self.getControlBlock()
             elifNode = Node('elif','elif',[condition,block])
-            childs.append(elifNode)
+            children.append(elifNode)
 
         if self.nextIs('else'):
             self.index+=len('else')
-            block = self.getControlBolck()
+            block = self.getControlBlock()
             elseNode = Node('else','else',[block])            
-            childs.append(elseNode)     
+            children.append(elseNode)     
         
-        return Node('if','if',childs)   
+        return Node('if','if',children)   
         
     def getSwitchBlock(self):
         
@@ -368,7 +370,7 @@ class _Parser():
         if self.nextIs('case'):next='case'
         elif self.nextIs('default:'):next='default:'
 
-        childs = []
+        children = []
         while next=='case':
             self.index+=len('case')
             if self.current == '\'' or self.current == '"':
@@ -395,7 +397,7 @@ class _Parser():
 
             block= Node('block','block',lines)
             case = Node(compare,'case',[block])
-            childs.append(case) 
+            children.append(case) 
 
         if next=='default:':
             self.index+=len('default:')
@@ -406,11 +408,11 @@ class _Parser():
                 if self.current == '}': break
             block= Node('block','block',lines)
             default = Node('default','default',[block])
-            childs.append(default) 
+            children.append(default) 
         
         if self.current == '}': self.index+=1
 
-        options= Node('options','options',childs)
+        options= Node('options','options',children)
         return Node('switch','switch',[value,options])     
 
     def getWhileBlock(self):
@@ -449,7 +451,7 @@ class _Parser():
         name=  self.getValue()
         if self.current == '(': self.index+=1
         listArgs=  self.getArgs(end=')')
-        block = self.getControlBolck()
+        block = self.getControlBlock()
         args =Node('args','args',listArgs) 
         return Node(name,'function',[args,block]) 
 
@@ -461,7 +463,7 @@ class _Parser():
                 return Node(name,'arrowFunction',[parent]) 
             else:    
                 if self.current=='=' and self.next == '>':self.index+=2
-                else:raise ExpressionException('map without body')
+                else:raise Exception('map without body')
                 variable= Node(variableName,'variable')
                 body= self.getExpression(_break=')')
                 return Node(name,'arrowFunction',[parent,variable,body])        
@@ -475,19 +477,19 @@ class _Parser():
         return Node('return','return',[value])  
 
     def getTryCatchBlock(self):
-        childs = []              
-        tryBlock = self.getControlBolck()
-        childs.append(tryBlock)
+        children = []              
+        tryBlock = self.getControlBlock()
+        children.append(tryBlock)
         if self.nextIs('catch'):
             self.index+=len('catch')
             if self.current == '(':
                 self.index+=1
                 variable= self.getExpression(_break=')')
-            catchBlock = self.getControlBolck()
+            catchBlock = self.getControlBlock()
             catch = Node('catch','catch',[variable,catchBlock])
-            childs.append(catch)
+            children.append(catch)
         if self.current == ';':self.index+=1
-        return Node('try','try',childs)    
+        return Node('try','try',children)    
 
     def getThrow(self): 
         exception= self.getExpression(_break=';')

@@ -3,6 +3,7 @@ import math
 from datetime import date,datetime,time,timedelta
 from os import path,getcwd
 from .base import *
+from .model import Model
 
 class Volume():
     def __init__(self,_path):        
@@ -10,9 +11,11 @@ class Volume():
     def fullpath(self,_path):
         return path.join(self._root,_path)
 
-class CoreLib(Library):
-    def __init__(self):
-       super(CoreLib,self).__init__('core')   
+class CoreLib(): 
+    def __init__(self,model:Model):       
+       self.model = model 
+
+    def load(self):
        self.initEnums()
        self.initOperators()
        self.generalFunctions()
@@ -21,173 +24,173 @@ class CoreLib(Library):
        self.datetimeFunctions()
        self.ioFunctions()
        self.arrayFunctions()
-       self.signalFunctions()
+       self.signalFunctions()   
 
     def initEnums(self): 
-        self.addEnum('DayOfWeek',{"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":0}) 
+        self.model.addEnum('DayOfWeek',{"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":0}) 
 
     def initOperators(self):       
 
-        self.addOperator('+','arithmetic',self.Operators.addition,4)
-        self.addOperator('-','arithmetic',self.Operators.subtraction,4)
-        self.addOperator('-','arithmetic',self.Operators.negative,8)
-        self.addOperator('*','arithmetic',self.Operators.multiplication,5)
-        self.addOperator('/','arithmetic',self.Operators.division,5)
-        self.addOperator('**','arithmetic',self.Operators.exponentiation,6)
-        self.addOperator('//','arithmetic',self.Operators.floorDivision,6)
-        self.addOperator('%','arithmetic',self.Operators.mod,7)
+        self.model.addOperator('+','arithmetic',self.Operators.addition,4)
+        self.model.addOperator('-','arithmetic',self.Operators.subtraction,4)
+        self.model.addOperator('-','arithmetic',self.Operators.negative,8)
+        self.model.addOperator('*','arithmetic',self.Operators.multiplication,5)
+        self.model.addOperator('/','arithmetic',self.Operators.division,5)
+        self.model.addOperator('**','arithmetic',self.Operators.exponentiation,6)
+        self.model.addOperator('//','arithmetic',self.Operators.floorDivision,6)
+        self.model.addOperator('%','arithmetic',self.Operators.mod,7)
         
 
-        self.addOperator('&','bitwise',self.Operators.bitAnd,4)
-        self.addOperator('|','bitwise',self.Operators.bitOr,4)
-        self.addOperator('^','bitwise',self.Operators.bitXor,4)
-        self.addOperator('~','bitwise',self.Operators.bitNot,4)
-        self.addOperator('<<','bitwise',self.Operators.leftShift,4)
-        self.addOperator('>>','bitwise',self.Operators.rightShift,4)
+        self.model.addOperator('&','bitwise',self.Operators.bitAnd,4)
+        self.model.addOperator('|','bitwise',self.Operators.bitOr,4)
+        self.model.addOperator('^','bitwise',self.Operators.bitXor,4)
+        self.model.addOperator('~','bitwise',self.Operators.bitNot,4)
+        self.model.addOperator('<<','bitwise',self.Operators.leftShift,4)
+        self.model.addOperator('>>','bitwise',self.Operators.rightShift,4)
 
-        self.addOperator('==','comparison',self.Operators.equal,3)
-        self.addOperator('!=','comparison',self.Operators.notEqual,3)
-        self.addOperator('>','comparison',self.Operators.greaterThan,3)
-        self.addOperator('<','comparison',self.Operators.lessThan,3)
-        self.addOperator('>=','comparison',self.Operators.greaterThanOrEqual,3)
-        self.addOperator('<=','comparison',self.Operators.lessThanOrEqual,3)
+        self.model.addOperator('==','comparison',self.Operators.equal,3)
+        self.model.addOperator('!=','comparison',self.Operators.notEqual,3)
+        self.model.addOperator('>','comparison',self.Operators.greaterThan,3)
+        self.model.addOperator('<','comparison',self.Operators.lessThan,3)
+        self.model.addOperator('>=','comparison',self.Operators.greaterThanOrEqual,3)
+        self.model.addOperator('<=','comparison',self.Operators.lessThanOrEqual,3)
 
-        self.addOperator('&&','logical',self.Operators._and,2,self.Operators.And)
-        self.addOperator('||','logical',self.Operators._or,2,self.Operators.Or)
-        self.addOperator('!','logical',self.Operators._not,4)
+        self.model.addOperator('&&','logical',self.Operators._and,2,self.Operators.And)
+        self.model.addOperator('||','logical',self.Operators._or,2,self.Operators.Or)
+        self.model.addOperator('!','logical',self.Operators._not,4)
 
-        self.addOperator('[]','list',self.Operators.item)
+        self.model.addOperator('[]','list',self.Operators.item)
         
-        self.addOperator('=','assignment',self.Operators.assigment,1,self.Operators.Assigment)
-        self.addOperator('+=','assignment',self.Operators.assigmentAddition,1,self.Operators.Assigment,self.Operators.addition)
-        self.addOperator('-=','assignment',self.Operators.assigmentSubtraction,1,self.Operators.Assigment,self.Operators.subtraction)
-        self.addOperator('*=','assignment',self.Operators.assigmentMultiplication,1,self.Operators.Assigment,self.Operators.multiplication)
-        self.addOperator('/=','assignment',self.Operators.assigmentDivision,1,self.Operators.Assigment,self.Operators.division)
-        self.addOperator('**=','assignment',self.Operators.assigmentExponentiation,1,self.Operators.Assigment,self.Operators.exponentiation)
-        self.addOperator('//=','assignment',self.Operators.assigmentFloorDivision,1,self.Operators.Assigment,self.Operators.floorDivision)
-        self.addOperator('%=','assignment',self.Operators.assigmentMod,1,self.Operators.Assigment,self.Operators.mod)
-        self.addOperator('&=','assignment',self.Operators.assigmentBitAnd,1,self.Operators.Assigment,self.Operators.bitAnd)
-        self.addOperator('|=','assignment',self.Operators.assigmentBitOr,1,self.Operators.Assigment,self.Operators.bitOr)
-        self.addOperator('^=','assignment',self.Operators.assigmentBitXor,1,self.Operators.Assigment,self.Operators.bitXor)
-        self.addOperator('<<=','assignment',self.Operators.assigmentLeftShift,1,self.Operators.Assigment,self.Operators.leftShift)
-        self.addOperator('>>=','assignment',self.Operators.assigmentRightShift,1,self.Operators.Assigment,self.Operators.rightShift)        
+        self.model.addOperator('=','assignment',self.Operators.assignment,1,self.Operators.Assignment)
+        self.model.addOperator('+=','assignment',self.Operators.assignmentAddition,1,self.Operators.Assignment,self.Operators.addition)
+        self.model.addOperator('-=','assignment',self.Operators.assignmentSubtraction,1,self.Operators.Assignment,self.Operators.subtraction)
+        self.model.addOperator('*=','assignment',self.Operators.assignmentMultiplication,1,self.Operators.Assignment,self.Operators.multiplication)
+        self.model.addOperator('/=','assignment',self.Operators.assignmentDivision,1,self.Operators.Assignment,self.Operators.division)
+        self.model.addOperator('**=','assignment',self.Operators.assignmentExponentiation,1,self.Operators.Assignment,self.Operators.exponentiation)
+        self.model.addOperator('//=','assignment',self.Operators.assignmentFloorDivision,1,self.Operators.Assignment,self.Operators.floorDivision)
+        self.model.addOperator('%=','assignment',self.Operators.assignmentMod,1,self.Operators.Assignment,self.Operators.mod)
+        self.model.addOperator('&=','assignment',self.Operators.assignmentBitAnd,1,self.Operators.Assignment,self.Operators.bitAnd)
+        self.model.addOperator('|=','assignment',self.Operators.assignmentBitOr,1,self.Operators.Assignment,self.Operators.bitOr)
+        self.model.addOperator('^=','assignment',self.Operators.assignmentBitXor,1,self.Operators.Assignment,self.Operators.bitXor)
+        self.model.addOperator('<<=','assignment',self.Operators.assignmentLeftShift,1,self.Operators.Assignment,self.Operators.leftShift)
+        self.model.addOperator('>>=','assignment',self.Operators.assignmentRightShift,1,self.Operators.Assignment,self.Operators.rightShift)        
 
     def generalFunctions(self):
-        self.addFunction('nvl',self.General.nvl )
-        self.addFunction('isEmpty',self.General.isEmpty)
-        self.addFunction('sleep',self.General.sleep)        
+        self.model.addFunction('nvl',self.General.nvl )
+        self.model.addFunction('isEmpty',self.General.isEmpty)
+        self.model.addFunction('sleep',self.General.sleep)        
 
     def stringFunctions(self):
-        self.addFunction('capitalize',self.String.capitalize)
-        self.addFunction('strCount',self.String.count)
-        self.addFunction('encode',self.String.encode)
-        self.addFunction('endswith',self.String.endswith)
-        self.addFunction('find',self.String.find)
-        self.addFunction('index',self.String.index)
-        self.addFunction('isalnum',self.String.isalnum)
-        self.addFunction('isalpha',self.String.isalpha)
-        self.addFunction('isdigit',self.String.isdigit)
-        self.addFunction('islower',self.String.islower)
-        self.addFunction('isspace',self.String.isspace)
-        self.addFunction('istitle',self.String.istitle)
-        self.addFunction('isupper',self.String.isupper)
-        self.addFunction('strJoin',self.String.join)
-        self.addFunction('ljust',self.String.ljust)
-        self.addFunction('lower',self.String.lower)
-        self.addFunction('lstrip',self.String.lstrip)
-        self.addFunction('strPartition',self.String.partition)
-        self.addFunction('replace',self.String.replace)
-        self.addFunction('rfind',self.String.rfind)
-        self.addFunction('rindex',self.String.rindex)
-        self.addFunction('rjust',self.String.rjust)
-        self.addFunction('rpartition',self.String.rpartition)
-        self.addFunction('rsplit',self.String.rsplit)
-        self.addFunction('rstrip',self.String.lstrip)
-        self.addFunction('split',self.String.split)
-        self.addFunction('splitlines',self.String.splitlines)
-        self.addFunction('startswith',self.String.startswith)
-        self.addFunction('strip',self.String.lstrip)
-        self.addFunction('swapcase',self.String.swapcase)
-        self.addFunction('title',self.String.title)
-        # self.addFunction('translate',self.String.translate)
-        self.addFunction('upper',self.String.upper)
-        self.addFunction('zfill',self.String.zfill)   
+        self.model.addFunction('capitalize',self.String.capitalize)
+        self.model.addFunction('strCount',self.String.count)
+        self.model.addFunction('encode',self.String.encode)
+        self.model.addFunction('endswith',self.String.endswith)
+        self.model.addFunction('find',self.String.find)
+        self.model.addFunction('index',self.String.index)
+        self.model.addFunction('isalnum',self.String.isalnum)
+        self.model.addFunction('isalpha',self.String.isalpha)
+        self.model.addFunction('isdigit',self.String.isdigit)
+        self.model.addFunction('islower',self.String.islower)
+        self.model.addFunction('isspace',self.String.isspace)
+        self.model.addFunction('istitle',self.String.istitle)
+        self.model.addFunction('isupper',self.String.isupper)
+        self.model.addFunction('strJoin',self.String.join)
+        self.model.addFunction('ljust',self.String.ljust)
+        self.model.addFunction('lower',self.String.lower)
+        self.model.addFunction('lstrip',self.String.lstrip)
+        self.model.addFunction('strPartition',self.String.partition)
+        self.model.addFunction('replace',self.String.replace)
+        self.model.addFunction('rfind',self.String.rfind)
+        self.model.addFunction('rindex',self.String.rindex)
+        self.model.addFunction('rjust',self.String.rjust)
+        self.model.addFunction('rpartition',self.String.rpartition)
+        self.model.addFunction('rsplit',self.String.rsplit)
+        self.model.addFunction('rstrip',self.String.lstrip)
+        self.model.addFunction('split',self.String.split)
+        self.model.addFunction('splitlines',self.String.splitlines)
+        self.model.addFunction('startswith',self.String.startswith)
+        self.model.addFunction('strip',self.String.lstrip)
+        self.model.addFunction('swapcase',self.String.swapcase)
+        self.model.addFunction('title',self.String.title)
+        # self.model.addFunction('translate',self.String.translate)
+        self.model.addFunction('upper',self.String.upper)
+        self.model.addFunction('zfill',self.String.zfill)   
 
     def mathFunctions(self):
-        self.addFunction('ceil',self.Math.ceil)
-        self.addFunction('copysign',self.Math.copysign) 
-        self.addFunction('factorial',self.Math.factorial) 
-        self.addFunction('floor',self.Math.floor) 
-        self.addFunction('fmod',self.Math.fmod) 
-        self.addFunction('frexp',self.Math.frexp) 
-        self.addFunction('fsum',self.Math.fsum) 
-        self.addFunction('isfinite',self.Math.isfinite) 
-        self.addFunction('isnan',self.Math.isnan) 
-        self.addFunction('ldexp',self.Math.ldexp) 
-        self.addFunction('modf',self.Math.modf) 
-        self.addFunction('trunc',self.Math.trunc) 
-        self.addFunction('exp',self.Math.exp) 
-        self.addFunction('expm1',self.Math.expm1) 
-        self.addFunction('log',self.Math.log) 
-        self.addFunction('log1p',self.Math.log1p) 
-        self.addFunction('log2',self.Math.log2) 
-        self.addFunction('log10',self.Math.log10) 
-        self.addFunction('pow',self.Math.pow) 
-        self.addFunction('sqrt',self.Math.sqrt) 
-        self.addFunction('acos',self.Math.acos) 
-        self.addFunction('asin',self.Math.asin) 
-        self.addFunction('atan',self.Math.atan) 
-        self.addFunction('atan2',self.Math.atan2) 
-        self.addFunction('cos',self.Math.cos) 
-        self.addFunction('hypot',self.Math.hypot) 
-        self.addFunction('sin',self.Math.sin) 
-        self.addFunction('tan',self.Math.tan) 
-        self.addFunction('degrees',self.Math.degrees)
-        self.addFunction('radians',self.Math.radians)
-        self.addFunction('acosh',self.Math.acosh)
-        self.addFunction('asinh',self.Math.asinh)
-        self.addFunction('atanh',self.Math.atanh)
-        self.addFunction('cosh',self.Math.cosh)
-        self.addFunction('sinh',self.Math.sinh)
-        self.addFunction('tanh',self.Math.tanh)
-        self.addFunction('erf',self.Math.erf)
-        self.addFunction('erfc',self.Math.erfc)
-        self.addFunction('gamma',self.Math.gamma)
-        self.addFunction('lgamma',self.Math.lgamma)
-        self.addFunction('pi',self.Math.pi)
-        self.addFunction('e',self.Math.e)
+        self.model.addFunction('ceil',self.Math.ceil)
+        self.model.addFunction('copysign',self.Math.copysign) 
+        self.model.addFunction('factorial',self.Math.factorial) 
+        self.model.addFunction('floor',self.Math.floor) 
+        self.model.addFunction('fmod',self.Math.fmod) 
+        self.model.addFunction('frexp',self.Math.frexp) 
+        self.model.addFunction('fsum',self.Math.fsum) 
+        self.model.addFunction('isfinite',self.Math.isfinite) 
+        self.model.addFunction('isnan',self.Math.isnan) 
+        self.model.addFunction('ldexp',self.Math.ldexp) 
+        self.model.addFunction('modf',self.Math.modf) 
+        self.model.addFunction('trunc',self.Math.trunc) 
+        self.model.addFunction('exp',self.Math.exp) 
+        self.model.addFunction('expm1',self.Math.expm1) 
+        self.model.addFunction('log',self.Math.log) 
+        self.model.addFunction('log1p',self.Math.log1p) 
+        self.model.addFunction('log2',self.Math.log2) 
+        self.model.addFunction('log10',self.Math.log10) 
+        self.model.addFunction('pow',self.Math.pow) 
+        self.model.addFunction('sqrt',self.Math.sqrt) 
+        self.model.addFunction('acos',self.Math.acos) 
+        self.model.addFunction('asin',self.Math.asin) 
+        self.model.addFunction('atan',self.Math.atan) 
+        self.model.addFunction('atan2',self.Math.atan2) 
+        self.model.addFunction('cos',self.Math.cos) 
+        self.model.addFunction('hypot',self.Math.hypot) 
+        self.model.addFunction('sin',self.Math.sin) 
+        self.model.addFunction('tan',self.Math.tan) 
+        self.model.addFunction('degrees',self.Math.degrees)
+        self.model.addFunction('radians',self.Math.radians)
+        self.model.addFunction('acosh',self.Math.acosh)
+        self.model.addFunction('asinh',self.Math.asinh)
+        self.model.addFunction('atanh',self.Math.atanh)
+        self.model.addFunction('cosh',self.Math.cosh)
+        self.model.addFunction('sinh',self.Math.sinh)
+        self.model.addFunction('tanh',self.Math.tanh)
+        self.model.addFunction('erf',self.Math.erf)
+        self.model.addFunction('erfc',self.Math.erfc)
+        self.model.addFunction('gamma',self.Math.gamma)
+        self.model.addFunction('lgamma',self.Math.lgamma)
+        self.model.addFunction('pi',self.Math.pi)
+        self.model.addFunction('e',self.Math.e)
     
     def datetimeFunctions(self):
-        self.addFunction('strftime',self.Date.strftime)
-        self.addFunction('strptime',self.Date.strptime)        
-        self.addFunction('datetime',self.Date.datetime)
-        self.addFunction('today',self.Date.today)
-        self.addFunction('now',self.Date.now)
-        self.addFunction('date',self.Date.date)
-        self.addFunction('fromtimestamp',self.Date.fromtimestamp)
-        self.addFunction('time',self.Date.time)
+        self.model.addFunction('strftime',self.Date.strftime)
+        self.model.addFunction('strptime',self.Date.strptime)        
+        self.model.addFunction('datetime',self.Date.datetime)
+        self.model.addFunction('today',self.Date.today)
+        self.model.addFunction('now',self.Date.now)
+        self.model.addFunction('date',self.Date.date)
+        self.model.addFunction('fromtimestamp',self.Date.fromtimestamp)
+        self.model.addFunction('time',self.Date.time)
     
     def ioFunctions(self): 
-        self.addFunction('Volume',self.IO.Volume)
-        self.addFunction('pathRoot',self.IO.pathRoot)
-        self.addFunction('pathJoin',self.IO.pathJoin)
+        self.model.addFunction('Volume',self.IO.Volume)
+        self.model.addFunction('pathRoot',self.IO.pathRoot)
+        self.model.addFunction('pathJoin',self.IO.pathJoin)
 
     def arrayFunctions(self): 
-        self.addFunction('foreach',self.Array.foreach,self.Array.ArrayForeach,True)
-        self.addFunction('map',self.Array.map,self.Array.ArrayMap,True)
-        self.addFunction('filter',self.Array.filter,self.Array.ArrayFilter,True)
-        self.addFunction('reverse',self.Array.reverse,self.Array.ArrayReverse,True)
-        self.addFunction('first',self.Array.first,self.Array.ArrayFirst,True)
-        self.addFunction('last',self.Array.last,self.Array.ArrayLast,True)
-        self.addFunction('sort',self.Array.sort,self.Array.ArraySort,True)
-        self.addFunction('push',self.Array.push,self.Array.ArrayPush)
-        self.addFunction('pop',self.Array.pop,self.Array.ArrayPop)
-        self.addFunction('remove',self.Array.remove,self.Array.ArrayRemove)
+        self.model.addFunction('foreach',self.Array.foreach,self.Array.ArrayForeach,True)
+        self.model.addFunction('map',self.Array.map,self.Array.ArrayMap,True)
+        self.model.addFunction('filter',self.Array.filter,self.Array.ArrayFilter,True)
+        self.model.addFunction('reverse',self.Array.reverse,self.Array.ArrayReverse,True)
+        self.model.addFunction('first',self.Array.first,self.Array.ArrayFirst,True)
+        self.model.addFunction('last',self.Array.last,self.Array.ArrayLast,True)
+        self.model.addFunction('sort',self.Array.sort,self.Array.ArraySort,True)
+        self.model.addFunction('push',self.Array.push,self.Array.ArrayPush)
+        self.model.addFunction('pop',self.Array.pop,self.Array.ArrayPop)
+        self.model.addFunction('remove',self.Array.remove,self.Array.ArrayRemove)
 
     def signalFunctions(self):
-        self.addFunction('listen',self.Signal.listen,self.Signal.Listen )
-        self.addFunction('wait',self.Signal.wait,self.Signal.Wait)
-        self.addFunction('listeners',self.Signal.listen,self.Signal.Listeners )
+        self.model.addFunction('listen',self.Signal.listen,self.Signal.Listen )
+        self.model.addFunction('wait',self.Signal.wait,self.Signal.Wait)
+        self.model.addFunction('listeners',self.Signal.listen,self.Signal.Listeners )
 
     class Operators():
         @staticmethod
@@ -265,31 +268,31 @@ class CoreLib(Library):
             return a or b  
 
         @staticmethod
-        def assigment(a:any,b:any)->any: pass
+        def assignment(a:any,b:any)->any: pass
         @staticmethod
-        def assigmentAddition(a:float,b:float)->float: pass 
+        def assignmentAddition(a:float,b:float)->float: pass 
         @staticmethod
-        def assigmentSubtraction(a:float,b:float)->float: pass 
+        def assignmentSubtraction(a:float,b:float)->float: pass 
         @staticmethod
-        def assigmentMultiplication(a:float,b:float)->float: pass 
+        def assignmentMultiplication(a:float,b:float)->float: pass 
         @staticmethod
-        def assigmentDivision(a:float,b:float)->float: pass 
+        def assignmentDivision(a:float,b:float)->float: pass 
         @staticmethod
-        def assigmentExponentiation(a:float,b:float)->float: pass 
+        def assignmentExponentiation(a:float,b:float)->float: pass 
         @staticmethod
-        def assigmentFloorDivision(a:float,b:float)->float: pass 
+        def assignmentFloorDivision(a:float,b:float)->float: pass 
         @staticmethod
-        def assigmentMod(a:float,b:float)->float: pass 
+        def assignmentMod(a:float,b:float)->float: pass 
         @staticmethod
-        def assigmentBitAnd(a:float,b:float)->float: pass 
+        def assignmentBitAnd(a:float,b:float)->float: pass 
         @staticmethod
-        def assigmentBitOr(a:float,b:float)->float: pass 
+        def assignmentBitOr(a:float,b:float)->float: pass 
         @staticmethod
-        def assigmentBitXor(a:float,b:float)->float: pass 
+        def assignmentBitXor(a:float,b:float)->float: pass 
         @staticmethod
-        def assigmentLeftShift(a:float,b:float)->float: pass 
+        def assignmentLeftShift(a:float,b:float)->float: pass 
         @staticmethod
-        def assigmentRightShift(a:float,b:float)->float: pass 
+        def assignmentRightShift(a:float,b:float)->float: pass 
 
         @staticmethod
         def item(list:list[any],index:int):
@@ -315,7 +318,7 @@ class CoreLib(Library):
                 if len(values) == 1:
                     return self._children[1].eval(token)
 
-        class Assigment(Operator):
+        class Assignment(Operator):
             def solve(self,values,token:Token)->Value:
                 if len(values) == 0:
                     value = self._children[0].eval(token)
@@ -369,7 +372,7 @@ class CoreLib(Library):
                 The error handling scheme to use for encoding errors.
                 The default is 'strict' meaning that encoding errors raise a
                 UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
-                'xmlcharrefreplace' as well as any other name registered with
+                'xmlCharrefReplace' as well as any other name registered with
                 codecs.register_error that can handle UnicodeEncodeErrors.
             """
             return str.encode(self,encoding,errors)
@@ -483,13 +486,13 @@ class CoreLib(Library):
             """
             return str.join(self,iterable)
         @staticmethod
-        def ljust(self, width: int,fillchar: str = None) -> str: 
+        def ljust(self, width: int,fillChar: str = None) -> str: 
             """
             Return a left-justified string of length width.
 
             Padding is done using the specified fill character (default is a space).
             """
-            return str.ljust(self,width,fillchar)
+            return str.ljust(self,width,fillChar)
         @staticmethod
         def lower(self:str)->str: 
             """Return a copy of the string converted to lowercase."""
@@ -553,13 +556,13 @@ class CoreLib(Library):
             """
             return str.rindex(self,sub,start,end)
         @staticmethod
-        def rjust(self, width: int,fillchar: str = None) -> str: 
+        def rjust(self, width: int,fillChar: str = None) -> str: 
             """
             Return a right-justified string of length width.
 
             Padding is done using the specified fill character (default is a space).
             """
-            return str.rjust(self,width,fillchar)
+            return str.rjust(self,width,fillChar)
         @staticmethod
         def rpartition(self:str,sep:str)->tuple[str,str,str]: 
             """
@@ -574,7 +577,7 @@ class CoreLib(Library):
             """
             return str.rpartition(self,sep)
         @staticmethod
-        def rsplit(self:str,sep:str,maxsplit:int=None)->list[str]: 
+        def rsplit(self:str,sep:str,maxSplit:int=None)->list[str]: 
             """
             Return a list of the words in the string, using sep as the delimiter string.
 
@@ -582,13 +585,13 @@ class CoreLib(Library):
                 The delimiter according which to split the string.
                 None (the default value) means split according to any whitespace,
                 and discard empty strings from the result.
-            maxsplit
+            maxSplit
                 Maximum number of splits to do.
                 -1 (the default value) means no limit.
 
             Splits are done starting at the end of the string and working to the front.
             """
-            return str.rsplit(self,sep,maxsplit)
+            return str.rsplit(self,sep,maxSplit)
         @staticmethod
         def rstrip(self:str,chars:str=None)->str: 
             """
@@ -598,7 +601,7 @@ class CoreLib(Library):
             """
             return str.rstrip(self,chars)
         @staticmethod
-        def split(self:str,sep:str,maxsplit:int=None)->list[str]: 
+        def split(self:str,sep:str,maxSplit:int=None)->list[str]: 
             """
             Return a list of the words in the string, using sep as the delimiter string.
 
@@ -606,20 +609,20 @@ class CoreLib(Library):
                 The delimiter according which to split the string.
                 None (the default value) means split according to any whitespace,
                 and discard empty strings from the result.
-            maxsplit
+            maxSplit
                 Maximum number of splits to do.
                 -1 (the default value) means no limit.
             """
-            return str.split(self,sep,maxsplit)
+            return str.split(self,sep,maxSplit)
         @staticmethod
-        def splitlines(self:str,keepends:bool=None)->list[str]: 
+        def splitlines(self:str,keepEnds:bool=None)->list[str]: 
             """
             Return a list of the lines in the string, breaking at line boundaries.
 
-            Line breaks are not included in the resulting list unless keepends is given and
+            Line breaks are not included in the resulting list unless keepEnds is given and
             true.
             """
-            return str.splitlines(self,keepends)
+            return str.splitlines(self,keepEnds)
         @staticmethod
         def startswith(self:str,suffix:str,start: int = None, end: int = None) -> bool: 
             """
@@ -646,9 +649,9 @@ class CoreLib(Library):
         @staticmethod
         def title(self:str)->str: 
             """
-            Return a version of the string where each word is titlecased.
+            Return a version of the string where each word is titleCased.
 
-            More specifically, words start with uppercased characters and all remaining
+            More specifically, words start with upperCased characters and all remaining
             cased characters have lower case.
             """
             return str.title(self)
@@ -973,15 +976,15 @@ class CoreLib(Library):
             """
             return time(hour,minute,second,microsecond,tzinfo) 
 
-        #  self.addFunction('timedelta',timedelta)
-        #  self.addFunction('timezone',pytz.timezone) 
+        #  self.model.addFunction('timedelta',timedelta)
+        #  self.model.addFunction('timezone',pytz.timezone) 
 
     class IO():
         # https://docs.python.org/3/library/os.path.html
 
         @staticmethod
         def Volume(_path:str)->Volume:
-            """cretae Volume"""
+            """create Volume"""
             return Volume(_path)
 
         @staticmethod
@@ -1231,7 +1234,7 @@ class CoreLib(Library):
 
         class Listeners(FunctionRef):
             def solve(self,values,token:Token)->Value:
-                timekey = 'time:'+token.id
+                timeKey = 'time:'+token.id
                 if len(values) == 0:                                    
                     value = self._children[0].eval(token)
                     if token.isBreak: return value
@@ -1245,7 +1248,7 @@ class CoreLib(Library):
                     value = self._children[1].eval(token)
                     if token.isBreak: return value
                     values.append(value.value)
-                    signal = Signal(timekey,values[1])
+                    signal = Signal(timeKey,values[1])
                     token.addListener(signal)
                     return Value()                     
                 else:
@@ -1253,7 +1256,7 @@ class CoreLib(Library):
                         if key in token.signals:
                             token.clearListeners()
                             return Value(key)
-                    if timekey in token.signals:
+                    if timeKey in token.signals:
                         token.clearListeners()
                         return Value('time')
                     return Value()                

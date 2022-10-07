@@ -10,60 +10,7 @@ class Singleton(type):
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
 
-class ModelException(Exception):pass
-class ExpressionException(Exception):pass
-
-class Model():
-    def __init__(self):
-        self._operators={}
-        self._enums={} 
-        self._functions={}
-
-    @property
-    def enums(self):
-        return self._enums
-    @property
-    def operators(self):
-        return self._operators
-    @property
-    def functions(self):
-        return self._functions
-
-    def addEnum(self,key,source):
-        self.enums[key]=source
-    def isEnum(self,name):    
-        names = name.split('.')
-        return names[0] in self.enums.keys()
-    def getEnumValue(self,name,option): 
-        return self.enums[name][option]
-    def getEnum(self,name): 
-        return self.enums[name]
-  
-    def addOperator(self,name:str,cardinality:int,metadata):
-        if name not in self.operators.keys():self.operators[name]= {}    
-        self.operators[name][cardinality] = metadata       
-
-    def addFunction(self:str,name:str,metadata):
-        self.functions[name] = metadata    
-    
-    def getOperatorMetadata(self,name:str,cardinality:int):
-        try:            
-            if name in self._operators:
-                operator = self._operators[name]
-                if cardinality in operator:
-                    return operator[cardinality]
-            return None        
-        except:
-            raise ModelException('error with operator: '+name)     
-
-    def getFunctionMetadata(self,name:str):
-        try:
-            if name in self._functions:
-                return self._functions[name]
-            return None
-        except:
-            raise ModelException('error with function: '+name)        
-        
+       
 class Library():
     def __init__(self,name):
         self._name = name
@@ -97,7 +44,7 @@ class Library():
                 list[p]=enum[p].value
             self._enums[key] =list
         else:
-            raise ModelException('enum not supported: '+key)    
+            raise Exception('enum not supported: '+key)    
 
     def addOperator(self,name:str,category:str,source,priority:int=-1,custom=None,customFunction=None):
         if name not in self._operators.keys():
@@ -161,14 +108,14 @@ class Context():
     def newContext(self):        
         return Context({},self)
 
-    def getConext(self,variable):
+    def getContext(self,variable):
         if variable in self.data or self._parent is None: return self.data
-        _context =self._parent.getConext(variable)
+        _context =self._parent.getContext(variable)
         return _context  if _context is not None else self.data
 
     def get(self,name):
         names=name.split('.')
-        value = self.getConext(names[0]) 
+        value = self.getContext(names[0]) 
         for n in names:
             if n not in value: return None
             value=value[n]
@@ -177,7 +124,7 @@ class Context():
     def set(self,name,value):
         names=name.split('.')        
         level = len(names)-1
-        list = self.getConext(names[0]) 
+        list = self.getContext(names[0]) 
         for i,e in enumerate(names):
             if i == level:
                 list[e]=value
@@ -187,7 +134,7 @@ class Context():
     def init(self,name,value):
         self.data[name]=value                     
 
-class Contextable():
+class ContextAble():
     def __init__(self):
       self._context  = None
     @property
@@ -197,7 +144,7 @@ class Contextable():
     def context(self,value):
         self._context=value
 
-class ChildContextable(Contextable):pass
+class ChildContextAble(ContextAble):pass
 
 class Token():
     def __init__(self):
@@ -451,7 +398,7 @@ class Constant(Operand):
     def solve(self,values,token:Token)->Value:
         return Value(self._name)
 
-class Variable(Operand,Contextable):
+class Variable(Operand,ContextAble):
     def __init__(self,name:str,children:list[Operand]=[]):
         Operand.__init__(self,name,children)
 
@@ -513,7 +460,7 @@ class FunctionRef(Operand):
                 values.append(value.value)
         return Value(self._function(*values))   
 
-class ArrowFunction(FunctionRef,ChildContextable):pass
+class ArrowFunction(FunctionRef,ChildContextAble):pass
 
 class ContextFunction(FunctionRef):
     def solve(self,values,token:Token)->Value:
@@ -530,7 +477,7 @@ class ContextFunction(FunctionRef):
                     values.append(value.value)
             return Value(function(*values[1:]))     
         else:    
-            raise ExpressionException('function: '+self._name +' not found in') 
+            raise Exception('function: '+self._name +' not found in') 
 
 class Block(Operand):
     def solve(self,values,token:Token)->Value:
@@ -556,7 +503,7 @@ class If(Operand):
                 if token.isBreak: return value
                 values.append(value.value)                
 
-        # if had elif or else , evaluale them
+        # if had elif or else , evaluate them
         if not values[0]:
             index=2
             while len(self._children) > len(values):            

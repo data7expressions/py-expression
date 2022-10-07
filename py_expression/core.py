@@ -1,5 +1,6 @@
 from .base import *
 from .coreLib import CoreLib
+from .model import Model
 from .minifier import *
 from .sourceManager import *
 from .nodeManager import *
@@ -8,19 +9,23 @@ from .parser import Parser
 # Facade  
 class Exp(metaclass=Singleton):
     def __init__(self):
-       self.model = Model()
        self.minifier = Minifier()
+       self.model = Model()
+       CoreLib(self.model).load()       
        self.parser = Parser(self.model)
        self.nodeManager = NodeManager(self.model)
-       self.sourceManager = SourceManager(self.model)        
-       self.addLibrary(CoreLib())        
+       self.sourceManager = SourceManager(self.model)
 
-    def addLibrary(self,library):
-        self.sourceManager.addLibrary(library)
-        self.refresh() 
+    def addEnum(self,key,source):
+        self.model.addEnum(key,source)        
+    #    self.addLibrary(CoreLib())        
+
+    # def addLibrary(self,library):
+    #     self.sourceManager.addLibrary(library)
+    #     self.refresh() 
     
-    def refresh(self):
-        self.parser.refresh()    
+    # def refresh(self):
+    #     self.parser.refresh()    
     
     def minify(self,expression:str)->list[str]:
         return self.minifier.minify(expression) 
@@ -32,7 +37,7 @@ class Exp(metaclass=Singleton):
             self.nodeManager.setParent(node)
             return node
         except Exception as error:
-            raise ExpressionException('expression: '+expression+' error: '+str(error))
+            raise Exception('expression: '+expression+' error: '+str(error))
 
     def compile(self,expression)->Operand:
         try:
@@ -42,11 +47,11 @@ class Exp(metaclass=Singleton):
             elif isinstance(expression,str):
                 node = self.parse(expression)
             else:
-               raise ExpressionException('not possible to compile')      
+               raise Exception('not possible to compile')      
 
             return self.sourceManager.compile(node)
         except Exception as error:
-            raise ExpressionException('node: '+node.name+' error: '+str(error))  
+            raise Exception('node: '+node.name+' error: '+str(error))  
 
     def run(self,expression,context:dict={},token:Token=Token())-> any : 
         try:
@@ -59,12 +64,12 @@ class Exp(metaclass=Singleton):
                 node = self.parse(expression)
                 operand =self.sourceManager.compile(node) 
             else:
-               raise ExpressionException('not possible to run')  
+               raise Exception('not possible to run')  
 
             value= self.sourceManager.eval(operand,context,token)
             return value.value
         except Exception as error:
-            raise ExpressionException('operand: '+operand.name+' error: '+str(error))    
+            raise Exception('operand: '+operand.name+' error: '+str(error))    
 
     def serialize(self,value)-> dict:        
         if isinstance(value,Node):
@@ -79,7 +84,7 @@ class Exp(metaclass=Singleton):
         elif type == 'Node':
             return self.nodeManager.deserialize(serialized)
         else:
-            raise ExpressionException('type: '+type+' not support')           
+            raise Exception('type: '+type+' not support')           
  
     def vars(self,value)->dict:
         if isinstance(value,Node):

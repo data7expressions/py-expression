@@ -10,6 +10,21 @@
             "request": "launch",
             "console": "integratedTerminal",
             "module": "py_expression_test"
+        },
+        {
+            "name": "Lab",
+            "type": "python",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "module": "py_expression_lab"
+        },
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/${relativeFileDirname}"
         }
     ]
 }

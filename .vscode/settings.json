@@ -1,6 +1,10 @@
 {
     "python.pythonPath": "C:\\Users\\Beesion\\AppData\\Local\\Programs\\Python\\Python39\\python.exe",
     "cSpell.words": [
-        "Flavio"
-    ]
+        "Flavio",
+        "idiv",
+        "minifier",
+        "pytz"
+    ],
+    "python.formatting.provider": "black"
 }
