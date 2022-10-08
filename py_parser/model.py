@@ -1,4 +1,4 @@
-from .base import *
+from ..py_expression.base import *
 
 class Model():
     def __init__(self):
@@ -81,6 +81,15 @@ class Model():
         return self.enums[name][option]
     def getEnum(self,name): 
         return self.enums[name]
+    
+    def priority(self,name:str,cardinality:int)->int:
+        try:
+            metadata = self.getOperator(name,cardinality)
+            return metadata["priority"] if metadata is not None else -1
+        except Exception as error:
+            raise Exception('priority: '+name+' error: '+str(error)) 
+  
+    
   
          
     def getMetadata(self,source):

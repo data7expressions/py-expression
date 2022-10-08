@@ -2,8 +2,8 @@ import time as t
 import math
 from datetime import date,datetime,time,timedelta
 from os import path,getcwd
-from .base import *
-from .model import Model
+from ..py_expression.base import *
+from ..py_parser.model import Model
 
 class Volume():
     def __init__(self,_path):        
@@ -11,7 +11,7 @@ class Volume():
     def fullpath(self,_path):
         return path.join(self._root,_path)
 
-class CoreLib(): 
+class CoreLibrary(): 
     def __init__(self,model:Model):       
        self.model = model 
 

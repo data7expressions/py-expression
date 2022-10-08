@@ -1,78 +1,38 @@
-import re
-from .base import *
+from typing import List
+from ..py_expression.base import *
+from .model import Model
+import py_helper.helper as helper
+Helper = helper.Helper
 
 class Parser():
-    def __init__(self,model):
-       self._model = model 
-       self.reAlphanumeric = re.compile('[a-zA-Z0-9_.]+$') 
-       self.reInt = re.compile('[0-9]+$')
-       self.reFloat = re.compile('(\d+(\.\d*)?|\.\d+)([eE]\d+)?')
-       self._tripleOperators = []
-       self._doubleOperators = [] 
-       self._assignmentOperators = []
-       self._arrowFunction = []
-       self.refresh()         
-   
-    def refresh(self):
-        for key in self._model.operators.keys():
-            if len(key)==2: self._doubleOperators.append(key)
-            elif len(key)==3: self._tripleOperators.append(key)
+    def __init__(self,model:Model,buffer:List[str]):
+       self.model = model
+       self.buffer = buffer
+       self.length=len(self.buffer)
+       self.index=0
+       self.tripleOperators = []
+       self.doubleOperators = [] 
+       self.assignmentOperators = []
+       self.arrowFunction = []
+       self.setOperators()
+    
+    def setOperators(self):
+        for key in self.model.operators.keys():
+            if len(key)==2: 
+                self.doubleOperators.append(key)
+            elif len(key)==3: 
+                self.tripleOperators.append(key)
 
-            operator = self._model.operators[key]
+            operator = self.model.operators[key]
             if 2 in operator.keys():
             #    if operator[2]['category'] == 'assignment':
                if operator[2]['priority'] == 1: 
-                  self._assignmentOperators.append(key)
+                  self.assignmentOperators.append(key)
 
-        for key in self._model.functions.keys():
-            metadata = self._model.functions[key]
-            if metadata['isArrowFunction']: self._arrowFunction.append(key)
-
-    
-
-    @property
-    def doubleOperators(self):
-        return self._doubleOperators
-
-    @property
-    def tripleOperators(self):
-        return self._tripleOperators   
-
-    @property
-    def arrowFunction(self):
-        return self._arrowFunction 
-
-    def priority(self,name:str,cardinality:int)->int:
-        try:
-            metadata = self._model.getOperator(name,cardinality)
-            return metadata["priority"] if metadata is not None else -1
-        except Exception as error:
-            raise Exception('priority: '+name+' error: '+str(error)) 
-  
-    def isEnum(self,name):    
-        return self._model.isEnum(name) 
-    def getEnumValue(self,name,option): 
-        return self._model.getEnumValue(name,option) 
-    def getEnum(self,name): 
-        return self._model.getEnum(name) 
-
-        
-
-    def parse(self,expression)->Node:
-        try:            
-            _parser = _Parser(self,expression)
-            node= _parser.parse() 
-            del _parser             
-            return node  
-        except Exception as error:
-            raise Exception('expression: '+expression+' error: '+str(error))      
- 
-class _Parser():
-    def __init__(self,mgr:Parser,expression:str):
-       self.mgr = mgr 
-       self.buffer = list(expression)
-       self.length=len(self.buffer)
-       self.index=0
+        for key in self.model.functions.keys():
+            metadata = self.model.functions[key]
+            if metadata['isArrowFunction']: 
+                self.arrowFunction.append(key)   
     
     def parse(self)->Node:
         nodes=[]
@@ -200,7 +160,7 @@ class _Parser():
                 operand = Node(True,'constant')
             elif value=='false':                
                 operand = Node(False,'constant')
-            elif self.mgr.reInt.match(value): 
+            elif Helper.validator.isIntegerFormat(value): 
                 if isNegative:
                     value = int(value)* -1
                     isNegative= False 
@@ -210,7 +170,7 @@ class _Parser():
                 else:
                     value =int(value)
                 operand = Node(value,'constant')
-            elif self.mgr.reFloat.match(value):
+            elif Helper.validator.isDecimalFormat(value):
                 if isNegative:
                     value = float(value)* -1
                     isNegative= False
@@ -220,7 +180,7 @@ class _Parser():
                 else:
                     value =float(value)
                 operand = Node(value,'constant')            
-            elif self.mgr.isEnum(value):                
+            elif self.model.isEnum(value):                
                 operand= self.getEnum(value)
             else:
                 operand = Node(value,'variable')
@@ -256,17 +216,17 @@ class _Parser():
             return  operand        
 
     def priority(self,op:str,cardinality:int=2)->int:
-        return self.mgr.priority(op,cardinality)        
+        return self.model.priority(op,cardinality)        
 
     def getValue(self,increment:bool=True):
         buff=[]
         if increment:
-            while not self.end and self.mgr.reAlphanumeric.match(self.current):
+            while not self.end and Helper.validator.isAlphanumeric(self.current):
                 buff.append(self.current)
                 self.index+=1            
         else:
             index = self.index
-            while not self.end and self.mgr.reAlphanumeric.match(self.buffer[index]):
+            while not self.end and Helper.validator.isAlphanumeric(self.buffer[index]):
                 buff.append(self.buffer[index])
                 index+=1        
         return ''.join(buff)
@@ -276,10 +236,10 @@ class _Parser():
         op=None
         if self.index+2 < self.length:
             triple = self.current+self.next+self.buffer[self.index+2]
-            if triple in self.mgr.tripleOperators :op=triple
+            if triple in self.tripleOperators :op=triple
         if op is None and  self.index+1 < self.length:
             double = self.current+self.next
-            if double in self.mgr.doubleOperators  :op=double
+            if double in self.doubleOperators  :op=double
         if op is None:op=self.current 
         self.index+=len(op)
         return op
@@ -456,7 +416,7 @@ class _Parser():
         return Node(name,'function',[args,block]) 
 
     def getChildFunction(self,name,parent):        
-        if name in self.mgr.arrowFunction:
+        if name in self.arrowFunction:
             variableName= self.getValue()
             if variableName=='' and self.current==')':
                 self.index+=1
@@ -501,14 +461,14 @@ class _Parser():
         return Node('[]','operator',[operand,idx]) 
 
     def getEnum(self,value):
-        if '.' in value and self.mgr.isEnum(value):
+        if '.' in value and self.model.isEnum(value):
             names = value.split('.')
             enumName = names[0]
             enumOption = names[1] 
-            enumValue= self.mgr.getEnumValue(enumName,enumOption)
+            enumValue= self.model.getEnumValue(enumName,enumOption)
             return Node(enumValue,'constant')
         else:
-            values= self.mgr.getEnum(value)
+            values= self.model.getEnum(value)
             attributes= []
             for name in values:
                 _value = values[name]
