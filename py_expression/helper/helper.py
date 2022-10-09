@@ -1,6 +1,6 @@
 import re
 from typing import List
-from py_expression.base import *
+from py_expression.model.base import *
 
 class ValidatorHelper():
     def __init__(self):

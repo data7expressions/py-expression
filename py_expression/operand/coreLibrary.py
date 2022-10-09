@@ -2,8 +2,8 @@ import time as t
 import math
 from datetime import date,datetime,time,timedelta
 from os import path,getcwd
-from ..py_expression.base import *
-from ..py_parser.model import Model
+from py_expression.operand.operands import *
+from py_expression.parser.model import Model
 
 class Volume():
     def __init__(self,_path):        

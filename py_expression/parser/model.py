@@ -1,4 +1,5 @@
-from ..py_expression.base import *
+from py_expression.model.base import *
+import inspect
 
 class Model():
     def __init__(self):

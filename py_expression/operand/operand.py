@@ -1,9 +1,10 @@
-from py_expression.base import *
+from py_expression.model import *
+from py_expression.core.context import *
+from py_expression.operand.operands import *
 from .builder import OperandBuilder
 from .serializer import OperandSerializer
-from ..py_parser.parser import Parser
+from py_expression.parser.parser import Parser, Model
 from typing import List
-from py_parser.model import Model
 
 class OperandManager():
     def __init__(self,model:Model):
@@ -46,7 +47,7 @@ class OperandManager():
     def operandType(self,operand:Operand)->str:
         """ """
         if isinstance(operand.parent,Operator):
-            metadata = self._model.getOperator(operand.parent.name,len(operand.parent.children))
+            metadata = self.__model.getOperator(operand.parent.name,len(operand.parent.children))
             # if metadata['category'] == 'comparison':
             #     otherIndex = 1 if operand.index == 0 else 0
             #     otherOperand= operand.parent.children[otherIndex]
@@ -56,7 +57,7 @@ class OperandManager():
             #         metadata =self.getFunctionMetadata(otherOperand.name)
             #         return metadata['return']
             #     elif isinstance(otherOperand,Operator):    
-            #         metadata =self._model.getOperatorMetadata(otherOperand.name,len(otherOperand.children))
+            #         metadata =self.__model.getOperatorMetadata(otherOperand.name,len(otherOperand.children))
             #         return metadata['return']    
             #     else:
             #         return 'any'
@@ -64,7 +65,7 @@ class OperandManager():
             return metadata['args'][operand.index]['type']
         elif isinstance(operand.parent,FunctionRef):
             name = operand.parent.name.replace('.','',1) if operand.parent.name.starWith('.') else  operand.parent.name
-            metadata =self._model.getFunction(name)
+            metadata =self.__model.getFunction(name)
             return metadata['args'][operand.index]['type'] 
 
     def constants(self,operand:Operand)->dict:
@@ -99,7 +100,7 @@ class OperandManager():
                 list = {**list, **subList}
 
         for key in list:
-            list[key] = self._model.functions[key]
+            list[key] = self.__model.functions[key]
         return list
     
     def __setContext(self,operand:Operand,context:Context):

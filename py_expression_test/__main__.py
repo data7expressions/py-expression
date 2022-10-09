@@ -1,6 +1,7 @@
 import unittest
-from py_expression.base import *
-from py_expression.core import Exp,Token
+from py_expression.model.base import *
+# from py_expression.core import Token
+from py_expression.expression import Exp
 from enum import Enum
 from os import path
 
@@ -191,19 +192,19 @@ class TestExpression(unittest.TestCase):
         # node = exp.parse('a > "a"')
         # self.assertEqual(exp.vars(node), {'a': 'str'})
 
-        op = exp.compile('strCount("expression","e")>= a+1')
+        op = exp.build('strCount("expression","e")>= a+1')
         self.assertEqual(exp.vars(op),{'a': 'any'})
         self.assertEqual(exp.constants(op),{'expression': 'str', 'e': 'str', 1: 'int'})
         self.assertEqual(exp.operators(op),['>=','+'])
         self.assertEqual(exp.functions(op)['strCount']['signature'] ,'(self:str,x:str,start:int=None,end:int=None)->int' ) 
 
-        # op = exp.compile('a-1')
+        # op = exp.build('a-1')
         # self.assertEqual(exp.vars(op), {'a': 'float'})
-        # op  = exp.compile('a && true')
+        # op  = exp.build('a && true')
         # self.assertEqual(exp.vars(op ), {'a': 'bool'})
-        # op  = exp.compile('a > 1')
+        # op  = exp.build('a > 1')
         # self.assertEqual(exp.vars(op ), {'a': 'int'})
-        # op  = exp.compile('a > "a"')
+        # op  = exp.build('a > "a"')
         # self.assertEqual(exp.vars(op ), {'a': 'str'})
 
     # def test_serialize(self): 
@@ -294,7 +295,7 @@ class TestExpression(unittest.TestCase):
 
 unittest.main()
 
-# operand=exp.compile('(a+1)*(a-1)')
+# operand=exp.build('(a+1)*(a-1)')
 # context = {'a':3}
 # token= Token()
 # result = exp.eval(operand,context,token)

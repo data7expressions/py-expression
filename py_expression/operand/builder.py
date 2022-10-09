@@ -1,6 +1,6 @@
-from py_expression.base import *
-from py_parser.model import Model
-import py_helper.helper as helper
+from py_expression.operand.operands import *
+from py_expression.parser.model import Model
+import py_expression.helper.helper as helper
 Helper = helper.Helper
 
 class OperandBuilder():
@@ -41,7 +41,7 @@ class OperandBuilder():
                 return constant
             else:
                 for i, p in enumerate(operand.children):
-                   operand.children[i]=self.reduce(p,token)
+                   operand.children[i]=self.__reduce(p,token)
         return operand  
 
     def createOperand(self,name:str,type:str,children:list[Operand])->Operand:
