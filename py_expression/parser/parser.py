@@ -6,7 +6,7 @@ Helper = helper.Helper
 
 class Parser():
     def __init__(self,model:Model,buffer:List[str]):
-       self.model = model
+       self.model = model       
        self.buffer = buffer
        self.length=len(self.buffer)
        self.index=0

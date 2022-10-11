@@ -88,7 +88,7 @@ class OperandBuilder():
             cardinality =len(children)
             metadata = self.__model.getOperator(name,cardinality)
             if metadata['custom'] is not None:                    
-                return metadata['custom'](name,children,metadata['customFunction']) 
+                return metadata['custom'](name,children,metadata['chainedFunction']) 
             else:                
                 return Operator(name,children,metadata['function'])
         except Exception as error:

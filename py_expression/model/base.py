@@ -1,4 +1,3 @@
-from enum import Enum
 import uuid
 from datetime import date,datetime,time,timedelta 
 
@@ -287,7 +286,7 @@ class Operand():
 #             self._enums[key] =list
 #         else:
 #             raise Exception('enum not supported: '+key)
-#     def addOperator(self,name:str,category:str,source,priority:int=-1,custom=None,customFunction=None):
+#     def addOperator(self,name:str,category:str,source,priority:int=-1,custom=None,chainedFunction=None):
 #         if name not in self._operators.keys():
 #             self._operators[name]= {}
 #         metadata = self.getMetadata(source)
@@ -295,7 +294,7 @@ class Operand():
 #         metadata['category'] =category
 #         metadata['priority'] =priority
 #         cardinality = len(metadata['args'])    
-#         self._operators[name][cardinality]={'function':source,'metadata':metadata,'custom':custom,'customFunction':customFunction}
+#         self._operators[name][cardinality]={'function':source,'metadata':metadata,'custom':custom,'chainedFunction':chainedFunction}
 #     def addFunction(self,name,source,custom=None,isArrowFunction:bool=False):        
 #         metadata = self.getMetadata(source)
 #         metadata['lib'] =self._name  

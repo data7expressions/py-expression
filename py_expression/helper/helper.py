@@ -15,6 +15,9 @@ class ValidatorHelper():
     def isDecimalFormat(self,value:str)->bool:
         return self._reDecimal.match(value)
     
+    
+    
+    
 class NodeHelper():
     def __init__(self,validator:ValidatorHelper):
         self.validator = validator
