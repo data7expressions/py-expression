@@ -54,26 +54,24 @@ class Model():
     def addOperator(self,sing:str,source,additionalInfo):
         singInfo = self.__getSing(sing)
         name = singInfo['name']
-        cardinality = len(singInfo['params'])
-        if type(source).__name__ == 'function':
-            func = source            
-        elif type(source).__name__  == 'type' and issubclass(source, Operand):
-            func = source
-        else:
-            raise Exception('operator ' + singInfo['name'] + 'source not supported')      
+        cardinality = len(singInfo['params'])     
         metadata = {            
 			'priority': additionalInfo['priority'],
 			'deterministic': False,
 			'operands': cardinality,			
 			'params': singInfo['params'],
-			'return': singInfo['return'],
-            'func': func
+			'return': singInfo['return']
         }
-        
+        if type(source).__name__ == 'function':
+            metadata['func'] = source            
+        elif type(source).__name__  == 'type' and issubclass(source, Operand):
+            metadata['custom'] = source
+        else:
+            raise Exception('operator ' + singInfo['name'] + 'source not supported') 
         if 'doc' in additionalInfo:
             metadata['doc'] = additionalInfo['doc']
-        if 'chainedFunction' in additionalInfo:
-            metadata['chainedFunction'] = additionalInfo['chainedFunction']
+        if 'chained' in additionalInfo:
+            metadata['chained'] = additionalInfo['chained']
         if name not in self._operators.keys():
             self._operators[name]= {}           
         self._operators[name][cardinality] = metadata    
@@ -89,15 +87,15 @@ class Model():
 			'return': singInfo['return']
         }
         if type(source).__name__ == 'function':
-            metadata['function'] = source            
+            metadata['func'] = source            
         elif type(source).__name__  == 'type' and issubclass(source, Operand):
             metadata['custom'] = source
         else:
             raise Exception('operator ' + singInfo['name'] + 'source not supported') 
         if 'doc' in additionalInfo:
             metadata['doc'] = additionalInfo['doc']
-        if 'chainedFunction' in additionalInfo:
-            metadata['chainedFunction'] = additionalInfo['chainedFunction']      
+        if 'chained' in additionalInfo:
+            metadata['chained'] = additionalInfo['chained']      
         self._functions[name] = metadata   
 
     def isConstant(self,name):    
