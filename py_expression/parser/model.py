@@ -54,20 +54,22 @@ class Model():
     def addOperator(self,sing:str,source,additionalInfo):
         singInfo = self.__getSing(sing)
         name = singInfo['name']
-        cardinality = len(singInfo['params'])     
+        cardinality = len(singInfo['params'])
+        if type(source).__name__ == 'function':
+            func = source            
+        elif type(source).__name__  == 'type' and issubclass(source, Operand):
+            func = source
+        else:
+            raise Exception('operator ' + singInfo['name'] + 'source not supported')      
         metadata = {            
 			'priority': additionalInfo['priority'],
 			'deterministic': False,
 			'operands': cardinality,			
 			'params': singInfo['params'],
-			'return': singInfo['return']
+			'return': singInfo['return'],
+            'func': func
         }
-        if type(source).__name__ == 'function':
-            metadata['function'] = source            
-        elif type(source).__name__  == 'type' and issubclass(source, Operand):
-            metadata['custom'] = source
-        else:
-            raise Exception('operator ' + singInfo['name'] + 'source not supported') 
+        
         if 'doc' in additionalInfo:
             metadata['doc'] = additionalInfo['doc']
         if 'chainedFunction' in additionalInfo:
@@ -77,7 +79,7 @@ class Model():
         self._operators[name][cardinality] = metadata    
 
 
-    def addFunction(self,sing:str,source,additionalInfo):
+    def addFunction(self,sing:str,source,additionalInfo={}):
         singInfo = self.__getSing(sing)
         name = singInfo['name']
         metadata = {            
@@ -96,8 +98,13 @@ class Model():
             metadata['doc'] = additionalInfo['doc']
         if 'chainedFunction' in additionalInfo:
             metadata['chainedFunction'] = additionalInfo['chainedFunction']      
-        self._operators[name] = metadata   
+        self._functions[name] = metadata   
 
+    def isConstant(self,name):    
+        return name in self._constants.keys()
+    def getConstantValue(self,name:str):
+        return self._constants[name]
+    
     def isEnum(self,name):    
         names = name.split('.')
         return names[0] in self.enums.keys()
@@ -121,11 +128,20 @@ class Model():
         buffer = list(sing)
         length=len(buffer)
         index = 0
-        functionName = ""        
+        prefix = ''
+        functionName = ''        
         chars:List[str] = []
         
+        # Clear begin spaces
+        while buffer[index] == ' ' :
+            index+=1 
+        
+        # get function name
         while buffer[index] != '(' :            
-            if buffer[index] != " ":
+            if buffer[index] == ' ' and buffer[index+1] != ' ' and buffer[index+1] != '(':
+                prefix = ''.join(chars)
+                chars = []
+            elif buffer[index] != ' ':
                 chars.append(buffer[index])
             index+=1    
         functionName = ''.join(chars)
@@ -194,7 +210,9 @@ class Model():
         return {
             'name': functionName,
             'return': _return if _return != '' else'void',
-            'params': params
+            'params': params,
+            'async': prefix == 'async'
+            
         }
     
     def getMetadata(self,source):

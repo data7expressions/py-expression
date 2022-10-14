@@ -1,5 +1,5 @@
 i = 0;
-signal =listeners(["signal_1","signal_2"], addTime(now(),time(2,10,30)))
+signal =listen(["signal_1","signal_2"], addTime(now(),time(2,10,30)))
 switch(signal){
     case "signal_1": 
         i=1;

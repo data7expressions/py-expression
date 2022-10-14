@@ -1,6 +1,4 @@
-from py_expression.core import Exp,Token
-from enum import Enum
-from os import path
+from py_expression.expression import Exp
 
 exp = Exp()
 try:

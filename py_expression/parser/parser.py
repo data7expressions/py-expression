@@ -29,10 +29,10 @@ class Parser():
                if operator[2]['priority'] == 1: 
                   self.assignmentOperators.append(key)
 
-        for key in self.model.functions.keys():
-            metadata = self.model.functions[key]
-            if metadata['isArrowFunction']: 
-                self.arrowFunction.append(key)   
+        # for key in self.model.functions.keys():
+        #     metadata = self.model.functions[key]
+        #     if metadata['isArrowFunction']: 
+        #         self.arrowFunction.append(key)   
     
     def parse(self)->Node:
         nodes=[]
@@ -156,10 +156,9 @@ class Parser():
                 operand = Node('break','break')
             elif value=='continue':                
                 operand = Node('continue','continue')
-            elif value=='true':                
-                operand = Node(True,'constant')
-            elif value=='false':                
-                operand = Node(False,'constant')
+            elif self.model.isConstant(value):
+                constantValue = self.model.getConstantValue(value)                
+                operand = Node(constantValue,'constant')
             elif Helper.validator.isIntegerFormat(value): 
                 if isNegative:
                     value = int(value)* -1

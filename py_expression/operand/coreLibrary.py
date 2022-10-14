@@ -33,8 +33,6 @@ class CoreLibrary():
         self.model.addConstant('true', True)
         self.model.addConstant('false', False)
         self.model.addConstant('null', None)
-        # self.model.addConstant('pi',math.pi)
-        # self.model.addConstant('e',math.e)
         
     def enums(self): 
         self.model.addEnum('DayOfWeek',{"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":0}) 
@@ -98,7 +96,7 @@ class CoreLibrary():
         self.model.addOperator('>>=(a:number,b:number):number',self.Assignment,{'priority':1,'chainedFunction':lambda a, b: a >> b})        
 
     def generalFunctions(self):
-        self.model.addFunction('async sleep(ms?: number)',lambda ms: t.sleep(ms))
+        self.model.addFunction('async sleep(ms: number)',lambda ms: t.sleep(ms))
         self.model.addFunction('console(value:any)',lambda value: print(value) )   
     
     def nullFunctions(self):
@@ -116,27 +114,27 @@ class CoreLibrary():
         # self.model.addFunction('isupper',self.String.isupper)
 
     def numberFunctions(self):
-        self.model.addFunction('abs(x:number):number', math.abs)
-        self.model.addFunction('acos(x:number):number', math.acos)
-        self.model.addFunction('asin(x:number):number', math.asin)
-        self.model.addFunction('atan(x:number):number', math.atan)
-        self.model.addFunction('atan2(x:number):number', math.atan2)
-        self.model.addFunction('ceil(x:number):number', math.ceil)
-        self.model.addFunction('cos(x:number):number', math.cos)
-        self.model.addFunction('cosh(x:number):number', math.cosh)
-        self.model.addFunction('exp(x:number):number', math.exp)
-        self.model.addFunction('floor(x:number):number', math.floor)
-        self.model.addFunction('ln(x:number):number', math.log)
-        self.model.addFunction('log10(x:number):number', math.log10)
-        self.model.addFunction('log(x:number):number', math.log)
+        self.model.addFunction('abs(x:number):number',lambda x: abs(x))
+        self.model.addFunction('acos(x:number):number', lambda x: math.acos(x))
+        self.model.addFunction('asin(x:number):number', lambda x:math.asin(x))
+        self.model.addFunction('atan(x:number):number', lambda x:math.atan(x))
+        self.model.addFunction('atan2(x:number):number',lambda x:math.atan2(x))
+        self.model.addFunction('ceil(x:number):number', lambda x:math.ceil(x))
+        self.model.addFunction('cos(x:number):number', lambda x:math.cos(x))
+        self.model.addFunction('cosh(x:number):number', lambda x:math.cosh(x))
+        self.model.addFunction('exp(x:number):number', lambda x:math.exp(x))
+        self.model.addFunction('floor(x:number):number', lambda x:math.floor(x))
+        self.model.addFunction('ln(x:number):number', lambda x:math.log(x))
+        self.model.addFunction('log10(x:number):number', lambda x:math.log10(x))
+        self.model.addFunction('log(x:number):number', lambda x:math.log(x))
         self.model.addFunction('remainder(n1:number,n2:number):number',lambda n1,n2: n1 % n2)
         self.model.addFunction('round(num:number,decimals=0):number',lambda num,decimals=0: round(num,decimals))
         self.model.addFunction('sign(x:number):number',lambda x:  (x > 0) - (x < 0))
-        self.model.addFunction('sin(x:number):number', math.sin)
-        self.model.addFunction('sinh(x:number):number', math.sinh)
-        self.model.addFunction('tan(x:number):number', math.tan)
-        self.model.addFunction('tanh(x:number):number', math.tanh)
-        self.model.addFunction('trunc(x:number):number', math.trunc)
+        self.model.addFunction('sin(x:number):number', lambda x:math.sin(x))
+        self.model.addFunction('sinh(x:number):number', lambda x:math.sinh(x))
+        self.model.addFunction('tan(x:number):number', lambda x:math.tan(x))
+        self.model.addFunction('tanh(x:number):number', lambda x:math.tanh(x))
+        self.model.addFunction('trunc(x:number):number', lambda x:math.trunc(x))
     
     def conversionFunctions(self):
         self.model.addFunction('toString(value:any):string', lambda value: str(value) )
@@ -173,14 +171,16 @@ class CoreLibrary():
         self.model.addFunction('startWith(value:string, sub:string, start:number):boolean',lambda value,sub,start: str.startswith(value, sub, start))    
     
     def datetimeFunctions(self):
-        self.model.addFunction('strftime',self.Date.strftime)
-        self.model.addFunction('strptime',self.Date.strptime)        
-        self.model.addFunction('datetime',self.Date.datetime)
-        self.model.addFunction('today',self.Date.today)
-        self.model.addFunction('now',self.Date.now)
-        self.model.addFunction('date',self.Date.date)
-        self.model.addFunction('fromtimestamp',self.Date.fromtimestamp)
-        self.model.addFunction('time',self.Date.time)
+        # https://stackabuse.com/how-to-format-dates-in-python/
+        # https://www.programiz.com/python-programming/datetime
+        self.model.addFunction('strftime(date:dateTime,fmt:string)',lambda date,fmt: datetime.strftime(date, fmt))
+        # self.model.addFunction('strptime',lambda cls,date_string,forma: datetime.strptime(cls, date_string,forma))        
+        # self.model.addFunction('datetime',lambda year,month=None,day=None,hour=0,minute=0,second=0,microsecond=0,tzinfo=None: datetime(year,month,day,hour,minute,second,microsecond,tzinfo) )
+        # self.model.addFunction('today',lambda : date.today())
+        # self.model.addFunction('now(tz:any)',lambda tz=None: datetime.now(tz))
+        # self.model.addFunction('date',lambda year,month=None,day=None: date(year,month,day))
+        # self.model.addFunction('fromtimestamp',lambda t: date.fromtimestamp(t))
+        # self.model.addFunction('time',lambda hour=0,minute=0,second=0,microsecond=0,tzinfo=None: time(hour,minute,second,microsecond,tzinfo))
     
     def arrayFunctions(self):
         self.model.addFunction('map(list: any[], predicate: T):T[]',self.Map)
@@ -197,18 +197,18 @@ class CoreLibrary():
         self.model.addFunction('push(list: T[], value: T):T[]',self.Push)
         self.model.addFunctionAlias('insert', 'push')
         self.model.addFunction('pop(list: T[]): T',self.Pop)
-        self.model.addFunction('length(source: any[]|string):number', None)
-        self.model.addFunctionAlias('len', 'length')
-        self.model.addFunction('slice(list: T[], from:integer, to:integer):T[]', None)
-        self.model.addFunction('page(list: T[], page:integer, records:integer):T[]', None)        
+        # self.model.addFunction('length(source: any[]|string):number', None)
+        # self.model.addFunctionAlias('len', 'length')
+        # self.model.addFunction('slice(list: T[], from:integer, to:integer):T[]', None)
+        # self.model.addFunction('page(list: T[], page:integer, records:integer):T[]', None)        
 
     def groupFunctions(self):
         self.model.addFunction('first(list: T[], predicate: boolean): T',self.First)
         self.model.addFunction('last(list: T[], predicate: boolean): T',self.Last)
            
     def signalFunctions(self):
-        self.model.addFunction('async listen(list:string[],timeout:time):string',self.Listen )
-        self.model.addFunction('async wait(time:time)',self.Wait) 
+        self.model.addFunction('listen(signals:string[],timeout:time):string',self.Listen )
+        self.model.addFunction('wait(ms:time)',self.Wait) 
     
     def ioFunctions(self):
         pass 
@@ -447,65 +447,6 @@ class CoreLibrary():
                 if timeKey in token.signals:
                     token.clearListeners()
                     return Value('time')
-                return Value()   
-    class Date():
-        # https://stackabuse.com/how-to-format-dates-in-python/
-        # https://www.programiz.com/python-programming/datetime
-        @staticmethod
-        def strftime(self:date, fmt:str)->str:
-            """format -> strftime() style string."""
-            return datetime.strftime(self, fmt)
-        @staticmethod
-        def strptime(cls:datetime, date_string :str, forma:str)->datetime:
-            """string, format -> new datetime parsed from a string (like time.strptime())."""
-            return datetime.strptime(cls, date_string,forma) 
-        @staticmethod
-        def datetime(year:int, month:int=None, day:int=None, hour:int=0, minute:int=0, second:int=0,microsecond:int=0,tzinfo:t.timezone=None)->datetime:
-            """
-            datetime(year, month, day[, hour[, minute[, second[, microsecond[,tzinfo]]]]])
-
-            The year, month and day arguments are required. tzinfo may be None, or an     
-            instance of a tzinfo subclass. The remaining arguments may be ints.
-            """
-            return datetime(year,month,day,hour,minute,second,microsecond,tzinfo)        
-        @staticmethod
-        def today()->date:
-            """Current date or datetime:  same as self.__class__.fromtimestamp(time.time()). """
-            return date.today()
-        @staticmethod
-        def now(tz:t.timezone=None)->datetime:
-            """
-            Returns new datetime object representing current time local to tz.
-
-            tz
-                Timezone object.
-
-            If no tz is specified, uses local timezone.
-            """
-            return datetime.now(tz)         
-        @staticmethod
-        def date(year:int, month:int=None, day:int=None)->date:
-            """date(year, month, day) --> date object"""
-            return date(year,month,day) 
-        @staticmethod
-        def fromtimestamp(t:float)->date:
-            """
-            Create a date from a POSIX timestamp.
-
-            The timestamp is a number, e.g. created via time.time(), that is interpreted
-            as local time.
-            """
-            return date.fromtimestamp(t) 
-        @staticmethod
-        def time(hour:int=0, minute:int=0, second:int=0,microsecond:int=0,tzinfo:t.timezone=None)->time:
-            """
-            time([hour[, minute[, second[, microsecond[, tzinfo]]]]]) --> a time object
-
-            All arguments are optional. tzinfo may be None, or an instance of
-            a tzinfo subclass. The remaining arguments may be ints.
-            """
-            return time(hour,minute,second,microsecond,tzinfo) 
-
-        #  self.model.addFunction('timedelta',timedelta)
-        #  self.model.addFunction('timezone',pytz.timezone) 
+                return Value()  
+   
                 

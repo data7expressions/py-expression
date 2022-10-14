@@ -90,7 +90,7 @@ class OperandBuilder():
             if metadata['custom'] is not None:                    
                 return metadata['custom'](name,children,metadata['chainedFunction']) 
             else:                
-                return Operator(name,children,metadata['function'])
+                return Operator(name,children,metadata['func'])
         except Exception as error:
             raise Exception('create operator: '+name+' error: '+str(error))              
 
