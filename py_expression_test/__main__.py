@@ -1,5 +1,5 @@
 import unittest
-from py_expression.model.base import *
+from py_expression.contract.base import *
 # from py_expression.core import Token
 from py_expression.expression import Exp
 from enum import Enum

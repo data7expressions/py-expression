@@ -1,8 +1,7 @@
 from typing import List
-from py_expression.model.base import *
+from py_expression.contract.base import *
 from .model import Model
-import py_expression.helper.helper as helper
-Helper = helper.Helper
+from py_expression.helper.helper import helper
 
 class Parser():
     def __init__(self,model:Model,buffer:List[str]):
@@ -13,7 +12,6 @@ class Parser():
        self.tripleOperators = []
        self.doubleOperators = [] 
        self.assignmentOperators = []
-       self.arrowFunction = []
        self.setOperators()
     
     def setOperators(self):
@@ -25,14 +23,9 @@ class Parser():
 
             operator = self.model.operators[key]
             if 2 in operator.keys():
-            #    if operator[2]['category'] == 'assignment':
+               # category assignment
                if operator[2]['priority'] == 1: 
-                  self.assignmentOperators.append(key)
-
-        # for key in self.model.functions.keys():
-        #     metadata = self.model.functions[key]
-        #     if metadata['isArrowFunction']: 
-        #         self.arrowFunction.append(key)   
+                  self.assignmentOperators.append(key)  
     
     def parse(self)->Node:
         nodes=[]
@@ -56,6 +49,9 @@ class Parser():
     @property
     def end(self):
         return self.index >= self.length 
+    
+    def char(self, index)->str:
+        return self.buffer[index]
 
     def nextIs(self,key):
         arr = list(key)        
@@ -159,7 +155,7 @@ class Parser():
             elif self.model.isConstant(value):
                 constantValue = self.model.getConstantValue(value)                
                 operand = Node(constantValue,'constant')
-            elif Helper.validator.isIntegerFormat(value): 
+            elif helper.validator.isIntegerFormat(value): 
                 if isNegative:
                     value = int(value)* -1
                     isNegative= False 
@@ -169,7 +165,7 @@ class Parser():
                 else:
                     value =int(value)
                 operand = Node(value,'constant')
-            elif Helper.validator.isDecimalFormat(value):
+            elif helper.validator.isDecimalFormat(value):
                 if isNegative:
                     value = float(value)* -1
                     isNegative= False
@@ -220,12 +216,12 @@ class Parser():
     def getValue(self,increment:bool=True):
         buff=[]
         if increment:
-            while not self.end and Helper.validator.isAlphanumeric(self.current):
+            while not self.end and helper.validator.isAlphanumeric(self.current):
                 buff.append(self.current)
                 self.index+=1            
         else:
             index = self.index
-            while not self.end and Helper.validator.isAlphanumeric(self.buffer[index]):
+            while not self.end and helper.validator.isAlphanumeric(self.buffer[index]):
                 buff.append(self.buffer[index])
                 index+=1        
         return ''.join(buff)
@@ -414,15 +410,33 @@ class Parser():
         args =Node('args','args',listArgs) 
         return Node(name,'function',[args,block]) 
 
-    def getChildFunction(self,name,parent):        
-        if name in self.arrowFunction:
-            variableName= self.getValue()
+    def getChildFunction(self,name,parent):
+        isArrow = False
+        variableName = self.getValue(False)
+        if variableName != '':
+			# example: p => {name:p.name}
+			# example: p -> {name:p.name}
+            i = self.index + len(variableName)
+            if (self.char(i) == '=' or self.char(i) == '-') and  self.char(i + 1) == '>':
+                isArrow = True
+                self.index += (len(variableName) + 2) # [VARIABLE+NAME] + [=>]			
+        elif self.current + self.next == '()':
+		    #  example: ()=> {name:name}
+			#  example: ()-> {name:name}
+            if (self.offset(2) == '=' or self.offset(2) == '-') and self.offset(3) == '>':
+                isArrow = True
+                self.index += 4 # [()=>]			
+        elif self.current + self.next == '=>' or self.current + self.next == '->':
+			#  example: => {name:name}
+			#  example: -> {name:name}
+            isArrow = True
+            self.index += 2 # [=>]		
+          
+        if isArrow:
             if variableName=='' and self.current==')':
                 self.index+=1
                 return Node(name,'arrowFunction',[parent]) 
-            else:    
-                if self.current=='=' and self.next == '>':self.index+=2
-                else:raise Exception('map without body')
+            else: 
                 variable= Node(variableName,'variable')
                 body= self.getExpression(_break=')')
                 return Node(name,'arrowFunction',[parent,variable,body])        

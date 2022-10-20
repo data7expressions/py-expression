@@ -1,11 +1,10 @@
-from py_expression.model.base import *
+from py_expression.contract.base import *
 from typing import List
 from py_expression.operand.coreLibrary import CoreLibrary
 from py_expression.parser.model import Model
 from py_expression.operand.operand import OperandManager, OperandBuilder
 from py_expression.parser.parser import Parser
-import py_expression.helper.helper as helper
-Helper = helper.Helper
+from py_expression.helper.helper import helper
 
 # Facade  
 class Exp(metaclass=Singleton):
@@ -20,7 +19,7 @@ class Exp(metaclass=Singleton):
 
     def build(self,expression:str)->Operand:
         try:               
-            minified = Helper.node.minify(expression) 
+            minified = helper.node.minify(expression) 
             return self.__operand.build(minified)
         except Exception as error:
             raise Exception('expression: '+expression+' error: '+str(error))  

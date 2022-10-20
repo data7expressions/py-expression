@@ -1,7 +1,7 @@
-from py_expression.operand.operands import *
+from py_expression.contract.operands import Node, Operand
+from py_expression.contract.context import Token
 from py_expression.parser.model import Model
-import py_expression.helper.helper as helper
-Helper = helper.Helper
+from py_expression.helper.helper import helper
 
 class OperandBuilder():
     def __init__(self,model:Model):
@@ -9,9 +9,9 @@ class OperandBuilder():
 
     def build(self,node:Node)->Operand:
         operand =self.__nodeToOperand(node)
-        operand =Helper.operand.setParent(operand)
+        operand =helper.operand.setParent(operand)
         operand =self.__reduce(operand,Token())
-        operand =Helper.operand.setParent(operand)
+        operand =helper.operand.setParent(operand)
         return operand        
   
     def __nodeToOperand(self,node:Node)->Operand:
@@ -87,8 +87,11 @@ class OperandBuilder():
         try:
             cardinality =len(children)
             metadata = self.__model.getOperator(name,cardinality)
-            if metadata['custom'] is not None:                    
-                return metadata['custom'](name,children,metadata['chained']) 
+            if 'custom' in  metadata and metadata['custom'] is not None:
+                if 'chained' in  metadata and metadata['chained'] is not None:                       
+                    return metadata['custom'](name,children,metadata['chained'])
+                else:
+                    return metadata['custom'](name,children) 
             else:                
                 return Operator(name,children,metadata['func'])
         except Exception as error:
@@ -97,7 +100,7 @@ class OperandBuilder():
     def __createFunctionRef(self,name:str,children:list[Operand])->FunctionRef:
         try:            
             metadata = self.__model.getFunction(name) 
-            if metadata['custom'] is not None:                   
+            if 'custom' in metadata and metadata['custom'] is not None:                   
                 return metadata['custom'](name,children) 
             else:
                 return FunctionRef(name,children,metadata['func'])

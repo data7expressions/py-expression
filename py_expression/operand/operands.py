@@ -1,4 +1,4 @@
-from py_expression.model.base import *
+from py_expression.contract.base import *
 
 class Constant(Operand):
     def __init__(self,name,children=[]):
@@ -17,10 +17,10 @@ class Variable(Operand,ContextAble):
         Operand.__init__(self,name,children)
 
     def solve(self,values,token:Token)->Value:
-        return Value(self.context.get(self._name))
+        return Value(self.context.data.get(self._name))
 
     def set(self,value,token:Token):
-        self.context.set(self._name,value)    
+        self.context.data.set(self._name,value)    
     
 class KeyValue(Operand):
     def solve(self,values,token:Token)->Value:

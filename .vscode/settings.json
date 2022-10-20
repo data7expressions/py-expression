@@ -5,6 +5,7 @@
         "Flavio",
         "idiv",
         "initcap",
+        "isarray",
         "minifier",
         "pytz"
     ],

@@ -1,5 +1,5 @@
-from py_expression.model.operands import OperatorType
-from py_expression.model.base import Operand
+from py_expression.contract.operands import OperandType
+from py_expression.contract.base import Operand
 from enum import Enum
 import inspect
 from typing import List
@@ -54,7 +54,7 @@ class Model():
     def addOperator(self,sing:str,source,additionalInfo):
         singInfo = self.__getSing(sing)
         name = singInfo['name']
-        cardinality = len(singInfo['params'])     
+        cardinality = len(singInfo['params'])
         metadata = {            
 			'priority': additionalInfo['priority'],
 			'deterministic': False,
@@ -65,9 +65,9 @@ class Model():
         if type(source).__name__ == 'function':
             metadata['func'] = source            
         elif type(source).__name__  == 'type' and issubclass(source, Operand):
-            metadata['custom'] = source
+           metadata['custom'] = source
         else:
-            raise Exception('operator ' + singInfo['name'] + 'source not supported') 
+            raise Exception('operator ' + singInfo['name'] + 'source not supported')          
         if 'doc' in additionalInfo:
             metadata['doc'] = additionalInfo['doc']
         if 'chained' in additionalInfo:

@@ -1,5 +1,6 @@
 from typing import List
 import time as t
+import re
 import math
 import json
 import dateutil.parser as dateParser
@@ -7,12 +8,13 @@ from datetime import date,datetime,time,timedelta
 from os import path,getcwd
 from py_expression.operand.operands import *
 from py_expression.parser.model import Model
+from py_expression.helper.helper import helper
 
-# class Volume():
-#     def __init__(self,_path):        
-#         self._root = _path if path.isabs(_path) else path.join(getcwd(),_path) 
-#     def fullpath(self,_path):
-#         return path.join(self._root,_path)
+class Volume():
+    def __init__(self,_path):        
+        self._root = _path if path.isabs(_path) else path.join(getcwd(),_path) 
+    def fullpath(self,_path):
+        return path.join(self._root,_path)
 
 class CoreLibrary(): 
     def __init__(self,model:Model):       
@@ -103,15 +105,32 @@ class CoreLibrary():
         self.model.addFunction('nvl(a:T, b:T):T', self.Nullable.nvl)
         self.model.addFunction('nvl2(a:any, b:T,c:T):T',self.Nullable.nvl2)                 
 
-    def comparisonFunctions(self):        
-        self.model.addFunction('isEmpty',self.Validations.isEmpty)
-        # self.model.addFunction('isalnum',self.String.isalnum)
-        # self.model.addFunction('isalpha',self.String.isalpha)
-        # self.model.addFunction('isdigit',self.String.isdigit)
-        # self.model.addFunction('islower',self.String.islower)
-        # self.model.addFunction('isspace',self.String.isspace)
-        # self.model.addFunction('istitle',self.String.istitle)
-        # self.model.addFunction('isupper',self.String.isupper)
+    def comparisonFunctions(self):
+        self.model.addFunction('isEmpty',self.Comparison.isEmpty)
+        self.model.addFunction('between(value:any,from:any,to:any):boolean',self.Comparison.between)
+        self.model.addFunction('includes(source:string|any[],value:any):boolean',self.Comparison.includes)
+        self.model.addFunctionAlias('in', 'includes')
+        self.model.addFunction('isNull(value:any):boolean', self.Comparison.isNull)
+        self.model.addFunction('isNotNull(value:any):boolean', self.Comparison.isNotNull)
+        self.model.addFunction('isEmpty(value:string):boolean', self.Comparison.isEmpty)
+        self.model.addFunction('isNotEmpty(value:string):boolean',self.Comparison.isNotEmpty)
+        self.model.addFunction('isBoolean(value:any):boolean', self.Comparison.isBoolean)
+        self.model.addFunction('isNumber(value:any):boolean', self.Comparison.isNumber)
+        self.model.addFunction('isInteger(value:any):boolean', self.Comparison.isInteger)
+        self.model.addFunction('isDecimal(value:any):boolean', self.Comparison.isDecimal)
+        self.model.addFunction('isString(value:any):boolean', self.Comparison.isString)
+        self.model.addFunction('isDate(value:any):boolean', self.Comparison.isDate)
+        self.model.addFunction('isDateTime(value:any):boolean', self.Comparison.isDateTime)
+        self.model.addFunction('isTime(value:any):boolean', self.Comparison.isTime)
+        self.model.addFunction('isObject(value:any):boolean', self.Comparison.isObject)
+        self.model.addFunction('isArray(value:any):boolean', self.Comparison.isArray)
+        self.model.addFunction('isBooleanFormat(value:string):boolean', self.Comparison.isBooleanFormat)
+        self.model.addFunction('isNumberFormat(value:string):boolean', self.Comparison.isNumberFormat)
+        self.model.addFunction('isIntegerFormat(value:string):boolean', self.Comparison.isIntegerFormat)
+        self.model.addFunction('isDecimalFormat(value:string):boolean', self.Comparison.isDecimalFormat)
+        self.model.addFunction('isDateFormat(value:string):boolean', self.Comparison.isDateFormat)
+        self.model.addFunction('isDateTimeFormat(value:string):boolean', self.Comparison.isDateTimeFormat)
+        self.model.addFunction('isTimeFormat(value:string):boolean', self.Comparison.isTimeFormat)
 
     def numberFunctions(self):
         self.model.addFunction('abs(x:number):number',self.Numbers.abs)
@@ -148,27 +167,30 @@ class CoreLibrary():
         self.model.addFunction('fromEntries(entries: [string,any][]): any', self.Conversions.fromEntries)
             
     def stringFunctions(self):        
-        self.model.addFunction('chr(ascii: number):string', lambda ascii: None )
-        self.model.addFunction('capitalize(value:string):string',lambda value: str.capitalize(value))
-        self.model.addFunction('endsWith(value:string, sub:string, start:number):boolean',lambda value,sub,start: str.endswith(value, sub, start))
-        self.model.addFunction('strCount(source: string, value: string):number',lambda source,value:str.count(source,value))
-        self.model.addFunction('lower(value: string):string',lambda value: str.lower(value)) 
-        self.model.addFunction('lpad(value: string, len: number, pad: string):string', lambda str,len,pad: None )
-        self.model.addFunction('ltrim(value: string):string',lambda value: str.lstrip(value))
-        self.model.addFunction('replace(value: string, source: string, target: string):string',lambda value, source,target: str.replace(value,source,target))
-        self.model.addFunction('rpad(value: string, len: number, pad: string):string',lambda str,len,pad: None)
-        self.model.addFunction('rtrim(value: string):string',lambda value: str.rstrip(value))
-        self.model.addFunction('substring(value: string, from: number, count: number):string',lambda str,_from,count: None)
+        self.model.addFunction('chr(ascii: number):string',self.String.chr)
+        self.model.addFunction('capitalize(value:string):string',self.String.capitalize)
+        self.model.addFunction('endsWith(value:string, sub:string, start:number):boolean',self.String.endsWith)
+        self.model.addFunction('strCount(source: string, value: string):number',self.String.strCount)
+        self.model.addFunction('lower(value: string):string',self.String.lower) 
+        self.model.addFunction('lpad(value: string, len: number, pad: string):string',self.String.lpad)
+        self.model.addFunction('ltrim(value: string):string',self.String.ltrim)
+        self.model.addFunction('indexOf(value:string, sub:string, start:number):number', self.String.indexOf)
+        self.model.addFunction('join(values:string[],separator:string=","):string', self.String.join)
+        self.model.addFunction('replace(value: string, source: string, target: string):string',self.String.replace)
+        self.model.addFunction('rpad(value: string, len: number, pad: string):string',self.String.rpad)
+        self.model.addFunction('rtrim(value: string):string',self.String.rtrim)
+        self.model.addFunction('substring(value: string, from: number, count: number):string',self.String.substring)
         self.model.addFunctionAlias('substr', 'substring')
-        self.model.addFunction('trim(value: string):string',lambda value: str.strip(value))
-        self.model.addFunction('upper(value: string):string',lambda value: str.upper(value))
-        self.model.addFunction('concat(...values:any):string',lambda values: None)
+        self.model.addFunction('trim(value: string):string',self.String.trim)
+        self.model.addFunction('upper(value: string):string',self.String.upper)
+        self.model.addFunction('concat(...values:any):string',self.String.concat)
         self.model.addFunctionAlias('concatenate', 'concat')
-        self.model.addFunction('test(value: any, regexp: string):boolean',lambda value,regexp: None)
-        self.model.addFunction('title(value:string):string',lambda value: str.title(value))
-        self.model.addFunction('match(value: string, regexp: string):any',lambda value,regexp: None)
-        self.model.addFunction('mask(value: string):string',lambda value,regexp: None)
-        self.model.addFunction('startWith(value:string, sub:string, start:number):boolean',lambda value,sub,start: str.startswith(value, sub, start))    
+        self.model.addFunction('test(value: any, regexp: string):boolean',self.String.test)
+        self.model.addFunction('title(value:string):string',self.String.title)
+        self.model.addFunction('match(value: string, regexp: string):any',self.String.match)
+        self.model.addFunction('mask(value: string):string',self.String.mask)
+        self.model.addFunction('split(value:string,separator:string=","):string[]', self.String.split)
+        self.model.addFunction('startWith(value:string, sub:string, start:number):boolean',self.String.startswith)    
     
     def datetimeFunctions(self):
         # https://stackabuse.com/how-to-format-dates-in-python/
@@ -197,10 +219,10 @@ class CoreLibrary():
         self.model.addFunction('push(list: T[], value: T):T[]',self.Push)
         self.model.addFunctionAlias('insert', 'push')
         self.model.addFunction('pop(list: T[]): T',self.Pop)
-        # self.model.addFunction('length(source: any[]|string):number', None)
-        # self.model.addFunctionAlias('len', 'length')
-        # self.model.addFunction('slice(list: T[], from:integer, to:integer):T[]', None)
-        # self.model.addFunction('page(list: T[], page:integer, records:integer):T[]', None)        
+        self.model.addFunction('length(source: any[]|string):number', self.Array.length)
+        self.model.addFunctionAlias('len', 'length')
+        self.model.addFunction('slice(list: T[], from:integer, to:integer):T[]', self.Array.slice)
+        self.model.addFunction('page(list: T[], page:integer, records:integer):T[]', self.Array.page)        
 
     def groupFunctions(self):
         self.model.addFunction('first(list: T[], predicate: boolean): T',self.First)
@@ -211,11 +233,9 @@ class CoreLibrary():
         self.model.addFunction('wait(ms:time)',self.Wait) 
     
     def ioFunctions(self):
-        pass 
-    #     self.model.addFunction('Volume(path:string):Volume',lambda path: Volume(path))
-    #     self.model.addFunction('pathRoot():string',lambda : getcwd())
-    #     self.model.addFunction('pathJoin(paths:string[]):string',lambda paths: path.join(paths) )
-    
+        self.model.addFunction('Volume(path:string):Volume',self.IO.Volume)
+        self.model.addFunction('pathRoot():string',self.IO.pathRoot)
+        self.model.addFunction('pathJoin(paths:string[]):string',self.IO.pathJoin)    
     
     class General():
         @staticmethod
@@ -224,18 +244,83 @@ class CoreLibrary():
         @staticmethod
         def console(value): 
             print(value)        
-    
     class Nullable():
         @staticmethod
         def nvl(a:any,b:any)->any: 
             return a if a!=None and a!="" else b 
         def nvl2(a:any,b:any,c:any)->any: 
             return  b if a!=None and a!="" else c    
-    class Validations():
+    class Comparison():
         @staticmethod
-        def isEmpty(a:any)->bool:return  a==None or a =="" 
- 
-      
+        def between(value:any,start:any,to:any)->bool:
+            return helper.validator.between(value,start,to)
+        @staticmethod
+        def includes(source:any,value:any)->bool:
+            return helper.validator.includes(source,value)
+        @staticmethod
+        def isNull(value:any)->bool:
+            return helper.validator.isNull(value)
+        @staticmethod
+        def isNotNull(value:any)->bool:
+            return helper.validator.isNotNull(value)
+        @staticmethod
+        def isEmpty(value:str)->bool:
+            return helper.validator.isEmpty(value)
+        @staticmethod
+        def isNotEmpty(value:str)->bool:
+            return helper.validator.isNotEmpty(value)
+        @staticmethod
+        def isBoolean(value:any)->bool:
+            return helper.validator.isBoolean(value)
+        @staticmethod
+        def isNumber(value:any)->bool:
+            return helper.validator.isNumber(value)
+        @staticmethod
+        def isInteger(value:any)->bool:
+            return helper.validator.isInteger(value)
+        @staticmethod
+        def isDecimal(value:any)->bool:
+            return helper.validator.isDecimal(value)
+        @staticmethod
+        def isString(value:any)->bool:
+            return helper.validator.isString(value)
+        @staticmethod
+        def isDate(value:any)->bool:
+            return helper.validator.isDate(value)
+        @staticmethod
+        def isDateTime(value:any)->bool:
+            return helper.validator.isDateTime(value)
+        @staticmethod
+        def isTime(value:any)->bool:
+            return helper.validator.isTime(value)
+        @staticmethod
+        def isObject(value:any)->bool:
+            return helper.validator.isObject(value)
+        @staticmethod
+        def isArray(value:any)->bool:
+            return helper.validator.isArray(value)
+        @staticmethod
+        def isBooleanFormat(value:str)->bool:
+            return helper.validator.isBooleanFormat(value)
+        @staticmethod
+        def isNumberFormat(value:str)->bool:
+            return helper.validator.isNumberFormat(value)
+        @staticmethod
+        def isIntegerFormat(value:str)->bool:
+            return helper.validator.isIntegerFormat(value)
+        @staticmethod
+        def isDecimalFormat(value:str)->bool:
+            return helper.validator.isDecimalFormat(value)
+        @staticmethod
+        def isDateFormat(value:str)->bool:
+            return helper.validator.isDateFormat(value)
+        @staticmethod
+        def isDateTimeFormat(value:str)->bool:
+            return helper.validator.isDateTimeFormat(value)
+        @staticmethod
+        def isTimeFormat(value:str)->bool:
+            return helper.validator.isTimeFormat(value)
+                 
     class Operators():
         @staticmethod
         def addition(a:any,b:any)->any:
@@ -311,291 +396,6 @@ class CoreLibrary():
         @staticmethod
         def item(list:list[any],index:int):
             return list[index]   
-    class String():
-        # https://docs.python.org/2.5/lib/string-methods.html
-        @staticmethod
-        def capitalize(self:str)->str:
-            """
-            Return a capitalized version of the string.
-            More specifically, make the first character have upper case and the rest lower case. 
-            """    
-            return str.capitalize(self)
-        @staticmethod
-        def count(self:str,x: str,start: int = None, end: int = None)->int: 
-            """
-            S.count(sub[, start[, end]]) -> int
-            Return the number of non-overlapping occurrences of substring sub in
-            string S[start:end].  Optional arguments start and end are
-            interpreted as in slice notation.
-            """
-            return str.count(self,x,start,end)
-        @staticmethod
-        def encode(self:str,encoding: str = None, errors: str = None) -> bytes: 
-            """
-            Encode the string using the codec registered for encoding.
-            encoding
-                The encoding in which to encode the string.
-            errors
-                The error handling scheme to use for encoding errors.
-                The default is 'strict' meaning that encoding errors raise a
-                UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
-                'xmlcharrefreplace' as well as any other name registered with
-                codecs.register_error that can handle UnicodeEncodeErrors.
-            """
-            return str.encode(self,encoding,errors)
-        @staticmethod
-        def endswith(self:str,suffix:str,start: int = None, end: int = None) -> bool:
-            """
-            S.endswith(suffix[, start[, end]]) -> bool
-            Return True if S ends with the specified suffix, False otherwise.
-            With optional start, test S beginning at that position.
-            With optional end, stop comparing S at that position.
-            suffix can also be a tuple of strings to try.
-            """ 
-            return str.endswith(self,suffix,start,end)
-        @staticmethod
-        def find(self:str,sub: str,start: int = None, end: int = None)->int:
-            """
-            S.find(sub[, start[, end]]) -> int
-            Return the lowest index in S where substring sub is found,
-            such that sub is contained within S[start:end].  Optional
-            arguments start and end are interpreted as in slice notation.
-            Return -1 on failure.
-            """ 
-            return str.find(self,sub,start,end)
-        @staticmethod
-        def index(self:str,sub: str,start: int = None, end: int = None)->int:
-            """
-            S.index(sub[, start[, end]]) -> int
-            Return the lowest index in S where substring sub is found,
-            such that sub is contained within S[start:end].  Optional
-            arguments start and end are interpreted as in slice notation.
-            Raises ValueError when the substring is not found.
-            """ 
-            return str.index(self,sub,start,end)
-        @staticmethod
-        def isalnum(self:str)->bool: 
-            """
-            Return True if the string is an alpha-numeric string, False otherwise.
-            A string is alpha-numeric if all characters in the string are alpha-numeric and
-            there is at least one character in the string.
-            """
-            return str.isalnum(self)
-        @staticmethod
-        def isalpha(self:str)->bool: 
-            """
-            Return True if the string is an alphabetic string, False otherwise.
-            A string is alphabetic if all characters in the string are alphabetic and there
-            is at least one character in the string.
-            """
-            return str.isalpha(self)
-        @staticmethod
-        def isdigit(self:str)->bool: 
-            """
-            Return True if the string is a digit string, False otherwise.
-            A string is a digit string if all characters in the string are digits and there
-            is at least one character in the string.
-            """
-            return str.isdigit(self)
-        @staticmethod
-        def islower(self:str)->bool: 
-            """
-            Return True if the string is a lowercase string, False otherwise.
-            A string is lowercase if all cased characters in the string are lowercase and
-            there is at least one cased character in the string.
-            """
-            return str.islower(self)
-        @staticmethod
-        def isspace(self:str)->bool: 
-            """
-            Return True if the string is a whitespace string, False otherwise.
-            A string is whitespace if all characters in the string are whitespace and there
-            is at least one character in the string.
-            """
-            return str.isspace(self)
-        @staticmethod
-        def istitle(self:str)->bool: 
-            """
-            Return True if the string is a title-cased string, False otherwise.
-            In a title-cased string, upper- and title-case characters may only
-            follow uncased characters and lowercase characters only cased ones.
-            """
-            return str.istitle(self)
-        @staticmethod
-        def isupper(self:str)->bool: 
-            """
-            Return True if the string is an uppercase string, False otherwise.
-            A string is uppercase if all cased characters in the string are uppercase and
-            there is at least one cased character in the string.
-            """
-            return str.isupper(self)
-        @staticmethod
-        def join(self:str,iterable: list[str])->bool: 
-            """
-            Concatenate any number of strings.
-            The string whose method is called is inserted in between each given string.
-            The result is returned as a new string.
-            Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
-            """
-            return str.join(self,iterable)
-        @staticmethod
-        def ljust(self, width: int,fillchar: str = None) -> str: 
-            """
-            Return a left-justified string of length width.
-            Padding is done using the specified fill character (default is a space).
-            """
-            return str.ljust(self,width,fillchar)
-        @staticmethod
-        def lower(self:str)->str: 
-            """Return a copy of the string converted to lowercase."""
-            return str.lower(self)
-        @staticmethod
-        def lstrip(self:str,chars:str=None)->str: 
-            """
-            Return a copy of the string with leading whitespace removed.
-            If chars is given and not None, remove characters in chars instead.
-            """
-            return str.lstrip(self,chars)
-        @staticmethod
-        def partition(self:str,sep:str)->tuple[str,str,str]: 
-            """
-            Partition the string into three parts using the given separator.
-            This will search for the separator in the string.  If the separator is found,
-            returns a 3-tuple containing the part before the separator, the separator
-            itself, and the part after it.
-            If the separator is not found, returns a 3-tuple containing the original string
-            and two empty strings.
-            """
-            return str.partition(self,sep)
-        @staticmethod
-        def replace(self:str,old:str,new:str,count:int=None)->str: 
-            """
-            Return a copy with all occurrences of substring old replaced by new.
-            count
-                Maximum number of occurrences to replace.
-                -1 (the default value) means replace all occurrences.
-            If the optional argument count is given, only the first count occurrences are
-            replaced.
-            """
-            return str.replace(self,old,new,count)
-        @staticmethod
-        def rfind(self:str,sub: str,start: int = None, end: int = None)->int: 
-            """
-            S.rfind(sub[, start[, end]]) -> int
-            Return the highest index in S where substring sub is found,
-            such that sub is contained within S[start:end].  Optional
-            arguments start and end are interpreted as in slice notation.
-            Return -1 on failure.
-            """
-            return str.rfind(self,sub,start,end)
-        @staticmethod
-        def rindex(self:str,sub: str,start: int = None, end: int = None)->int: 
-            """
-            S.rindex(sub[, start[, end]]) -> int
-            Return the highest index in S where substring sub is found,
-            such that sub is contained within S[start:end].  Optional
-            arguments start and end are interpreted as in slice notation.
-            Raises ValueError when the substring is not found.
-            """
-            return str.rindex(self,sub,start,end)
-        @staticmethod
-        def rjust(self, width: int,fillchar: str = None) -> str: 
-            """
-            Return a right-justified string of length width.
-            Padding is done using the specified fill character (default is a space).
-            """
-            return str.rjust(self,width,fillchar)
-        @staticmethod
-        def rpartition(self:str,sep:str)->tuple[str,str,str]: 
-            """
-            Partition the string into three parts using the given separator.
-            This will search for the separator in the string, starting at the end. If
-            the separator is found, returns a 3-tuple containing the part before the
-            separator, the separator itself, and the part after it.
-            If the separator is not found, returns a 3-tuple containing two empty strings
-            and the original string.
-            """
-            return str.rpartition(self,sep)
-        @staticmethod
-        def rsplit(self:str,sep:str,maxsplit:int=None)->list[str]: 
-            """
-            Return a list of the words in the string, using sep as the delimiter string.
-            sep
-                The delimiter according which to split the string.
-                None (the default value) means split according to any whitespace,
-                and discard empty strings from the result.
-            maxsplit
-                Maximum number of splits to do.
-                -1 (the default value) means no limit.
-            Splits are done starting at the end of the string and working to the front.
-            """
-            return str.rsplit(self,sep,maxsplit)
-        @staticmethod
-        def rstrip(self:str,chars:str=None)->str: 
-            """
-            Return a copy of the string with leading whitespace removed.
-            If chars is given and not None, remove characters in chars instead.
-            """
-            return str.rstrip(self,chars)
-        @staticmethod
-        def split(self:str,sep:str,maxsplit:int=None)->list[str]: 
-            """
-            Return a list of the words in the string, using sep as the delimiter string.
-            sep
-                The delimiter according which to split the string.
-                None (the default value) means split according to any whitespace,
-                and discard empty strings from the result.
-            maxsplit
-                Maximum number of splits to do.
-                -1 (the default value) means no limit.
-            """
-            return str.split(self,sep,maxsplit)
-        @staticmethod
-        def splitlines(self:str,keepends:bool=None)->list[str]: 
-            """
-            Return a list of the lines in the string, breaking at line boundaries.
-            Line breaks are not included in the resulting list unless keepends is given and
-            true.
-            """
-            return str.splitlines(self,keepends)
-        @staticmethod
-        def startswith(self:str,suffix:str,start: int = None, end: int = None) -> bool: 
-            """
-            S.startswith(prefix[, start[, end]]) -> bool
-            Return True if S starts with the specified prefix, False otherwise.
-            With optional start, test S beginning at that position.
-            With optional end, stop comparing S at that position.
-            prefix can also be a tuple of strings to try.
-            """
-            return str.startswith(self,suffix,start,end)
-        @staticmethod
-        def strip(self:str,chars:str=None)->str: 
-            """
-            Return a copy of the string with leading whitespace removed.
-            If chars is given and not None, remove characters in chars instead.
-            """
-            return str.strip(self,chars)
-        @staticmethod
-        def swapcase(self:str)->str: 
-            """Convert uppercase characters to lowercase and lowercase characters to uppercase."""
-            return str.swapcase(self)
-        @staticmethod
-        def title(self:str)->str: 
-            """
-            Return a version of the string where each word is titlecased.
-            More specifically, words start with uppercased characters and all remaining
-            cased characters have lower case.
-            """
-            return str.title(self)
-        @staticmethod
-        def upper(self:str)->str: 
-            """Return a copy of the string converted to uppercase."""
-            return str.upper(self)
-        @staticmethod
-        def zfill(self:str,width: int)->str: 
-            """Pad a numeric string with zeros on the left, to fill a field of the given width."""
-            return str.zfill(self,width)
-
     class Numbers():
         
         def remainder(n1:float,n2:float) -> float:
@@ -840,7 +640,6 @@ class CoreLibrary():
         @staticmethod           
         def e()->float:
             return math.e
-
     class Conversions():
         @staticmethod
         def toString(value:any)->str:
@@ -859,7 +658,7 @@ class CoreLibrary():
             return json.dumps(value, separators=(',', ':'))
         
         @staticmethod
-        def stringify(value:str)->dict:
+        def parse(value:str)->dict:
             return json.loads(value)
         
         @staticmethod
@@ -877,7 +676,310 @@ class CoreLibrary():
         @staticmethod
         def fromEntries(entries:any)->dict: #List<any>
             return dict(entries)
+    class String():
+        # https://docs.python.org/2.5/lib/string-methods.html
+        @staticmethod
+        def chr(ascii:int)->str:               
+            return chr(ascii)
+        @staticmethod
+        def capitalize(value:str)->str:
+            """
+            Return a capitalized version of the string.
+            More specifically, make the first character have upper case and the rest lower case. 
+            """    
+            return value.capitalize()
+        @staticmethod
+        def concat(*args)->str: 
+           return ''.join(args)        
+        @staticmethod
+        def endsWith(value:str,suffix:str,start: int = None, end: int = None) -> bool:
+            """
+            S.endswith(suffix[, start[, end]]) -> bool
+            Return True if S ends with the specified suffix, False otherwise.
+            With optional start, test S beginning at that position.
+            With optional end, stop comparing S at that position.
+            suffix can also be a tuple of strings to try.
+            """ 
+            return value.endswith(suffix,start,end)        
+        @staticmethod
+        def lower(value:str)->str: 
+            """Return a copy of the string converted to lowercase."""
+            return value.lower()        
+        @staticmethod
+        def lpad(value: str, len: int, pad: str)->str:
+            """
+            Return a left-justified string of length width.
+            Padding is done using the specified fill character (default is a space).
+            """             
+            return value.ljust(len,pad)        
+        @staticmethod
+        def ltrim(value:str,chars:str=None)->str: 
+            """
+            Return a copy of the string with leading whitespace removed.
+            If chars is given and not None, remove characters in chars instead.
+            """
+            return value.lstrip(chars)
+        @staticmethod
+        def indexOf(value:str,sub: str,start: int = None, end: int = None)->int:
+            """
+            S.find(sub[, start[, end]]) -> int
+            Return the lowest index in S where substring sub is found,
+            such that sub is contained within S[start:end].  Optional
+            arguments start and end are interpreted as in slice notation.
+            Return -1 on failure.
+            """ 
+            return value.index(sub,start,end)
+        @staticmethod
+        def join(value:str,iterable: list[str])->bool: 
+            """
+            Concatenate any number of strings.
+            The string whose method is called is inserted in between each given string.
+            The result is returned as a new string.
+            Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
+            """
+            return value.join(iterable)      
+        @staticmethod
+        def replace(value:str,old:str,new:str,count:int=None)->str: 
+            """
+            Return a copy with all occurrences of substring old replaced by new.
+            count
+                Maximum number of occurrences to replace.
+                -1 (the default value) means replace all occurrences.
+            If the optional argument count is given, only the first count occurrences are
+            replaced.
+            """
+            return value.replace(old,new,count)
+        @staticmethod
+        def rpad(value: str, len: int, pad: str)->str:
+            """
+            Return a right-justified string of length width.
+            Padding is done using the specified fill character (default is a space).
+            """            
+            return value.rjust(len,pad) 
+        @staticmethod
+        def rtrim(value:str,chars:str=None)->str: 
+            """
+            Return a copy of the string with leading whitespace removed.
+            If chars is given and not None, remove characters in chars instead.
+            """
+            return value.rstrip(chars)        
+        @staticmethod
+        def substring(value:str,start: int, count: int)->str:            
+            return value[start:start+count]
+        @staticmethod
+        def strCount(value:str,x: str,start: int = None, end: int = None)->int: 
+            """
+            S.count(sub[, start[, end]]) -> int
+            Return the number of non-overlapping occurrences of substring sub in
+            string S[start:end].  Optional arguments start and end are
+            interpreted as in slice notation.
+            """
+            return value.count(x,start,end)
+        @staticmethod
+        def trim(value:str,chars:str=None)->str: 
+            """
+            Return a copy of the string with leading whitespace removed.
+            If chars is given and not None, remove characters in chars instead.
+            """
+            return value.strip(chars)
+        @staticmethod
+        def upper(value:str)->str: 
+            """Return a copy of the string converted to uppercase."""
+            return value.upper()
+        @staticmethod
+        def test(value:str, regexp: str)->bool: 
+            regExp= re.compile(regexp)
+            return regExp.match(value) != None       
+        @staticmethod
+        def title(value:str)->str: 
+            """
+            Return a version of the string where each word is titleCased.
+            More specifically, words start with upperCased characters and all remaining
+            cased characters have lower case.
+            """
+            return value.title() 
+        @staticmethod
+        def match(value:str, regexp: str)->str: 
+            regExp= re.compile(regexp)
+            return regExp.match(value)
+        def mask(value:str)->str: 
+            if value==None:
+                return value
+            length = len(value)
+            if length > 8:
+                return value[0:3] + '*****' + value[length - 3, length]
+            elif length > 5 :
+                return value[0:1] + '*****' + value[length - 1, length]
+            else:
+                return '*' 
+        @staticmethod
+        def split(value:str,sep:str,maxSplit:int=None)->list[str]: 
+            """
+            Return a list of the words in the string, using sep as the delimiter string.
+            sep
+                The delimiter according which to split the string.
+                None (the default value) means split according to any whitespace,
+                and discard empty strings from the result.
+            maxSplit
+                Maximum number of splits to do.
+                -1 (the default value) means no limit.
+            """
+            return value.split(sep,maxSplit)           
+        @staticmethod
+        def startswith(value:str,suffix:str,start: int = None, end: int = None) -> bool: 
+            """
+            S.startswith(prefix[, start[, end]]) -> bool
+            Return True if S starts with the specified prefix, False otherwise.
+            With optional start, test S beginning at that position.
+            With optional end, stop comparing S at that position.
+            prefix can also be a tuple of strings to try.
+            """
+            return value.startswith(suffix,start,end)       
         
+        
+        # Pending
+        @staticmethod
+        def encode(value:str,encoding: str = None, errors: str = None) -> bytes: 
+            """
+            Encode the string using the codec registered for encoding.
+            encoding
+                The encoding in which to encode the string.
+            errors
+                The error handling scheme to use for encoding errors.
+                The default is 'strict' meaning that encoding errors raise a
+                UnicodeEncodeError.  Other possible values are 'ignore', 'replace' and
+                'xml char refer place' as well as any other name registered with
+                codecs.register_error that can handle UnicodeEncodeErrors.
+            """
+            return value.encode(encoding,errors)      
+        @staticmethod
+        def isalnum(value:str)->bool: 
+            """
+            Return True if the string is an alpha-numeric string, False otherwise.
+            A string is alpha-numeric if all characters in the string are alpha-numeric and
+            there is at least one character in the string.
+            """
+            return value.isalnum()
+        @staticmethod
+        def isalpha(value:str)->bool: 
+            """
+            Return True if the string is an alphabetic string, False otherwise.
+            A string is alphabetic if all characters in the string are alphabetic and there
+            is at least one character in the string.
+            """
+            return value.isalpha()
+        @staticmethod
+        def isdigit(value:str)->bool: 
+            """
+            Return True if the string is a digit string, False otherwise.
+            A string is a digit string if all characters in the string are digits and there
+            is at least one character in the string.
+            """
+            return value.isdigit()
+        @staticmethod
+        def islower(value:str)->bool: 
+            """
+            Return True if the string is a lowercase string, False otherwise.
+            A string is lowercase if all cased characters in the string are lowercase and
+            there is at least one cased character in the string.
+            """
+            return value.islower()
+        @staticmethod
+        def isspace(value:str)->bool: 
+            """
+            Return True if the string is a whitespace string, False otherwise.
+            A string is whitespace if all characters in the string are whitespace and there
+            is at least one character in the string.
+            """
+            return value.isspace()
+        @staticmethod
+        def istitle(value:str)->bool: 
+            """
+            Return True if the string is a title-cased string, False otherwise.
+            In a title-cased string, upper- and title-case characters may only
+            follow uncased characters and lowercase characters only cased ones.
+            """
+            return value.istitle()
+        @staticmethod
+        def isupper(value:str)->bool: 
+            """
+            Return True if the string is an uppercase string, False otherwise.
+            A string is uppercase if all cased characters in the string are uppercase and
+            there is at least one cased character in the string.
+            """
+            return value.isupper()                
+        @staticmethod
+        def partition(value:str,sep:str)->tuple[str,str,str]: 
+            """
+            Partition the string into three parts using the given separator.
+            This will search for the separator in the string.  If the separator is found,
+            returns a 3-tuple containing the part before the separator, the separator
+            itself, and the part after it.
+            If the separator is not found, returns a 3-tuple containing the original string
+            and two empty strings.
+            """
+            return value.partition(sep)        
+        @staticmethod
+        def rfind(value:str,sub: str,start: int = None, end: int = None)->int: 
+            """
+            S.rfind(sub[, start[, end]]) -> int
+            Return the highest index in S where substring sub is found,
+            such that sub is contained within S[start:end].  Optional
+            arguments start and end are interpreted as in slice notation.
+            Return -1 on failure.
+            """
+            return value.rfind(sub,start,end)
+        @staticmethod
+        def rindex(value:str,sub: str,start: int = None, end: int = None)->int: 
+            """
+            S.rindex(sub[, start[, end]]) -> int
+            Return the highest index in S where substring sub is found,
+            such that sub is contained within S[start:end].  Optional
+            arguments start and end are interpreted as in slice notation.
+            Raises ValueError when the substring is not found.
+            """
+            return value.rindex(sub,start,end)        
+        @staticmethod
+        def rpartition(value:str,sep:str)->tuple[str,str,str]: 
+            """
+            Partition the string into three parts using the given separator.
+            This will search for the separator in the string, starting at the end. If
+            the separator is found, returns a 3-tuple containing the part before the
+            separator, the separator itself, and the part after it.
+            If the separator is not found, returns a 3-tuple containing two empty strings
+            and the original string.
+            """
+            return value.rpartition(sep)
+        @staticmethod
+        def rsplit(value:str,sep:str,maxSplit:int=None)->list[str]: 
+            """
+            Return a list of the words in the string, using sep as the delimiter string.
+            sep
+                The delimiter according which to split the string.
+                None (the default value) means split according to any whitespace,
+                and discard empty strings from the result.
+            maxSplit
+                Maximum number of splits to do.
+                -1 (the default value) means no limit.
+            Splits are done starting at the end of the string and working to the front.
+            """
+            return value.rsplit(sep,maxSplit)        
+        @staticmethod
+        def splitlines(value:str,keepEnds:bool=None)->list[str]: 
+            """
+            Return a list of the lines in the string, breaking at line boundaries.
+            Line breaks are not included in the resulting list unless keepEnds is given and
+            true.
+            """
+            return value.splitlines(keepEnds)        
+        @staticmethod
+        def swapcase(value:str)->str: 
+            """Convert uppercase characters to lowercase and lowercase characters to uppercase."""
+            return value.swapcase()               
+        @staticmethod
+        def zfill(value:str,width: int)->str: 
+            """Pad a numeric string with zeros on the left, to fill a field of the given width."""
+            return value.zfill(width)    
     class Date():
         # https://stackabuse.com/how-to-format-dates-in-python/
         # https://www.programiz.com/python-programming/datetime
@@ -930,10 +1032,29 @@ class CoreLibrary():
             a tzinfo subclass. The remaining arguments may be ints.
             """
             return time(hour,minute,second,microsecond,tzinfo) 
-
         #  self.addFunction('timedelta',timedelta)
         #  self.addFunction('timezone',pytz.timezone) 
-
+    
+    class Array():
+        @staticmethod
+        def pop(list:any)->any:
+            return list.pop(1) 
+        @staticmethod
+        def length(source:any)->int:
+            return len(source) 
+        @staticmethod
+        def slice(list:any,start:int,to:int)->any:
+            return list[start:to]
+        @staticmethod
+        def page(list:any,page:int,records:int)->any:
+            _from = (page - 1) * records
+            if _from < 0:
+                _from = 0			
+            to = _from + records
+            if to > len(list):
+                to = len(list) - 1			
+            return list[_from: to]    
+        
     class IO():
         # https://docs.python.org/3/library/os.path.html
 
@@ -955,10 +1076,7 @@ class CoreLibrary():
             meaning that the result will only end in a separator if the last part is empty. 
             If a component is an absolute path, all previous components are thrown away and joining continues from the absolute path component.
             """     
-            return path.join(paths)   
-
-    
-    
+            return path.join(paths)    
     class And(Operator):
         def solve(self,values,token:Token)->Value:
             if len(values) == 0:
@@ -1190,6 +1308,4 @@ class CoreLibrary():
                 if timeKey in token.signals:
                     token.clearListeners()
                     return Value('time')
-                return Value()  
-   
-                
+                return Value()

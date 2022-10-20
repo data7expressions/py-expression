@@ -1,4 +1,4 @@
-from py_expression.model import *
+from py_expression.contract import *
 from py_expression.core.context import *
 from py_expression.operand.operands import *
 from .builder import OperandBuilder
@@ -24,10 +24,9 @@ class OperandManager():
         del _parser
         return self.__builder.build(node)
     
-    def eval(self,operand:Operand,context:dict,token:Token)-> Value :  
-        if context is not None:
-            self.__setContext(operand,Context(context))
-        try:    
+    def eval(self,operand:Operand,data:dict,token:Token)-> Value : 
+        try:
+            self.__setContext(operand,Context(Data(data if data is not None else {})))    
             return operand.eval(token)
         except Exception as error:
             raise Exception('eval: '+Operand.name+' error: '+str(error)) 

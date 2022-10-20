@@ -1,4 +1,4 @@
-from py_expression.model.base import *
+from py_expression.contract.base import *
 from .builder import OperandBuilder
 
 class OperandSerializer():
