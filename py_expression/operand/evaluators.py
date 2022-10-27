@@ -70,7 +70,14 @@ class CallFuncEvaluator(Evaluator):
         args = []
         for i, child in enumerate(self.operand.children): 
             args.append(child.eval(context))
-        return self._function(*args)  
+        return self._function(*args)    
+
+class BlockEvaluator(Evaluator):
+    def eval (self,context: Context)-> any:
+        lastValue = None
+        for i, child in enumerate(self.operand.children): 
+            lastValue=child.eval(context)
+        return lastValue
                 
 class IfEvaluator(Evaluator):
     def eval (self,context: Context)->any:

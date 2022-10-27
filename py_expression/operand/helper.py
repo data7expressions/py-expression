@@ -1,8 +1,10 @@
 import re
+import copy
 import numpy as np
 from typing import List
 from py_expression.contract.base import *
 from py_expression.contract.operands import *
+from .factory import ConstBuilder
 
 class ValidatorHelper():
     def __init__(self):        
@@ -72,68 +74,205 @@ class ValidatorHelper():
     def isTimeFormat(self,value:str)->bool:
         pass
     
-# class NodeHelper():
-#     def __init__(self,validator:ValidatorHelper):
-#         self.validator = validator
-
-#     def minify(self,expression)->List[str]:
-#         isString=False
-#         quotes=None
-#         buffer = list(expression)
-#         length=len(buffer)
-#         result =[]
-#         i=0
-#         while i < length:
-#             p =buffer[i]        
-#             if isString and p == quotes: isString=False 
-#             elif not isString and (p == '\'' or p=='"'):
-#                 isString=True
-#                 quotes=p
-#             if isString:
-#                 result.append(p)
-#             elif  p == ' ' :
-#                 # solo debería dejar los espacios cuando es entre caracteres alfanuméricos. 
-#                 # por ejemplo en el caso de "} if" no debería quedar un espacio 
-#                 if i+1 < length and self.validator.isAlphanumeric(buffer[i-1]) and self.validator.isAlphanumeric(buffer[i+1]):
-#                     result.append(p)                
-#             elif (p!='\n' and p!='\r' and p!='\t' ):
-#                result.append(p)
-#             i+=1   
-#         return result
-    
-#     def serialize(self,node:Node)-> dict:
-#         children = []                
-#         for p in node.children:
-#             children.append(self.serialize(p))
-#         return {'n':node.name,'t':node.type,'c':children} 
-
-#     def deserialize(self,serialized:dict)-> Node:
-#         children = []
-#         if 'c' in serialized:
-#             for p in serialized['c']:
-#                 children.append(self.deserialize(p))
-#         return  Node(serialized['n'],serialized['t'],children)
-
 class OperandHelper():
     
-    def setParent(self,operand:Operand,index:int=0,parent:Operand=None):        
-        try:
-            if parent is not None:
-                operand.id = parent.id +'.'+str(index)
-                operand.parent = parent
-                operand.index = index
-                operand.level = parent.level +1  
+    def clone (self, operand: Operand)->Operand:
+        return copy.copy(operand)
+	
+    def toExpression (self, operand: Operand)->str:
+        list: List[str] = []
+        if operand.type in [OperandType.Const,OperandType.Var]:
+            list.append(operand.name)
+        elif operand.type == OperandType.List:
+            list.append('[')
+            i = 0
+            for i, child in enumerate(operand.children):
+                if (i > 0): list.append(',')
+                list.append(self.toExpression(child))			
+            list.append(']')
+        elif operand.type == OperandType.KeyVal:
+            list.append(operand.name + ':')
+            list.append(self.toExpression(operand.children[0]))
+        elif operand.type == OperandType.Obj:
+            list.append('{')
+            for i,child in enumerate(operand.children):
+                if (i > 0):list.append(',')
+                list.append(self.toExpression(child))			
+            list.append('}')
+        elif operand.type == OperandType.Operator:
+            if len(operand.children) == 1:
+                list.append(operand.name)
+                list.append(self.toExpression(operand.children[0]))
+            elif len(operand.children) == 2:
+                list.append('(')
+                list.append(self.toExpression(operand.children[0]))
+                list.append(operand.name)
+                list.append(self.toExpression(operand.children[1]))
+                list.append(')')			
+        elif operand.type == OperandType.CallFunc:
+            list.append(operand.name)
+            list.append('(')
+            for i,child in enumerate(operand.children):
+                if (i > 0): list.append(',')
+                list.append(self.toExpression(child))			
+            list.append(')')
+        elif operand.type == OperandType.ChildFunc:
+            list.append(self.toExpression(operand.children[0]))
+            list.append('.' + operand.name)
+            list.append('(')
+            for i,child in enumerate(operand.children):
+                if (i > 1): list.append(',')
+                list.append(self.toExpression(operand.children[i]))			
+            list.append(')')
+        elif operand.type == OperandType.Arrow:
+            list.append(self.toExpression(operand.children[0]))
+            list.append('.' + operand.name)
+            list.append('(')
+            list.append(operand.children[1].name)
+            list.append('=>')
+            list.append(self.toExpression(operand.children[2]))
+            list.append(')')
+        else:
+            raise Exception('node: ' + operand.type + ' not supported')
+        return list.join('')
+	
+    def objectKey (self,obj:dict)->any:
+        keys = obj.keys().sort()
+        list:List[str] = []
+        for key in keys:
+            list.append(key)
+            list.append(str(obj[key]))		
+        return list.join('|')	
+
+    def getKeys (self,variable:Operand, fields: List[Operand], list: List[any], context: Context)-> List[any]:
+        keys:List[any] = []
+		# loop through the list and group by the grouper fields
+        for item in list:
+            key = ''
+            values = []
+            for keyValue in fields:
+                context.data.set(variable.name, item)
+				# variable.set(item)
+                value = keyValue.children[0].eval(context)
+                if type(value) is dict:
+                    raise Exception('Property value '+ keyValue.name + ' is an object, so it cannot be grouped')
+                key = value if key == '' else key+ '-' + value
+                values.append({ 'name': keyValue.name, 'value': value })			
+			# find if the key already exists in the list of keys
+            # keys.find((p:any) => p.key === key)
+            keyItem = next((p for p in keys if p.key == key ), None) 
+            if keyItem != None:
+				# if the key exists add the item
+                keyItem.items.append(item)
             else:
-                operand.id = '0'
-                operand.parent = None
-                operand.index = 0
-                operand.level = 0 
-            
-            for i,p in enumerate(operand.children):
-                self.setParent(p,i,operand)           
-            return operand
-        except Exception as error:
-            raise Exception('set parent: '+operand.name+' error: '+str(error)) 
+				# if the key does not exist add the key, the values and the item
+                keys.push({ 'key': key, 'values': values, 'items': [item], 'summarizers': [] })		
+        return keys	
+
+    def haveAggregates (self, operand: Operand)-> bool:
+        if (not (operand.type == OperandType.Arrow) and operand.type == OperandType.CallFunc and  operand.name in ['avg', 'count', 'first', 'last', 'max', 'min', 'sum']):
+            return True
+        elif (operand.children and len(operand.children) > 0):
+            for child in operand.children:
+                if (self.haveAggregates(child)):
+                    return True
+        return False
+
+    def findAggregates (self, operand: Operand)-> List[Operand]:
+        if (not (operand.type == OperandType.Arrow) and operand.type == OperandType.CallFunc and operand.name in ['avg', 'count', 'first', 'last', 'max', 'min', 'sum']):
+            return [operand]
+        elif operand.children and len(operand.children) > 0:
+            aggregates:List[Operand] = []
+            for child in operand.children:
+                childAggregates = self.findAggregates(child)
+                if len(childAggregates) > 0:
+                    aggregates = aggregates.concat(childAggregates)
+            return aggregates
+        return []
+
+    def solveAggregates (self, list: List[any], variable: Operand, operand: Operand, context: Context)-> Operand:
+        if (not(operand.type == OperandType.Arrow) and operand.type == OperandType.CallFunc and operand.name in ['avg', 'count', 'first', 'last', 'max', 'min', 'sum']):
+            value:None
+            if operand.name == 'avg':
+                value = self.avg(list, variable, operand.children[0], context)
+            elif operand.name == 'count':
+                value = self.count(list, variable, operand.children[0], context)
+            elif operand.name == 'first':
+                value = self.first(list, variable, operand.children[0], context)
+            elif operand.name == 'last':
+                value = self.last(list, variable, operand.children[0], context)
+            elif operand.name == 'max':
+                value = self.max(list, variable, operand.children[0], context)
+            elif operand.name == 'min':
+                value = self.min(list, variable, operand.children[0], context)
+            elif operand.name == 'sum':
+                value = self.sum(list, variable, operand.children[0], context)
+            return ConstBuilder().build(operand.pos, value)
+        elif (operand.children != None and len(operand.children) > 0):
+            for i,child in  enumerate(operand.children):
+                operand.children[i] = self.solveAggregates(list, variable, child, context)
+        return operand	
+
+    def count (self,list: List[any], variable: Operand, aggregate: Operand, context: Context)-> int:
+        count = 0
+        for item in list:
+            context.data.set(variable.name, item)
+            if aggregate.eval(context):
+                count+=1
+        return count	
+
+    def first (self,list: List[any], variable: Operand, aggregate: Operand, context: Context)->any:
+        for item in list:
+            context.data.set(variable.name, item)
+            if aggregate.eval(context):
+                return item
+        return None
+
+    def last (self,list: List[any], variable: Operand, aggregate: Operand, context: Context)-> any:
+        i = len(list)
+        while i >= 0:
+            item = list[i]
+            context.data.set(variable.name, item)
+            if aggregate.eval(context):
+                return item
+            i-=1
+        return None
+
+    def max (self, list: List[any], variable: Operand, aggregate: Operand, context: Context)->any:
+        max=None
+        for item in list:
+            context.data.set(variable.name, item)
+            value = aggregate.eval(context)
+            if (max == None or (value != None and value > max)):
+                max = value
+        return max
+
+    def min (self, list: List[any], variable: Operand, aggregate: Operand, context: Context)-> any:
+        min:None
+        for item in list:
+            context.data.set(variable.name, item)
+            value = aggregate.eval(context)
+            if min == None or (value != None and value < min):
+                min = value
+        return min	
+
+    def avg (self,list: List[any], variable: Operand, aggregate: Operand, context: Context)-> float:
+        sum = 0
+        for item in list:
+            context.data.set(variable.name, item)
+            value = aggregate.eval(context)
+            if value != None:
+                sum = sum + value
+        return sum / list.length if list > 0 else 0	
+
+    def sum (self,list: List[any], variable: Operand, aggregate: Operand, context: Context)-> float:
+        sum = 0
+        for item in list:
+            context.data.set(variable.name, item)
+            value = aggregate.eval(context)
+            if value != None:
+                sum = sum + value
+        return sum
 
 class ObjectHelper():
     def __init__(self,validator:ValidatorHelper):
@@ -242,18 +381,13 @@ class ObjectHelper():
 class ExpHelper():
     def __init__(self):
         self._validator = ValidatorHelper()
-        # self._node = NodeHelper(self._validator)
         self._operand = OperandHelper()
         self._obj = ObjectHelper(self._validator)
         
     @property
     def validator(self):
         return self._validator
-    
-    # @property
-    # def node(self):
-    #     return self._node  
-    
+   
     @property
     def operand(self):
         return self._operand
