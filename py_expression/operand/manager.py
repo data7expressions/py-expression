@@ -1,9 +1,9 @@
 from py_expression.contract import *
 from py_expression.core.context import *
-from py_expression.operand.operands import *
+from py_expression.operand.evaluators import *
 from .builder import OperandBuilder
 from .serializer import OperandSerializer
-from py_expression.parser.parser import Parser, Model
+from py_expression.operand.parser import Parser, Model
 from typing import List
 
 class OperandManager():

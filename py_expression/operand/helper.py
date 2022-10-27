@@ -2,7 +2,7 @@ import re
 import numpy as np
 from typing import List
 from py_expression.contract.base import *
-from py_expression.contract.operands import Node
+from py_expression.contract.operands import *
 
 class ValidatorHelper():
     def __init__(self):        
@@ -72,47 +72,47 @@ class ValidatorHelper():
     def isTimeFormat(self,value:str)->bool:
         pass
     
-class NodeHelper():
-    def __init__(self,validator:ValidatorHelper):
-        self.validator = validator
+# class NodeHelper():
+#     def __init__(self,validator:ValidatorHelper):
+#         self.validator = validator
 
-    def minify(self,expression)->List[str]:
-        isString=False
-        quotes=None
-        buffer = list(expression)
-        length=len(buffer)
-        result =[]
-        i=0
-        while i < length:
-            p =buffer[i]        
-            if isString and p == quotes: isString=False 
-            elif not isString and (p == '\'' or p=='"'):
-                isString=True
-                quotes=p
-            if isString:
-                result.append(p)
-            elif  p == ' ' :
-                # solo debería dejar los espacios cuando es entre caracteres alfanuméricos. 
-                # por ejemplo en el caso de "} if" no debería quedar un espacio 
-                if i+1 < length and self.validator.isAlphanumeric(buffer[i-1]) and self.validator.isAlphanumeric(buffer[i+1]):
-                    result.append(p)                
-            elif (p!='\n' and p!='\r' and p!='\t' ):
-               result.append(p)
-            i+=1   
-        return result
+#     def minify(self,expression)->List[str]:
+#         isString=False
+#         quotes=None
+#         buffer = list(expression)
+#         length=len(buffer)
+#         result =[]
+#         i=0
+#         while i < length:
+#             p =buffer[i]        
+#             if isString and p == quotes: isString=False 
+#             elif not isString and (p == '\'' or p=='"'):
+#                 isString=True
+#                 quotes=p
+#             if isString:
+#                 result.append(p)
+#             elif  p == ' ' :
+#                 # solo debería dejar los espacios cuando es entre caracteres alfanuméricos. 
+#                 # por ejemplo en el caso de "} if" no debería quedar un espacio 
+#                 if i+1 < length and self.validator.isAlphanumeric(buffer[i-1]) and self.validator.isAlphanumeric(buffer[i+1]):
+#                     result.append(p)                
+#             elif (p!='\n' and p!='\r' and p!='\t' ):
+#                result.append(p)
+#             i+=1   
+#         return result
     
-    def serialize(self,node:Node)-> dict:
-        children = []                
-        for p in node.children:
-            children.append(self.serialize(p))
-        return {'n':node.name,'t':node.type,'c':children} 
+#     def serialize(self,node:Node)-> dict:
+#         children = []                
+#         for p in node.children:
+#             children.append(self.serialize(p))
+#         return {'n':node.name,'t':node.type,'c':children} 
 
-    def deserialize(self,serialized:dict)-> Node:
-        children = []
-        if 'c' in serialized:
-            for p in serialized['c']:
-                children.append(self.deserialize(p))
-        return  Node(serialized['n'],serialized['t'],children)
+#     def deserialize(self,serialized:dict)-> Node:
+#         children = []
+#         if 'c' in serialized:
+#             for p in serialized['c']:
+#                 children.append(self.deserialize(p))
+#         return  Node(serialized['n'],serialized['t'],children)
 
 class OperandHelper():
     
@@ -134,7 +134,6 @@ class OperandHelper():
             return operand
         except Exception as error:
             raise Exception('set parent: '+operand.name+' error: '+str(error)) 
-  
 
 class ObjectHelper():
     def __init__(self,validator:ValidatorHelper):
@@ -239,12 +238,11 @@ class ObjectHelper():
             if item.name == name:
                 return item
         return None        
-    
         
 class ExpHelper():
     def __init__(self):
         self._validator = ValidatorHelper()
-        self._node = NodeHelper(self._validator)
+        # self._node = NodeHelper(self._validator)
         self._operand = OperandHelper()
         self._obj = ObjectHelper(self._validator)
         
@@ -252,9 +250,9 @@ class ExpHelper():
     def validator(self):
         return self._validator
     
-    @property
-    def node(self):
-        return self._node  
+    # @property
+    # def node(self):
+    #     return self._node  
     
     @property
     def operand(self):

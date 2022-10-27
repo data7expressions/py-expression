@@ -1,7 +1,7 @@
 from py_expression.contract.operands import Node, Operand
 from py_expression.contract.context import Token
-from py_expression.parser.model import Model
-from py_expression.helper.helper import helper
+from py_expression.operand.model import Model
+from py_expression.operand.helper import helper
 
 class OperandBuilder():
     def __init__(self,model:Model):

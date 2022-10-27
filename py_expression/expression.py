@@ -1,10 +1,10 @@
 from py_expression.contract.base import *
 from typing import List
 from py_expression.operand.coreLibrary import CoreLibrary
-from py_expression.parser.model import Model
-from py_expression.operand.operand import OperandManager, OperandBuilder
-from py_expression.parser.parser import Parser
-from py_expression.helper.helper import helper
+from py_expression.operand.model import Model
+from py_expression.operand.manager import OperandManager, OperandBuilder
+from py_expression.operand.parser import Parser
+from py_expression.operand.helper import helper
 
 # Facade  
 class Exp(metaclass=Singleton):

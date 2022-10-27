@@ -1,4 +1,4 @@
-from py_expression.helper.helper import helper
+from py_expression.operand.helper import helper
 import uuid
 
 class Data():
@@ -9,7 +9,7 @@ class Data():
     def newData(self)->'Data':        
         return Data({},self)
 
-    def getData (self,variable):
+    def getData (self,variable:str):
         if variable in self.data or self._parent is None: return self.data
         _context =self._parent.getData(variable)
         return _context  if _context is not None else self.data

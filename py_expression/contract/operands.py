@@ -3,7 +3,7 @@ from inspect import Parameter
 from pyclbr import Function
 from .context import Context
 from .type import Type
-from typing import TypeVar, Generic, List
+from typing import TypeVar, Generic, List, Tuple
 
 class OperandType(Enum):
     Const = 'Const'
@@ -37,12 +37,6 @@ class OperandType(Enum):
     Throw = 'Throw'
     Args = 'Args'
 
-class Node():
-    def __init__(self,name:str, type:OperandType ,children:List['Node']=[]): 
-        self.name = name
-        self.type = type         
-        self.children  = children
-
 class ParameterDoc():
     def __init__(self, name:str, description:str):
         self.name  = name
@@ -68,12 +62,13 @@ class IEvaluator():
         pass
     
 class Operand():
-    def __init__(self, type:OperandType, id:str, name:str, children:list['Operand']=[], returnType: Type=None):
-        self.type = type        
-        self.id  = id
+    def __init__(self,pos: Tuple[int, int], name:str, type:OperandType, id:str, children:list['Operand']=[], returnType: Type=None):
+        self.pos = pos
         self.name  = name
+        self.type = type
         self.children = children
         self.returnType = returnType
+        self.id  = None
         self.evaluator:IEvaluator = None
         self.number:int = None
 

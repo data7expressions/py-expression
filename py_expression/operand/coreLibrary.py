@@ -6,9 +6,9 @@ import json
 import dateutil.parser as dateParser
 from datetime import date,datetime,time,timedelta
 from os import path,getcwd
-from py_expression.operand.operands import *
-from py_expression.parser.model import Model
-from py_expression.helper.helper import helper
+from py_expression.operand.evaluators import *
+from py_expression.operand.model import Model
+from py_expression.operand.helper import helper
 
 class Volume():
     def __init__(self,_path):        

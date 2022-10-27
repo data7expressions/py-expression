@@ -26,15 +26,6 @@ class ICache(Generic[T]):
         pass
     def delete(self, key:str):
         pass
-
-class ActionObserverArgs():
-    def __init__(self, expression:str, data:any, result:any=None, error:any=None ):
-      self.expression = expression
-      self.data = data
-      self.result = result
-      self.error = error
-
-
 class Parameter():
     def __init__(self, name:str, type:str, value:any=None, default:any=None, multiple:bool=False ):
       self.name = name
