@@ -1,9 +1,7 @@
-from unittest import result
 from lib.contract.base import *
 from lib.contract.operands import * 
 from lib.contract.context import * 
 from lib.contract.managers import IExpressions, ActionObserver
-import inspect
 from typing import List, Tuple
 from lib.operand.cache import MemoryCache
 from lib.operand.model import ModelManager
@@ -77,7 +75,7 @@ class Exp(IExpressions, metaclass=Singleton):
         
     def eval (self,expression: str, data: any=None)-> any:
         context = Context(Data(data))
-        operand = self.basicBuild(expression)
+        operand = self.__basicBuild(expression)
         result = operand.eval(context)
         return result
     
@@ -117,9 +115,6 @@ class Exp(IExpressions, metaclass=Singleton):
             return value
         else:
             return None
-		
-	  
-
 
     def addEnum(self,key,source):
         self.model.addEnum(key,source)  
@@ -137,28 +132,5 @@ class Exp(IExpressions, metaclass=Singleton):
             value= self.__operand.eval(operand,context,token)
             return value.value
         except Exception as error:
-            raise Exception('expression: '+expression+' error: '+str(error))    
-
-    def serialize(self,operand:Operand)-> dict: 
-        return self.__operand.serialize(operand)
-
-    def deserialize(self,serialized:dict,type:str='Operand')->Operand:
-        return self.__operand.deserialize(serialized)           
- 
-    def vars(self,operand:Operand)->dict:
-        return self.__operand.vars(operand)       
-
-    def operandType(self,operand:Operand)->str:
-        return self.__operand.operandType(operand)      
-
-    def constants(self,operand:Operand)->dict:
-        return self.__operand.constants(operand)
-    
-    def operators(self,operand:Operand)->dict:
-        return self.__operand.operators(operand)
-
-    def functions(self,operand:Operand)->dict:
-        return self.__operand.functions(operand)
-        
-   
-                           
+            raise Exception('expression: '+expression+' error: '+str(error)) 
+                         
