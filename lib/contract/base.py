@@ -26,6 +26,7 @@ class ICache(Generic[T]):
         pass
     def delete(self, key:str):
         pass
+    
 class Parameter():
     def __init__(self, name:str, type:str, value:any=None, default:any=None, multiple:bool=False ):
       self.name = name
@@ -35,12 +36,11 @@ class Parameter():
       self.multiple = multiple
 
 class Sing():
-    def __init__(self, name:str, params:List[Parameter], returnType:str, default:any=None, multiple:bool=False ):
+    def __init__(self, name:str, params:List[Parameter], returnType:str, isAsync:bool=False ):
       self.name = name
       self.params = params
       self.returnType = returnType
-      self.default = default
-      self.multiple = multiple
+      self.isAsync = isAsync
       
 class Format():
     def __init__(self, name:str, pattern:str, regExp:re):

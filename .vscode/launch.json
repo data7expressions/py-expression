@@ -9,14 +9,14 @@
             "type": "python",
             "request": "launch",
             "console": "integratedTerminal",
-            "module": "py_expression_test"
+            "module": "test"
         },
         {
             "name": "Lab",
             "type": "python",
             "request": "launch",
             "console": "integratedTerminal",
-            "module": "py_expression_lab"
+            "module": "lab"
         },
         {
             "name": "Python: Current File",

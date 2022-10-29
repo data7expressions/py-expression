@@ -1,31 +1,41 @@
-from py_expression.contract.operands import OperandType
-from py_expression.contract.base import Operand
+from lib.contract.base import Sing, Format, Parameter
+from lib.contract.operands import OperatorMetadata,OperatorAdditionalInfo, FunctionAdditionalInfo, PrototypeEvaluator 
+from lib.contract.managers import IModelManager
 from enum import Enum
 import inspect
-from typing import List
-class Model():
+from typing import List, Tuple
+
+class ModelManager(IModelManager):
     def __init__(self):
         self._enums={}
         self._constants={}
         self._formats={}
         self._operators={}        
         self._functions={}
-
+          
     @property
-    def enums(self):
-        return self._enums
+    def constants(self)->List[Tuple[str, any]]:
+        return self._constants.items()
+    
     @property
-    def constants(self):
-        return self._constants
+    def formats(self)->List[Tuple[str, Format]]:
+        return self._formats.items()
+    
     @property
-    def formats(self):
-        return self._formats          
+    def enums(self)->List[Tuple[str,List[Tuple[str, any]]]]:
+        return self._enums.items()
+                  
     @property
-    def operators(self):
-        return self._operators
+    def operators(self)-> List[Tuple[str, OperatorMetadata]]:
+        operators:List[str, OperatorMetadata] = []
+        for entry  in self._operators.items():
+            for q in entry[1].values():
+                operators.append([entry[0], q])
+        return operators
+        
     @property
-    def functions(self):
-        return self._functions
+    def functions(self)-> List[Tuple[str, OperatorMetadata]]:
+        return self._functions.items()
 
     def addEnum(self,key,source):
         if(type(source).__name__ == 'dict'):
@@ -51,78 +61,99 @@ class Model():
     def addFunctionAlias(self,alias,reference):
         self._functions[alias] = self._functions[reference]    
     
-    def addOperator(self,sing:str,source,additionalInfo):
+    def addOperator(self,sing:str,source:any,additionalInfo:OperatorAdditionalInfo):
         singInfo = self.__getSing(sing)
-        name = singInfo['name']
-        cardinality = len(singInfo['params'])
         metadata = {            
-			'priority': additionalInfo['priority'],
+			'priority': additionalInfo.priority,
 			'deterministic': False,
-			'operands': cardinality,			
-			'params': singInfo['params'],
-			'return': singInfo['return']
+			'operands': len(singInfo.params),			
+			'params': singInfo.params,
+			'returnType': singInfo.returnType
         }
+        if issubclass(source,PrototypeEvaluator):
+            metadata['custom'] = source
         if type(source).__name__ == 'function':
             metadata['func'] = source            
-        elif type(source).__name__  == 'type' and issubclass(source, Operand):
-           metadata['custom'] = source
         else:
-            raise Exception('operator ' + singInfo['name'] + 'source not supported')          
+            raise Exception('Operator ' + singInfo.name + 'source not supported')          
         if 'doc' in additionalInfo:
-            metadata['doc'] = additionalInfo['doc']
-        if 'chained' in additionalInfo:
-            metadata['chained'] = additionalInfo['chained']
-        if name not in self._operators.keys():
-            self._operators[name]= {}           
-        self._operators[name][cardinality] = metadata    
+            metadata['doc'] = additionalInfo.doc
+        if singInfo.name not in self._operators.keys():
+            self._operators[singInfo.name]= {}           
+        self._operators[singInfo.name][metadata.operands] = metadata
 
-
-    def addFunction(self,sing:str,source,additionalInfo={}):
+    def addFunction(self,sing:str,source,additionalInfo:FunctionAdditionalInfo=None):
         singInfo = self.__getSing(sing)
-        name = singInfo['name']
         metadata = {            
 			'deterministic': additionalInfo['deterministic'] if additionalInfo and additionalInfo['deterministic'] else True,
-			'operands': len(singInfo['params']),			
-			'params': singInfo['params'],
-			'return': singInfo['return']
+			'operands': len(singInfo.params),			
+			'params': singInfo.params,
+			'returnType': singInfo.returnType
         }
+        if issubclass(source,PrototypeEvaluator):
+            metadata['custom'] = source
         if type(source).__name__ == 'function':
             metadata['func'] = source            
-        elif type(source).__name__  == 'type' and issubclass(source, Operand):
-            metadata['custom'] = source
         else:
-            raise Exception('operator ' + singInfo['name'] + 'source not supported') 
+            raise Exception('Function ' + singInfo.name + 'source not supported')   
         if 'doc' in additionalInfo:
-            metadata['doc'] = additionalInfo['doc']
-        if 'chained' in additionalInfo:
-            metadata['chained'] = additionalInfo['chained']      
-        self._functions[name] = metadata   
-
-    def isConstant(self,name):    
-        return name in self._constants.keys()
-    def getConstantValue(self,name:str):
-        return self._constants[name]
+            metadata['doc'] = additionalInfo.doc
+        self._functions[singInfo.name] = metadata
     
-    def isEnum(self,name):    
+    def getConstantValue(self,name:str)->any:
+        return self._constants[name]     
+    
+    def getEnumValue(self,name,option)->any: 
+        return self.enums[name][option]
+    
+    def getEnum(self,name)->List[Tuple[str,any]]: 
+        return self.enums[name]
+    
+    def getOperator(self,name:str,cardinality:int)->OperatorMetadata:
+        try:            
+            if name in self._operators:
+                operator = self._operators[name]
+                if cardinality in operator:
+                    return operator[cardinality]
+            return None        
+        except:
+            raise Exception('error with operator: '+name)     
+
+    def getFunction(self,name:str)->OperatorMetadata:
+        try:
+            if name in self._functions:
+                return self._functions[name]
+            return None
+        except:
+            raise Exception('error with function: '+name)   
+    
+    def isConstant(self,name:str)->bool:    
+        return name in self._constants.keys()
+    
+    def isEnum(self,name:str)->bool:      
         names = name.split('.')
         return names[0] in self.enums.keys()
-    def getEnumValue(self,name,option): 
-        return self.enums[name][option]
-    def getEnum(self,name): 
-        return self.enums[name]
+    
+    def isOperator (self, name:str, operands:int=None)->bool:
+        operators = self._operators[name]
+        if operands != None:
+            return operators and operators[operands] != None
+        return operators != None
+    
+    def isFunction (self,name:str)->bool:
+        return self._functions[name] != None	
     
     def priority(self,name:str,cardinality:int)->int:
         try:
             metadata = self.getOperator(name,cardinality)
             return metadata["priority"] if metadata is not None else -1
         except Exception as error:
-            raise Exception('priority: '+name+' error: '+str(error)) 
-  
+            raise Exception('priority: '+name+' error: '+str(error))   
     
     def __getTypeFromValue (self,value:str)->str:
         return value	
 
-    def __getSing(self, sing:str)->dict:
+    def __getSing(self, sing:str)->Sing:
         buffer = list(sing)
         length=len(buffer)
         index = 0
@@ -203,15 +234,9 @@ class Model():
                 chars.append(buffer[index])
             index+=1
         if hadReturn:
-           _return = ''.join(chars)     
-        
-        return {
-            'name': functionName,
-            'return': _return if _return != '' else'void',
-            'params': params,
-            'async': prefix == 'async'
-            
-        }
+           _return = ''.join(chars) 
+                   
+        return Sing(functionName,- params, _return if _return != '' else 'void', prefix == 'async')        
     
     def getMetadata(self,source):
         signature= inspect.signature(source)
@@ -234,32 +259,15 @@ class Model():
             'doc':source.__doc__,
             'args': args,
             'return':returnType
-        }        
+        } 
+               
     def getDefault(self,default):
         if str(default) == "<class 'inspect._empty'>": return None
-        return str(default)     
+        return str(default)  
+       
     def getType(self,annotation):
         _type = inspect.formatannotation(annotation)
         if(_type == '<built-in function any>'):return 'any'
         elif (_type == 'inspect._empty'):return None
-        return _type  
-    
-
-    def getOperator(self,name:str,cardinality:int):
-        try:            
-            if name in self._operators:
-                operator = self._operators[name]
-                if cardinality in operator:
-                    return operator[cardinality]
-            return None        
-        except:
-            raise Exception('error with operator: '+name)     
-
-    def getFunction(self,name:str):
-        try:
-            if name in self._functions:
-                return self._functions[name]
-            return None
-        except:
-            raise Exception('error with function: '+name)        
+        return _type
  

@@ -1,7 +1,7 @@
-from py_expression.contract.base import *
-from py_expression.contract.operands import *
-from py_expression.contract.type import *
-from py_expression.operand.helper import helper
+from lib.contract.base import *
+from lib.contract.operands import *
+from lib.contract.type import *
+from lib.operand.helper import helper
 import os
 import re 
 

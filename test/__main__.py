@@ -1,7 +1,7 @@
 import unittest
-from py_expression.contract.base import *
-# from py_expression.core import Token
-from py_expression.expression import Exp
+from lib.contract.base import *
+# from lib.core import Token
+from lib.expression import Exp
 from enum import Enum
 from os import path
 

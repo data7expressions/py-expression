@@ -35,14 +35,14 @@ Besides the operators, functions, variables, objects and arrays that are support
 Exp is the main class of the library that contains the methods to parse, evaluate, get info of expression, etc . In order to use the library you need to create an instance of this class:
 
 ```python
-from py_expression.core import Exp
+from lib.core import Exp
 exp = Exp()
 ```
 
 ### Parse
 
 ```python
-from py_expression.core import Exp
+from lib.core import Exp
 exp = Exp()
 operand =exp.parse('a+4')
 ```
@@ -50,7 +50,7 @@ operand =exp.parse('a+4')
 ### Eval
 
 ```python
-from py_expression.core import Exp
+from lib.core import Exp
 
 exp = Exp()
 operand =exp.parse('a+4')
@@ -58,7 +58,7 @@ result = exp.eval(operand,{"a":2})
 ```
 
 ```python
-from py_expression.core import Exp
+from lib.core import Exp
 
 exp = Exp()
 operand =exp.parse('a+4')
@@ -66,7 +66,7 @@ result = operand.eval({"a":2})
 ```
 
 ```python
-from py_expression.core import Exp
+from lib.core import Exp
 
 exp = Exp()
 result =exp.parse('a+4').eval({"a":2})
@@ -77,7 +77,7 @@ result =exp.parse('a+4').eval({"a":2})
 reuse the parsed expression:
 
 ```python
-from py_expression.core import Exp
+from lib.core import Exp
 
 exp = Exp()
 op = exp.parse('sin(x)') 
@@ -92,7 +92,7 @@ for x in range(-100,100):
 create a new expression based on two or more parsed expressions:
 
 ```python
-from py_expression.core import Exp
+from lib.core import Exp
 
 exp = Exp()
 op1 = exp.parse('a+1')

@@ -6,7 +6,7 @@ with open('README.md') as f:
 
 setup(
   name = 'py-expression',
-  packages = ['py_expression'],
+  packages = ['lib'],
   version = '1.3.3',
   description = 'parser and solve expressions',
   long_description=long_description,

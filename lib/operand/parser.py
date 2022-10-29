@@ -1,11 +1,11 @@
 from lib2to3.pgen2.token import OP
 from typing import List, Tuple
 import numpy as np
-from py_expression.contract.base import *
-from py_expression.contract.operands import Operand, OperandType
-from py_expression.contract.type import Type
-from py_expression.contract.managers import IModelManager
-from py_expression.operand.helper import helper
+from lib.contract.base import *
+from lib.contract.operands import Operand, OperandType
+from lib.contract.type import Type
+from lib.contract.managers import IModelManager
+from lib.operand.helper import helper
 
 class Parser():
     def __init__(self,model:IModelManager,expression:str):

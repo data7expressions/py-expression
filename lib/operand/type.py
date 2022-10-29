@@ -1,7 +1,7 @@
-from py_expression.contract.base import *
-from py_expression.contract.operands import *
-from py_expression.contract.type import *
-from py_expression.contract.managers import *
+from lib.contract.base import *
+from lib.contract.operands import *
+from lib.contract.type import *
+from lib.contract.managers import *
 
 
 class TypeManager(ITypeManager):
@@ -271,4 +271,3 @@ class TypeManager(ITypeManager):
 	
     def metadata (self, operator: Operand)-> OperatorMetadata:
         return self.model.getOperator(operator.name, len(operator.children)) if operator.type == OperandType.Operator else self.model.getFunction(operator.name)
-			

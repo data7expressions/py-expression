@@ -1,10 +1,10 @@
 import re
-import copy
 import numpy as np
 from typing import List
-from py_expression.contract.base import *
-from py_expression.contract.operands import *
+from lib.contract.base import *
+from lib.contract.operands import *
 from .factory import ConstBuilder
+import copy
 
 class ValidatorHelper():
     def __init__(self):        
@@ -75,10 +75,10 @@ class ValidatorHelper():
         pass
     
 class OperandHelper():
-    
+	
     def clone (self, operand: Operand)->Operand:
         return copy.copy(operand)
-	
+    
     def toExpression (self, operand: Operand)->str:
         list: List[str] = []
         if operand.type in [OperandType.Const,OperandType.Var]:

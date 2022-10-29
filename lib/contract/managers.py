@@ -82,6 +82,9 @@ class IModelManager():
 class IOperandBuilder():
     def build (self,expression: List[str])-> Operand:
         pass
+    
+    def clone (self, operand: Operand)->Operand:
+        pass
 
 class IEvaluatorFactory():
     def create(self,operand:Operand)-> Operand:

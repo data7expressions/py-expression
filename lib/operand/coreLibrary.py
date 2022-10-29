@@ -6,9 +6,10 @@ import json
 import dateutil.parser as dateParser
 from datetime import date,datetime,time,timedelta
 from os import path,getcwd
-from py_expression.operand.evaluators import *
-from py_expression.operand.model import Model
-from py_expression.operand.helper import helper
+from lib.contract.managers import *
+from lib.operand.evaluators import *
+from lib.operand.helper import helper
+import functools
 
 class Volume():
     def __init__(self,_path):        
@@ -17,7 +18,7 @@ class Volume():
         return path.join(self._root,_path)
 
 class CoreLibrary(): 
-    def __init__(self,model:Model):       
+    def __init__(self,model:IModelManager):       
        self.model = model 
 
     def load(self):
@@ -35,7 +36,7 @@ class CoreLibrary():
     def constants(self):
         self.model.addConstant('true', True)
         self.model.addConstant('false', False)
-        self.model.addConstant('null', None)
+        self.model.addConstant('None', None)
         
     def enums(self): 
         self.model.addEnum('DayOfWeek',{"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5,"Saturday":6,"Sunday":0}) 
@@ -68,17 +69,17 @@ class CoreLibrary():
         self.model.addOperator('>>(a:number,b:number):number',self.Operators.rightShift,{'priority':4})
 
         self.model.addOperator('==(a:T,b:T):boolean',self.Operators.equal,{'priority':3})
-        self.model.addOperatorAlias('===', '==')
+        self.model.addOperatorAlias('==', '==')
         self.model.addOperator('!=(a:T,b:T):boolean',self.Operators.notEqual,{'priority':3})
-        self.model.addOperatorAlias('!==', '!=')
+        self.model.addOperatorAlias('!=', '!=')
         self.model.addOperatorAlias('<>', '!=')
         self.model.addOperator('>(a:T,b:T):boolean',self.Operators.greaterThan,{'priority':3})
         self.model.addOperator('<(a:T,b:T):boolean',self.Operators.lessThan,{'priority':3})
         self.model.addOperator('>=(a:T,b:T):boolean',self.Operators.greaterThanOrEqual,{'priority':3})
         self.model.addOperator('<=(a:T,b:T):boolean',self.Operators.lessThanOrEqual,{'priority':3})
 
-        self.model.addOperator('&&(a:T,b:T):boolean',self.And,{'priority':2})
-        self.model.addOperator('||(a:T,b:T):boolean',self.Or,{'priority':2})
+        self.model.addOperator('and(a:T,b:T):boolean',And(),{'priority':2})
+        self.model.addOperator('or(a:T,b:T):boolean',Or(),{'priority':2})
         self.model.addOperator('!(a:boolean):boolean',self.Operators._not,{'priority':4})
 
         self.model.addOperator('[](list:T[],index:integer):T',lambda a, b: a[b],{'priority':2})
@@ -101,17 +102,17 @@ class CoreLibrary():
         self.model.addFunction('async sleep(ms: number)',self.General.sleep)
         self.model.addFunction('console(value:any)',self.General.console)   
     
-    def nullFunctions(self):
+    def NoneFunctions(self):
         self.model.addFunction('nvl(a:T, b:T):T', self.Nullable.nvl)
         self.model.addFunction('nvl2(a:any, b:T,c:T):T',self.Nullable.nvl2)                 
 
     def comparisonFunctions(self):
         self.model.addFunction('isEmpty',self.Comparison.isEmpty)
         self.model.addFunction('between(value:any,from:any,to:any):boolean',self.Comparison.between)
-        self.model.addFunction('includes(source:string|any[],value:any):boolean',self.Comparison.includes)
+        self.model.addFunction('includes(source:string|List[any],value:any):boolean',self.Comparison.includes)
         self.model.addFunctionAlias('in', 'includes')
-        self.model.addFunction('isNull(value:any):boolean', self.Comparison.isNull)
-        self.model.addFunction('isNotNull(value:any):boolean', self.Comparison.isNotNull)
+        self.model.addFunction('isNone(value:any):boolean', self.Comparison.isNone)
+        self.model.addFunction('isNotNone(value:any):boolean', self.Comparison.isNotNone)
         self.model.addFunction('isEmpty(value:string):boolean', self.Comparison.isEmpty)
         self.model.addFunction('isNotEmpty(value:string):boolean',self.Comparison.isNotEmpty)
         self.model.addFunction('isBoolean(value:any):boolean', self.Comparison.isBoolean)
@@ -162,7 +163,7 @@ class CoreLibrary():
         self.model.addFunction('stringify(value:any):string', self.Conversions.stringify)
         self.model.addFunction('parse(value:string):any', self.Conversions.parse)
         self.model.addFunction('keys(obj: any):string[]', self.Conversions.keys)
-        self.model.addFunction('values(obj: any):any[]',self.Conversions.values)
+        self.model.addFunction('values(obj: any):List[any]',self.Conversions.values)
         self.model.addFunction('entries(obj: any):[string,any][]', self.Conversions.entries)
         self.model.addFunction('fromEntries(entries: [string,any][]): any', self.Conversions.fromEntries)
             
@@ -205,32 +206,32 @@ class CoreLibrary():
         # self.model.addFunction('time',lambda hour=0,minute=0,second=0,microsecond=0,tzinfo=None: time(hour,minute,second,microsecond,tzinfo))
     
     def arrayFunctions(self):
-        self.model.addFunction('map(list: any[], predicate: T):T[]',self.Map)
+        self.model.addFunction('map(list: List[any], predicate: T):T[]',Map())
         self.model.addFunctionAlias('select', 'map') 
-        self.model.addFunction('foreach(list: any[], predicate: any)',self.Foreach)
+        self.model.addFunction('foreach(list: List[any], predicate: any)',Foreach())
         self.model.addFunctionAlias('each', 'foreach')        
-        self.model.addFunction('filter(list: T[], predicate: boolean):T[]',self.Filter)
+        self.model.addFunction('filter(list: T[], predicate: boolean):T[]',Filter())
         self.model.addFunctionAlias('where', 'filter')
-        self.model.addFunction('reverse(list: T[], predicate: any):T[]',self.Reverse)        
-        self.model.addFunction('sort(list: T[], predicate: any):T[]',self.Sort)
+        self.model.addFunction('reverse(list: T[], predicate: any):T[]',Reverse())        
+        self.model.addFunction('sort(list: T[], predicate: any):T[]',Sort())
         self.model.addFunctionAlias('order', 'sort')
-        self.model.addFunction('remove(list: T[], predicate: boolean):T[]',self.Remove)
+        self.model.addFunction('remove(list: T[], predicate: boolean):T[]',Remove())
         self.model.addFunctionAlias('delete', 'remove')
-        self.model.addFunction('push(list: T[], value: T):T[]',self.Push)
+        self.model.addFunction('push(list: T[], value: T):T[]',self.Array.push)
         self.model.addFunctionAlias('insert', 'push')
-        self.model.addFunction('pop(list: T[]): T',self.Pop)
-        self.model.addFunction('length(source: any[]|string):number', self.Array.length)
+        self.model.addFunction('pop(list: T[]): T',self.Array.pop)
+        self.model.addFunction('length(source: List[any]|string):number', self.Array.length)
         self.model.addFunctionAlias('len', 'length')
         self.model.addFunction('slice(list: T[], from:integer, to:integer):T[]', self.Array.slice)
         self.model.addFunction('page(list: T[], page:integer, records:integer):T[]', self.Array.page)        
 
     def groupFunctions(self):
-        self.model.addFunction('first(list: T[], predicate: boolean): T',self.First)
-        self.model.addFunction('last(list: T[], predicate: boolean): T',self.Last)
+        self.model.addFunction('first(list: T[], predicate: boolean): T',First())
+        self.model.addFunction('last(list: T[], predicate: boolean): T',Last())
            
-    def signalFunctions(self):
-        self.model.addFunction('listen(signals:string[],timeout:time):string',self.Listen )
-        self.model.addFunction('wait(ms:time)',self.Wait) 
+    # def signalFunctions(self):
+    #   self.model.addFunction('listen(signals:string[],timeout:time):string',Listen() )
+    #   self.model.addFunction('wait(ms:time)',Wait()) 
     
     def ioFunctions(self):
         self.model.addFunction('Volume(path:string):Volume',self.IO.Volume)
@@ -247,7 +248,8 @@ class CoreLibrary():
     class Nullable():
         @staticmethod
         def nvl(a:any,b:any)->any: 
-            return a if a!=None and a!="" else b 
+            return a if a!=None and a!="" else b
+        @staticmethod 
         def nvl2(a:any,b:any,c:any)->any: 
             return  b if a!=None and a!="" else c    
     class Comparison():
@@ -258,11 +260,11 @@ class CoreLibrary():
         def includes(source:any,value:any)->bool:
             return helper.validator.includes(source,value)
         @staticmethod
-        def isNull(value:any)->bool:
-            return helper.validator.isNull(value)
+        def isNone(value:any)->bool:
+            return helper.validator.isNone(value)
         @staticmethod
-        def isNotNull(value:any)->bool:
-            return helper.validator.isNotNull(value)
+        def isNotNone(value:any)->bool:
+            return helper.validator.isNotNone(value)
         @staticmethod
         def isEmpty(value:str)->bool:
             return helper.validator.isEmpty(value)
@@ -320,7 +322,6 @@ class CoreLibrary():
         @staticmethod
         def isTimeFormat(value:str)->bool:
             return helper.validator.isTimeFormat(value)
-                 
     class Operators():
         @staticmethod
         def addition(a:any,b:any)->any:
@@ -734,7 +735,7 @@ class CoreLibrary():
             """
             Concatenate any number of strings.
             The string whose method is called is inserted in between each given string.
-            The result is returned as a new string.
+            The result is returned as a string.
             Example: '.'.join(['ab', 'pq', 'rs']) -> 'ab.pq.rs'
             """
             return value.join(iterable)      
@@ -989,7 +990,7 @@ class CoreLibrary():
             return datetime.strftime(self, fmt)
         @staticmethod
         def strptime(cls:datetime, date_string :str, forma:str)->datetime:
-            """string, format -> new datetime parsed from a string (like time.strptime())."""
+            """string, format -> datetime parsed from a string (like time.strptime())."""
             return datetime.strptime(cls, date_string,forma) 
         @staticmethod
         def datetime(year:int, month:int=None, day:int=None, hour:int=0, minute:int=0, second:int=0,microsecond:int=0,tzinfo:t.timezone=None)->datetime:
@@ -1006,7 +1007,7 @@ class CoreLibrary():
         @staticmethod
         def now(tz:t.timezone=None)->datetime:
             """
-            Returns new datetime object representing current time local to tz.
+            Returns datetime object representing current time local to tz.
             tz
                 Timezone object.
             If no tz is specified, uses local timezone.
@@ -1037,16 +1038,19 @@ class CoreLibrary():
     
     class Array():
         @staticmethod
-        def pop(list:any)->any:
-            return list.pop(1) 
+        def pop(list:List[any])->any:
+            return list.pop(1)
+        @staticmethod
+        def push(list:List[any],value:any)->any:
+            return list.append(value)  
         @staticmethod
         def length(source:any)->int:
             return len(source) 
         @staticmethod
-        def slice(list:any,start:int,to:int)->any:
+        def slice(list:List[any],start:int,to:int)->any:
             return list[start:to]
         @staticmethod
-        def page(list:any,page:int,records:int)->any:
+        def page(list:List[any],page:int,records:int)->any:
             _from = (page - 1) * records
             if _from < 0:
                 _from = 0			
@@ -1077,235 +1081,623 @@ class CoreLibrary():
             If a component is an absolute path, all previous components are thrown away and joining continues from the absolute path component.
             """     
             return path.join(paths)    
-    class And(Operator):
-        def solve(self,values,token:Token)->Value:
-            if len(values) == 0:
-                value = self._children[0].eval(token)
-                if token.isBreak: return value
-                if not value.value : return Value(False)
-                values.append(value.value)                
-            if len(values) == 1:
-                return self._children[1].eval(token) 
-    class Or(Operator):
-        def solve(self,values,token:Token)->Value:
-            if len(values) == 0:
-                value = self._children[0].eval(token)
-                if token.isBreak: return value
-                if value.value : return Value(True)
-                values.append(value)                
-            if len(values) == 1:
-                return self._children[1].eval(token)
-    class Assignment(Operator):
-        def solve(self,values,token:Token)->Value:
-            if len(values) == 0:
-                value = self._children[0].eval(token)
-                if token.isBreak: return value  
-                values.append(value.value)
-            if len(values) ==1:
-                value = self._children[1].eval(token)
-                if token.isBreak: return value
-                values.append(value.value)
-                value = values[1] if self._function is None else self._function(values[0],values[1])
-                self._children[0].set(value,token)
-                return Value(value)
-    class Foreach(ArrowFunction):   
-        def solve(self,values,token:Token)->Value:
-            if len(values) == 0:
-                value = self._children[0].eval(token)
-                if token.isBreak: return value
-                values.append(value.value)
-            values.append(0)    
-            for i,p in enumerate(values[0]):
-                if i>=values[1]:
-                    self._children[1].set(p,token)
-                    value = self._children[2].eval(token)
-                    if token.isBreak: return value                    
-                    values[1] = i
-            return Value()        
-    class Map(ArrowFunction):
-        def solve(self,values,token:Token)->Value:
-            if len(values) == 0:
-                value = self._children[0].eval(token)
-                if token.isBreak: return value 
-                values.append(value.value)
-            values.append(0)    
-            for i,p in enumerate(values[0]):
-                if i>=values[1]:
-                    self._children[1].set(p,token)
-                    value = self._children[2].eval(token)
-                    if token.isBreak: return value
-                    values.append(value.value)
-                    values[1] = i 
-            return Value(values[2:])  
-    class First(ArrowFunction):
-        def solve(self,values,token:Token)->Value:
-            if len(values) == 0:
-                value = self._children[0].eval(token)
-                if token.isBreak: return value  
-                values.append(value.value)
-            values.append(0)    
-            for i,p in enumerate(values[0]):
-                if i>=values[1]:
-                    self._children[1].set(p,token)
-                    value = self._children[2].eval(token)
-                    if token.isBreak: return value
-                    if value.value: return Value(p)                    
-            return Value(None)
-    class Last(ArrowFunction):
-        def solve(self,values,token:Token)->Value:
-            if len(values) == 0:
-                value = self._children[0].eval(token)
-                if token.isBreak: return value 
-                value.value.reverse() 
-                values.append(value.value)
-            values.append(0)    
-            for i,p in enumerate(values[0]):
-                if i>=values[1]:
-                    self._children[1].set(p,token)
-                    value = self._children[2].eval(token)
-                    if token.isBreak: return value
-                    if value.value: return Value(p)                    
-            return Value(None)      
-    class Filter(ArrowFunction):
-        def solve(self,values,token:Token)->Value:
-            if len(values) == 0:
-                value = self._children[0].eval(token)
-                if token.isBreak: return value 
-                values.append(value.value)
-            values.append(0)    
-            for i,p in enumerate(values[0]):
-                if i>=values[1]:
-                    self._children[1].set(p,token)
-                    value = self._children[2].eval(token)
-                    if token.isBreak: return value
-                    if value.value: values.append(p) 
-                    values[1] = i                   
-            return Value(values[2:])       
-    class Reverse(ArrowFunction):
-        def solve(self,values,token:Token)->Value:
-            if len(values) == 0:
-                value = self._children[0].eval(token)
-                if token.isBreak: return value 
-                value.value.reverse() 
-                values.append(value.value)
+    
+class And(PrototypeEvaluator):
+    def clone (operand:Operand)-> IEvaluator:
+        return And(operand)	
+    
+    def eval(self,context: Context)->bool:
+        if self.operand == None:
+            raise Exception('Operand undefined')            
+        if not self.operand.children[0].eval(context):
+            return False
+        return self.operand.children[1].eval(context)
 
-            if len(self._children)==1:
-                return Value(values[0])   
-            
-            values.append(0)    
-            for i,p in enumerate(values[0]):
-                if i>=values[1]:
-                    self._children[1].set(p,token)
-                    value = self._children[2].eval(token)
-                    if token.isBreak: return value
-                    values.append({'ord':value.value,'p':p}) 
-                    values[1] = i
+class Or(PrototypeEvaluator):
+    def clone (operand:Operand)-> IEvaluator:
+        return Or(operand)	
+    
+    def eval(self,context: Context)->bool:
+        if self.operand == None:
+            raise Exception('Operand undefined')            
+        if self.operand.children[0].eval(context):
+            return True
+        return self.operand.children[1].eval(context)
+             
+class Assignment(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return Assignment(operand)
 
-            result = values[2:]  
-            result.sort((lambda p: p['ord']))
-            result.reverse()    
-            return Value(map(lambda p: p['p'],result))                                  
-    class Sort(ArrowFunction):
-        def solve(self,values,token:Token)->Value:
-            if len(values) == 0:
-                value = self._children[0].eval(token)
-                if token.isBreak: return value 
-                values.append(value.value)
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		value = self.operand.children[1].eval(context)
+		context.data.set(self.operand.children[0].name, value)
+		return value
 
-            if len(self._children)==1:
-                return Value(values[0])   
-            
-            values.append(0)    
-            for i,p in enumerate(values[0]):
-                if i>=values[1]:
-                    self._children[1].set(p,token)
-                    value = self._children[2].eval(token)
-                    if token.isBreak: return value
-                    values.append({'ord':value.value,'p':p}) 
-                    values[1] = i
+class AssignmentAddition(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return AssignmentAddition(operand)
 
-            result = values[2:]  
-            result.sort((lambda p: p['ord']))
-            return Value(map(lambda p: p['p'],result))           
-    class Push(ArrowFunction):
-        def solve(self,values,token:Token)->Value:
-            if len(values) == 0:
-                value = self._children[0].eval(token)
-                if token.isBreak: return value 
-                values.append(value.value)
-            if len(values) == 1:
-                value = self._children[1].eval(token)
-                if token.isBreak: return value
-                values.append(value.value)
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		value = self.operand.children[0].eval(context) + self.operand.children[1].eval(context)
+		context.data.set(self.operand.children[0].name, value)
+		return value
 
-            values[0].append(values[1])
-            return Value(values[0])
-    class Pop(ArrowFunction):
-        def solve(self,values,token:Token)->Value:
-            if len(values) == 0:
-                value = self._children[0].eval(token)
-                if token.isBreak: return value
-                values.append(value.value)
-            if len(values) == 1:   
-                if len(self._children)>1:
-                    value = self._children[1].eval(token)
-                    if token.isBreak: return value
-                    values.append(value.value)
-                else:
-                    index = len(self._children) -1 
-                    values.append(index)
+class AssignmentSubtraction(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return AssignmentSubtraction(operand)
 
-            return Value(values[0].pop(values[1]))   
-    class Remove(ArrowFunction):
-        def solve(self,values,token:Token)->Value:
-            if len(values) == 0:
-                value = self._children[0].eval(token)
-                if token.isBreak: return value
-                values.append(value.value)
-            if len(values) == 1: 
-                value = self._children[1].eval(token)
-                if token.isBreak: return value
-                values.append(value.value)
-            return Value(values[0].remove(values[1]) )             
-    class Wait(FunctionRef):
-        def solve(self,values,token:Token)->Value:
-            key = 'wait:'+token.id
-            if len(values) == 0: 
-                value = self._children[0].eval(token)
-                if token.isBreak: return value
-                values.append(value.value) 
-                signal = Signal(key,values[0])
-                token.addListener(signal)
-                return Value()
-            else:
-                if key in token.signals:
-                    token.clearListeners()
-                return Value() 
-    class Listen(FunctionRef):
-        def solve(self,values,token:Token)->Value:
-            timeKey = 'time:'+token.id
-            if len(values) == 0:                                    
-                value = self._children[0].eval(token)
-                if token.isBreak: return value
-                values.append(value.value)
-                for key in values[0]:     
-                    signal = Signal(key)
-                    token.addListener(signal) 
-                if len(self._children)== 1:
-                    return Value()      
-            if len(self._children)== 2 and len(values) == 1:
-                value = self._children[1].eval(token)
-                if token.isBreak: return value
-                values.append(value.value)
-                signal = Signal(timeKey,values[1])
-                token.addListener(signal)
-                return Value()                     
-            else:
-                for key in values[0]: 
-                    if key in token.signals:
-                        token.clearListeners()
-                        return Value(key)
-                if timeKey in token.signals:
-                    token.clearListeners()
-                    return Value('time')
-                return Value()
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		value = self.operand.children[0].eval(context) - self.operand.children[1].eval(context)
+		context.data.set(self.operand.children[0].name, value)
+		return value
+
+class AssignmentMultiplication(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return AssignmentMultiplication(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		value = self.operand.children[0].eval(context) * self.operand.children[1].eval(context)
+		context.data.set(self.operand.children[0].name, value)
+		return value
+
+class AssignmentDivision(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return AssignmentDivision(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		value = self.operand.children[0].eval(context) / self.operand.children[1].eval(context)
+		context.data.set(self.operand.children[0].name, value)
+		return value
+
+class AssignmentExponentiation(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return AssignmentExponentiation(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		value = self.operand.children[0].eval(context) ** self.operand.children[1].eval(context)
+		context.data.set(self.operand.children[0].name, value)
+		return value
+
+class AssignmentFloorDivision(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return AssignmentFloorDivision(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		value = math.floor(self.operand.children[0].eval(context) / self.operand.children[1].eval(context))
+		context.data.set(self.operand.children[0].name, value)
+		return value
+
+class AssignmentMod(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return AssignmentMod(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		value = self.operand.children[0].eval(context) % self.operand.children[1].eval(context)
+		context.data.set(self.operand.children[0].name, value)
+		return value
+
+class AssignmentBitAnd(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return AssignmentBitAnd(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		value = self.operand.children[0].eval(context) & self.operand.children[1].eval(context)
+		context.data.set(self.operand.children[0].name, value)
+		return value
+
+class AssignmentBitOr(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return AssignmentBitOr(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		value = self.operand.children[0].eval(context) | self.operand.children[1].eval(context)
+		context.data.set(self.operand.children[0].name, value)
+		return value
+
+class AssignmentBitXor(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return AssignmentBitXor(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		value = self.operand.children[0].eval(context) ^ self.operand.children[1].eval(context)
+		context.data.set(self.operand.children[0].name, value)
+		return value
+
+class AssignmentLeftShift(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return AssignmentLeftShift(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		value = self.operand.children[0].eval(context) << self.operand.children[1].eval(context)
+		context.data.set(self.operand.children[0].name, value)
+		return value
+
+class AssignmentRightShift(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return AssignmentRightShift(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		value = self.operand.children[0].eval(context) >> self.operand.children[1].eval(context)
+		context.data.set(self.operand.children[0].name, value)
+		return value
+
+class Map(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return Map(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+
+		rows = []
+		list: List[any] = self.operand.children[0].eval(context)
+		if (list==None):
+			raise Exception('Array '+ self.operand.children[0].name+' undefined')
+		if (self.operand.children[2].type == OperandType.Obj):
+			groupers:List[Operand] = []
+			aggregates:List[Operand] = []
+			for child in self.operand.children[2].children:
+				#In the case of being an object the value to return, find out if there are fields that are summarized
+				keyValue = child
+				if (keyValue):
+					if (helper.operand.haveAggregates(keyValue.children[0])):
+						aggregates.append(keyValue)
+					else:
+						groupers.append(keyValue)
+      
+			if (len(aggregates) > 0):
+				#case with aggregate functions
+				keys = helper.operand.getKeys(self.operand.children[1], groupers, list, context)
+				#once you got all the keys you have to calculate the aggregates fields
+				variable = self.operand.children[1]
+				for key in keys:
+					for keyValue in aggregates:
+						operandCloned = helper.operand.clone(keyValue.children[0])
+						operandResolved = helper.operand.solveAggregates(key.items, variable, operandCloned, context)
+						value = operandResolved.eval(context)
+						key.summarizers.append({ 'name': keyValue.name, 'value': value })
+      
+				#build the list of results
+				for key in keys:
+					row:any = {}
+					for value in key.values:
+						row[value.name] = value.value
+					for summarizer in key.summarizers:
+						row[summarizer.name] = summarizer.value
+					rows.append(row)
+				return rows
+
+		#simple case without aggregate functions
+		childContext = context.newContext()
+		for item in list:
+			childContext.data.set(self.operand.children[1].name, item)
+			row = self.operand.children[2].eval(childContext)
+			rows.append(row)
+		return rows
+
+class Distinct(PrototypeEvaluator):
+    def clone (operand:Operand)-> IEvaluator:
+        return Distinct(operand)
+
+    def eval (self, context: Context)-> any:
+        if (self.operand == None):
+            raise Exception('Operand undefined')
+        rows = []
+        list: List[any] = self.operand.children[0].eval(context)
+        if (list==None):
+            raise Exception('Array '+self.operand.children[0].name+' undefined')
+        if (len(self.operand.children) == 1):
+            #simple case
+            for item in list:
+                if next(p for p in rows if p == item) == None:         
+                    rows.append(item)
+            return rows
+        elif self.operand.children[2].type == OperandType.Obj:
+            #case with aggregate functions
+            keys = helper.operand.getKeys(self.operand.children[1], self.operand.children[2].children, list, context.newContext())
+            #build the list of results
+            for key in keys:
+                row:any = {}
+                for value in key.values:
+                    row[value.name] = value.value
+                rows.append(row)
+            return rows
+        elif self.operand.children[2].type == OperandType.List:
+            raise Exception('Distinct not support Array result')
+        #simple case without aggregate functions
+        childContext = context.newContext()
+        for item in list:
+            childContext.data.set(self.operand.children[1].name, item)
+            value = self.operand.children[2].eval(childContext)
+            # if rows.find((p:any) => p == value) == None:
+            if next(p for p in rows if p == value) == None:       
+                rows.append(value)
+        return rows
+
+class Foreach(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return Foreach(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		list: List[any] = self.operand.children[0].eval(context)
+		if (list==None):
+			raise Exception('Array '+self.operand.children[0].name+' undefined')
+		childContext = context.newContext()
+		for item in list:
+			childContext.data.set(self.operand.children[1].name, item)
+			self.operand.children[2].eval(childContext)
+		return list
+
+class Filter(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return Filter(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		rows = []
+		list: List[any] = self.operand.children[0].eval(context)
+		if (list==None):
+			raise Exception('Array '+self.operand.children[0].name+' undefined')
+		childContext = context.newContext()
+		for item in list:
+			childContext.data.set(self.operand.children[1].name, item)
+			if (self.operand.children[2].eval(childContext)):
+				rows.append(item)
+		return rows
+
+class Reverse(PrototypeEvaluator):
+    def clone (operand:Operand)-> IEvaluator:
+        return Reverse(operand)
+
+    def eval (self, context: Context)-> any:
+        if (self.operand == None):
+            raise Exception('Operand undefined')
+        list: List[any] = self.operand.children[0].eval(context)
+        if (list==None):
+            raise Exception('Array '+self.operand.children[0].name+' undefined')
+        if (len(self.operand.children) == 1):
+            return list.reverse()
+        values = []
+        childContext = context.newContext()
+        for item in list:
+            childContext.data.set(self.operand.children[1].name, item)
+            value = self.operand.children[2].eval(childContext)
+            values.append({ 'value': value, 'p': item })		
+        # values.sort((a, b) => a.value > b.value ? 1 : a.value < b.value ? -1 : 0)
+        values = sorted(values, key=functools.cmp_to_key(lambda a,b : 1 if a.value > b.value else -1 if a.value < b.value else 0))
+        values.reverse()
+        # return values.map(p => p.p)
+        return map((lambda p: p.p), values)
+
+class Sort(PrototypeEvaluator):
+    def clone (operand:Operand)-> IEvaluator:
+        return Sort(operand)
+
+    def eval (self, context: Context)-> any:
+        if (self.operand == None):
+            raise Exception('Operand undefined')
+        values = []
+        list: List[any] = self.operand.children[0].eval(context)
+        if (list==None):
+            raise Exception('Array '+self.operand.children[0].name+' undefined')
+        if (len(self.operand.children) == 1):
+            return list.sort()
+        childContext = context.newContext()
+        for item in list:
+            childContext.data.set(self.operand.children[1].name, item)
+            value = self.operand.children[2].eval(childContext)
+            values.append({ 'value': value, 'p': item })
+        # values.sort((a, b) => a.value > b.value ? 1 : a.value < b.value ? -1 : 0)
+        values = sorted(values, key=functools.cmp_to_key(lambda a,b : 1 if a.value > b.value else -1 if a.value < b.value else 0))
+        # return values.map(p => p.p)
+        return map((lambda p: p.p), values)
+
+class Remove(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return Remove(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		rows = []
+		list: List[any] = self.operand.children[0].eval(context)
+		if (list==None):
+			raise Exception('Array '+self.operand.children[0].name+' undefined')
+		childContext = context.newContext()
+		for item in list:
+			childContext.data.set(self.operand.children[1].name, item)
+			if not self.operand.children[2].eval(childContext):
+				rows.append(item)
+		return rows
+
+class First(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return First(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+
+		list: List[any] = self.operand.children[0].eval(context)
+		if (list==None):
+			raise Exception('Array '+self.operand.children[0].name+' undefined')
+		if (len(self.operand.children) == 1):
+			return list and list[0] if len(list) > 0 else None
+		return helper.operand.first(list, self.operand.children[1], self.operand.children[2], context.newContext())
+
+class Last(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return Last(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		list: List[any] = self.operand.children[0].eval(context)
+		if (list==None):
+			raise Exception('Array '+self.operand.children[0].name+' undefined')
+		if (len(self.operand.children) == 1):
+			return list and list[len(list) - 1]  if len(list) > 0 else None
+		return helper.operand.last(list, self.operand.children[1], self.operand.children[2], context.newContext())
+
+class Count(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return Count(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		list: List[any] = self.operand.children[0].eval(context)
+		if (list==None):
+			raise Exception('Array '+self.operand.children[0].name+' undefined')
+		if (len(self.operand.children) == 1):
+			return len(list)
+		return helper.operand.count(list, self.operand.children[1], self.operand.children[2], context.newContext())
+
+class Max(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return Max(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		list: List[any] = self.operand.children[0].eval(context)
+		if (list==None):
+			raise Exception('Array '+self.operand.children[0].name+' undefined')
+		if (len(self.operand.children) == 1):
+			max:any
+			for item in list:
+				if (max == None or (item != None and item > max)):
+					max = item
+			return max
+		return helper.operand.max(list, self.operand.children[1], self.operand.children[2], context.newContext())
+
+class Min(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return Min(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		list: List[any] = self.operand.children[0].eval(context)
+		if (list==None):
+			raise Exception('Array '+self.operand.children[0].name+' undefined')
+		if (len(self.operand.children) == 1):
+			min:any
+			for item in list:
+				if (min == None or (item != None and item < min)):
+					min = item
+			return min
+		return helper.operand.min(list, self.operand.children[1], self.operand.children[2], context.newContext())
+
+class Avg(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return Avg(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		list: List[any] = self.operand.children[0].eval(context)
+		if (list==None):
+			raise Exception('Array '+self.operand.children[0].name+' undefined')
+		if (len(self.operand.children) == 1):
+			sum = 0
+			for item in list:
+				if (item != None):
+					sum = sum + item
+			return sum / len(list)  if len(list) > 0 else 0
+		return helper.operand.avg(list, self.operand.children[1], self.operand.children[2], context.newContext())
+
+class Sum(PrototypeEvaluator):
+	def clone (operand:Operand)-> IEvaluator:
+		return Sum(operand)
+
+	def eval (self, context: Context)-> any:
+		if (self.operand == None):
+			raise Exception('Operand undefined')
+		list: List[any] = self.operand.children[0].eval(context)
+		if (list==None):
+			raise Exception('Array '+self.operand.children[0].name+' undefined')
+		if (len(self.operand.children) == 1):
+			sum = 0
+			for item in list:
+				if (item != None):
+					sum = sum + item
+			return sum
+		return helper.operand.sum(list, self.operand.children[1], self.operand.children[2], context.newContext())
+
+class Union(PrototypeEvaluator):
+    def clone (operand:Operand)-> IEvaluator:
+        return Union(operand)
+
+    def eval (self, context: Context)-> any:
+        if (self.operand == None):
+            raise Exception('Operand undefined')
+        a: List[any] = self.operand.children[0].eval(context)
+        b: List[any] = self.operand.children[1].eval(context)
+        if (not a):
+            raise Exception('Array '+self.operand.children[0].name+' undefined')
+        if (not b):
+            raise Exception('Array ${self.operand.children[1].name} undefined')
+        if (len(a) == 0):
+            return b
+        if (len(b) == 0):
+            return a
+        result:List[any] = []
+        if (helper.validator.isArray(a[0]) or helper.validator.isArray(b[0])):
+            raise Exception('Cannot union arrays of arrays')
+        elif type(a[0]) is dict:
+            for element in a:
+                key = helper.operand.objectKey(element)
+                result.append({ 'key': key, 'value': element })
+            for element in b:
+                key = helper.operand.objectKey(element)
+                # if not result.find((p:any) => ):
+                if next(p for p in result if p.key == key) == None:                    
+                    result.append({ 'key': key, 'value': element })				
+            # return result.map((p:any) => p.value)
+            return map(lambda p: p.value, result)
+        result = result.concat(a)
+        for element in b:
+            if (not result.includes(element)):
+                result.append(element)
+        return result
+
+class Intersection(PrototypeEvaluator):
+    def clone (operand:Operand)-> IEvaluator:
+        return Intersection(operand)
+
+    def eval (self, context: Context)-> any:
+        if (self.operand == None):
+            raise Exception('Operand undefined')
+        a: List[any] = self.operand.children[0].eval(context)
+        b: List[any] = self.operand.children[1].eval(context)
+        if (not a):
+            raise Exception('Array '+self.operand.children[0].name+' undefined')
+        if (not b):
+            raise Exception('Array ${self.operand.children[1].name} undefined')
+        if (len(a) == 0 or len(b) == 0):
+            return []
+        result:List[any] = []
+        if (helper.validator.isArray(a[0]) or helper.validator.isArray(b[0])):
+            raise Exception('Cannot union arrays of arrays')
+        elif type(a[0]) is dict:
+            # keys = a.map((p:any) => helper.operand.objectKey(p))
+            keys = map((lambda p: helper.operand.objectKey(p)), a )
+            for element in b:
+                key = helper.operand.objectKey(element)
+                if (keys.includes(key)):
+                    result.append(element)
+            return result
+        else:
+            for element in b:
+                if (a.includes(element)):
+                    result.append(element)
+            return result
+
+class Difference(PrototypeEvaluator):
+    def clone (operand:Operand)-> IEvaluator:
+        return Difference(operand)
+
+    def eval (self, context: Context)-> any:
+        if (self.operand == None):
+            raise Exception('Operand undefined')
+        a: List[any] = self.operand.children[0].eval(context)
+        b: List[any] = self.operand.children[1].eval(context)
+        if (not a):
+            raise Exception('Array '+self.operand.children[0].name+' undefined')
+        if (not b):
+            raise Exception('Array ${self.operand.children[1].name} undefined')
+        if (len(a) == 0):
+            return []
+        if (len(b) == 0):
+            return a
+        result:List[any] = []
+        if (helper.validator.isArray(a[0]) or helper.validator.isArray(b[0])):
+            raise Exception('Cannot union arrays of arrays')
+        elif type(a[0]) is dict:
+            # keys = b.map((p:any) => helper.operand.objectKey(p))
+            keys = map((lambda p: helper.operand.objectKey(p)), b )
+            for element in a:
+                key = helper.operand.objectKey(element)
+                if not keys.includes(key):
+                    result.append(element)
+            return result
+        else:
+            for element in a:
+                if not b.includes(element):
+                    result.append(element)
+            return result
+
+class SymmetricDifference(PrototypeEvaluator):
+    def clone (operand:Operand)-> IEvaluator:
+        return SymmetricDifference(operand)
+
+    def eval (self, context: Context)-> any:
+        if (self.operand == None):
+            raise Exception('Operand undefined')
+        a: List[any] = self.operand.children[0].eval(context)
+        b: List[any] = self.operand.children[1].eval(context)
+        if (not a):
+            raise Exception('Array '+self.operand.children[0].name+' undefined')
+        if (not b):
+            raise Exception('Array ${self.operand.children[1].name} undefined')
+        if (len(a) == 0):
+            return b
+        if (len(b) == 0):
+            return a
+        result:List[any] = []
+        if (helper.validator.isArray(a[0]) or helper.validator.isArray(b[0])):
+            raise Exception('Cannot union arrays of arrays')
+        elif type(a[0]) is dict:
+            # aKeys = a.map((p:any) => helper.operand.objectKey(p))
+            aKeys = map((lambda p: helper.operand.objectKey(p)), a )
+            # bKeys = b.map((p:any) => helper.operand.objectKey(p))
+            bKeys = map((lambda p: helper.operand.objectKey(p)), b )
+            for element in a:
+                key = helper.operand.objectKey(element)
+                if (not bKeys.includes(key)):
+                    result.append(element)
+            for element in b:
+                key = helper.operand.objectKey(element)
+                if not aKeys.includes(key):
+                    result.append(element)
+            return result
+        else:
+            for element in a:
+                if (not b.includes(element)):
+                    result.append(element)
+            for element in b:
+                if (not a.includes(element)):
+                    result.append(element)
+            return result
+
+        
