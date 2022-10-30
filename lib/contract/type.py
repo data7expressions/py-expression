@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import TypeVar, Generic, List, Union
+from lib.contract.base import Singleton
 import numpy as np
 import json
 
@@ -30,63 +31,52 @@ class ListType():
     def __init__(self, items: 'Type'):
         self.items = items
 
-class Type(type):
+class Type(metaclass=Singleton):
     def __init__(self, kind:Kind, spec:Union[ObjType, ListType, None]=None):
         self.kind = kind
         self.spec = spec  
         
     @staticmethod
-    @property
     def any ()-> 'Type':
         return Type(Kind.any)
     
     @staticmethod
-    @property
     def string ()-> 'Type':
         return Type(Kind.string)
     
     @staticmethod
-    @property
     def integer ()-> 'Type':
         return Type(Kind.integer)
     
     @staticmethod
-    @property
     def decimal ()-> 'Type':
         return Type(Kind.decimal)
     
     @staticmethod
-    @property
     def any ()-> 'Type':
         return Type(Kind.any)
     
     @staticmethod
-    @property
     def number ()-> 'Type':
         return Type(Kind.number)
     
     @staticmethod
-    @property
     def boolean ()-> 'Type':
         return Type(Kind.boolean)
     
     @staticmethod
-    @property
     def date ()-> 'Type':
         return Type(Kind.date)
     
     @staticmethod
-    @property
     def datetime ()-> 'Type':
         return Type(Kind.datetime)
     
     @staticmethod
-    @property
     def time ()-> 'Type':
         return Type(Kind.time)
     
     @staticmethod
-    @property
     def void ()-> 'Type':
         return Type(Kind.void)
     
@@ -118,11 +108,11 @@ class Type(type):
     @staticmethod
     def get (value: any)-> 'Type':
         if value == None:
-            return Type.any
+            return Type.any()
         elif np.ma.isarray(value):
             if len(value) > 0:
                 return Type.list(Type.get(value[0]))			
-            return Type.any
+            return Type.any()
         elif isinstance(value,dict):
             properties:List[PropertyType] = []
             for key, value in value.items():
@@ -130,14 +120,14 @@ class Type(type):
             return Type.obj(properties)
         elif isinstance(value,str):
             # TODO determinar si es fecha.
-            return Type.string
+            return Type.string()
         elif isinstance(value,int):			
-            return Type.integer
+            return Type.integer()
         elif isinstance(value,float):			
-            return Type.decimal
+            return Type.decimal()
         elif isinstance(value,bool):
-            return Type.boolean
-        return Type.any
+            return Type.boolean()
+        return Type.any()
 
     @staticmethod
     def isList (type: Union['Type', str])-> bool:

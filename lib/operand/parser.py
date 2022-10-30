@@ -145,7 +145,7 @@ class Parser():
                     isBitNot= False     
                 else:
                     value =int(value)
-                operand = Operand(pos,value,OperandType.Const,[], Type.integer)
+                operand = Operand(pos,value,OperandType.Const,[], Type.integer())
             elif h3lp.validator.isDecimalFormat(value):
                 if isNegative:
                     value = float(value)* -1
@@ -155,7 +155,7 @@ class Parser():
                     isBitNot= False      
                 else:
                     value =float(value)
-                operand = Operand(pos,value,OperandType.Const,[], Type.decimal)
+                operand = Operand(pos,value,OperandType.Const,[], Type.decimal())
             elif self.model.isConstant(value):
                 constantValue = self.model.getConstantValue(value)                
                 operand = Operand(pos,constantValue,OperandType.Const,[], Type.get(constantValue))                
@@ -166,11 +166,11 @@ class Parser():
         elif char == '\'' or char == '"':
             self.index+=1
             result=  self.getString(char)
-            operand= Operand(pos,result,OperandType.Const, [], Type.string )
+            operand= Operand(pos,result,OperandType.Const, [], Type.string() )
         elif char == '`':
             self.index+=1
             result=  self.getTemplate()
-            operand= Operand(pos,result,OperandType.Template, [], Type.string )    
+            operand= Operand(pos,result,OperandType.Template, [], Type.string() )    
         elif char == '(':
             self.index+=1
             operand=  self.getExpression(_break=')') 
