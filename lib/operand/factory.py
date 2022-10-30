@@ -2,12 +2,12 @@ from lib.contract.base import *
 from lib.contract.operands import *
 from lib.contract.type import *
 from lib.contract.managers import *
-from lib.operand.helper import helper
-from typing import List, Tuple
+# from lib.operand.helper import helper
+from typing import List, Tuple, Any
 from .evaluators import *
 
 class ConstBuilder():
-	def build (pos:Tuple[int, int], value:any)->Operand:
+	def build (pos:Tuple[int, int], value:Any)->Operand:
 		operand = Operand(pos, value, OperandType.Const, [], Type.get(value))
 		operand.evaluator = ConstEvaluator(operand)
 		return operand

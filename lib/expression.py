@@ -1,8 +1,8 @@
+from typing import List, Tuple, Any, Union
 from lib.contract.base import *
 from lib.contract.operands import * 
 from lib.contract.context import * 
 from lib.contract.managers import IExpressions, ActionObserver
-from typing import List, Tuple
 from lib.operand.cache import MemoryCache
 from lib.operand.model import ModelManager
 from lib.operand.helper import helper
@@ -20,7 +20,7 @@ class Exp(IExpressions, metaclass=Singleton):
        self.observers: List[ActionObserver]=[]
     
     @property
-    def enums(self)-> List[Tuple[str, List[Tuple[str, any]]]]:
+    def enums(self)-> List[Tuple[str, List[Tuple[str, Any]]]]:
         return self.model.enums
     
     @property
@@ -28,7 +28,7 @@ class Exp(IExpressions, metaclass=Singleton):
         return self.model.formats
     
     @property
-    def constants(self)-> List[Tuple[str,any]]:
+    def constants(self)-> List[Tuple[str,Any]]:
         return self.model.constants
     
     @property
@@ -39,19 +39,19 @@ class Exp(IExpressions, metaclass=Singleton):
     def functions(self)-> List[Tuple[str, OperandMetadata]]:
         return self.model.functions
     
-    def addEnum (self,name:str, values:List[(str, any)] | any):
+    def addEnum (self,name:str, values:Union[List[Tuple[str, Any]], Any]):
         self.model.addEnum(name, values)
     
-    def addConstant (self,key:str, value:any):
+    def addConstant (self,key:str, value:Any):
         self.model.addConstant(key, value)
         
     def addFormat (self,key:str, pattern:str):
         self.model.addFormat(key, pattern)
         
-    def addOperator (self,sing:str, source:any, additionalInfo: OperatorAdditionalInfo):
+    def addOperator (self,sing:str, source:Any, additionalInfo: OperatorAdditionalInfo):
         self.model.addOperator(sing, source, additionalInfo)
         
-    def addFunction(self,sing:str, source:any, additionalInfo: FunctionAdditionalInfo=None):
+    def addFunction(self,sing:str, source:Any, additionalInfo: FunctionAdditionalInfo=None):
         self.model.addFunction(sing, source, additionalInfo)
         
     def addOperatorAlias (self,alias:str, reference:str):
@@ -73,19 +73,19 @@ class Exp(IExpressions, metaclass=Singleton):
     def clone (self,source: Operand)->Operand:
         return self.basic.clone(source)
         
-    def eval (self,expression: str, data: any=None)-> any:
+    def eval (self,expression: str, data: Any=None)-> Any:
         context = Context(Data(data))
         operand = self.__basicBuild(expression)
         result = operand.eval(context)
         return result
     
-    def run (self,expression: str, data: any=None)-> any:
+    def run (self,expression: str, data: Any=None)-> Any:
         pass
     
-    def subscribe (self,observer:ActionObserver)-> any:
+    def subscribe (self,observer:ActionObserver)-> Any:
         self.observers.append(observer)
     
-    def unsubscribe (self,observer:ActionObserver)-> any:
+    def unsubscribe (self,observer:ActionObserver)-> Any:
         pass
  
     def __basicBuild (self, expression: str)->Operand:
@@ -126,7 +126,7 @@ class Exp(IExpressions, metaclass=Singleton):
         except Exception as error:
             raise Exception('expression: '+expression+' error: '+str(error))  
 
-    def run(self,expression:str,context:dict={},token:Token=Token())-> any : 
+    def run(self,expression:str,context:dict={},token:Token=Token())-> Any : 
         try:           
             operand = self.build(expression)
             value= self.__operand.eval(operand,context,token)

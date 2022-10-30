@@ -1,12 +1,12 @@
 from lib.contract.base import *
 from lib.contract.operands import *
 from lib.contract.type import *
-from lib.operand.helper import helper
+from lib.helper.h3lp import h3lp
 import os
-import re 
+from typing import Any
 
 class ConstEvaluator(Evaluator):
-    def eval (self)-> any:
+    def eval (self)-> Any:
         if self.operand.returnType == None:
             return self.operand.name
         kind = self.operand.returnType.kind
@@ -20,17 +20,17 @@ class ConstEvaluator(Evaluator):
             return self.operand.name
 
 class VarEvaluator(Evaluator):
-    def eval (self,context: Context)-> any:
+    def eval (self,context: Context)-> Any:
         return context.data.set(self.operand.name)    
 
 class EnvEvaluator(Evaluator):
-    def eval (self)-> any:
+    def eval (self)-> Any:
         return os.environ(self.operand.name) 
 
 class TemplateEvaluator(Evaluator):
-    def eval (self,context: Context)-> any:
+    def eval (self,context: Context)-> Any:
         pass
-    # def eval (self,context: Context)-> any:
+    # def eval (self,context: Context)-> Any:
     #     result = re.sub('\${([a-zA-Z0-9_.]+)}/g', lambda match, field : (
     #         value = os.environ[field]
     #         if value == None and context.data:
@@ -41,21 +41,21 @@ class TemplateEvaluator(Evaluator):
     #     return result
 
 class PropertyEvaluator(Evaluator):
-    def eval (self,context: Context)-> any:
+    def eval (self,context: Context)-> Any:
         value = self.operand.children[0].eval(context)
         if value == None:
             return None
-        return helper.obj.getValue(value, self.operand.name)    
+        return h3lp.obj.getValue(value, self.operand.name)    
 
 class ListEvaluator(Evaluator):
-    def eval (self,context: Context)-> any:
+    def eval (self,context: Context)-> Any:
         values=[]
         for i, p in enumerate(self.operand.children): 
             values.append(self.operand.children[i].eval(context))
         return values 
 
 class ObjEvaluator(Evaluator):
-    def eval (self,context: Context)-> any:
+    def eval (self,context: Context)-> Any:
         obj= {}
         for i, child in enumerate(self.operand.children):
             obj[child.name] = child.children[0].eval(context) 
@@ -66,21 +66,21 @@ class CallFuncEvaluator(Evaluator):
         super(CallFuncEvaluator,self).__init__(operand) 
         self._function = function
 
-    def eval (self,context: Context)-> any:
+    def eval (self,context: Context)-> Any:
         args = []
         for i, child in enumerate(self.operand.children): 
             args.append(child.eval(context))
         return self._function(*args)    
 
 class BlockEvaluator(Evaluator):
-    def eval (self,context: Context)-> any:
+    def eval (self,context: Context)-> Any:
         lastValue = None
         for i, child in enumerate(self.operand.children): 
             lastValue=child.eval(context)
         return lastValue
                 
 class IfEvaluator(Evaluator):
-    def eval (self,context: Context)->any:
+    def eval (self,context: Context)->Any:
         condition = self.operand.children[0].eval(context)
         if condition:
             ifBlock = self.operand.children[1]
@@ -98,7 +98,7 @@ class IfEvaluator(Evaluator):
                     return elseBlock.eval(context)
          
 class WhileEvaluator(Evaluator):
-    def eval (self,context: Context)->any:
+    def eval (self,context: Context)->Any:
         lastValue= None
         condition = self.operand.children[0]
         block = self.operand.children[1]
@@ -107,7 +107,7 @@ class WhileEvaluator(Evaluator):
         return lastValue
 
 class ForEvaluator(Evaluator):    
-    def eval (self,context: Context)->any:
+    def eval (self,context: Context)->Any:
         lastValue= None
         initialize = self.operand.children[0]
         condition = self.operand.children[1]
@@ -120,7 +120,7 @@ class ForEvaluator(Evaluator):
         return lastValue 
 
 class ForInEvaluator(Evaluator):       
-    def eval (self,context: Context)->any:
+    def eval (self,context: Context)->Any:
         lastValue= None
         item = self.operand.children[0]
         list = self.operand.children[1].eval(context)
@@ -134,7 +134,7 @@ class ForInEvaluator(Evaluator):
         return lastValue   
 
 class SwitchEvaluator(Evaluator):
-    def eval (self,context: Context)->any:
+    def eval (self,context: Context)->Any:
         value = self.operand.children[0].eval(context)
         i=1
         while len(self.operand.children) > i:
@@ -147,29 +147,29 @@ class SwitchEvaluator(Evaluator):
             i+=1
 
 class BreakEvaluator(Evaluator):
-	def eval (self,context: Context)->any:
+	def eval (self,context: Context)->Any:
 		raise Exception('NotImplemented')
   
 class ContinueEvaluator(Evaluator):
-	def eval (self,context: Context)->any:
+	def eval (self,context: Context)->Any:
 		raise Exception('NotImplemented')
 
 class FuncEvaluator(Evaluator):
-	def eval (self,context: Context)->any:
+	def eval (self,context: Context)->Any:
 		raise Exception('NotImplemented')
 
 class ReturnEvaluator(Evaluator):
-	def eval (self,context: Context)->any:
+	def eval (self,context: Context)->Any:
 		raise Exception('NotImplemented')
 
 class TryEvaluator(Evaluator):
-	def eval (self,context: Context)->any:
+	def eval (self,context: Context)->Any:
 		raise Exception('NotImplemented')
 
 class CatchEvaluator(Evaluator):
-	def eval (self,context: Context)->any:
+	def eval (self,context: Context)->Any:
 		raise Exception('NotImplemented')
 
 class ThrowEvaluator(Evaluator):
-	def eval (self,context: Context)->any:
+	def eval (self,context: Context)->Any:
 		raise Exception('NotImplemented')    

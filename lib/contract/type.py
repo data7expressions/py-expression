@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import TypeVar, Generic, List
+from typing import TypeVar, Generic, List, Union
 import numpy as np
 import json
 
@@ -31,7 +31,7 @@ class ListType():
         self.items = items
 
 class Type(type):
-    def __init__(self, kind:Kind, spec:'ObjType'|'ListType'=None):
+    def __init__(self, kind:Kind, spec:Union[ObjType, ListType, None]=None):
         self.kind = kind
         self.spec = spec  
         
@@ -99,7 +99,7 @@ class Type(type):
         return Type(Kind.list, { items: items })
 	
     @staticmethod
-    def isPrimitive (type:'Type' | str)-> boolean:
+    def isPrimitive (type:Union['Type', str])-> boolean:
         if isinstance(type,str):
             value = type
         elif type != None and type.kind != None:
@@ -109,7 +109,7 @@ class Type(type):
         return value in ['string', 'integer', 'decimal', 'number', 'boolean', 'date', 'datetime', 'time']	
 
     @staticmethod
-    def to (kind:Kind | str)-> 'Type': 
+    def to (kind:Union['Type', str])-> 'Type': 
         if isinstance(type,str):
             kindKey = str(kind)
             return Type(Kind[kindKey])
@@ -140,14 +140,14 @@ class Type(type):
         return Type.any
 
     @staticmethod
-    def isList (type: 'Type' | str)-> bool:
+    def isList (type: Union['Type', str])-> bool:
         if isinstance(type,str):
             return type.startswith('[') and type.endswith(']')		
         return type.kind == Kind.list
 	
 
     @staticmethod
-    def isObj (type: 'Type' | str)-> bool:
+    def isObj (type: Union['Type', str])-> bool:
         if isinstance(type, str):
             return type.startswith('{') and type.endswith('}')		
         return type.kind == Kind.obj

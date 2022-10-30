@@ -1,7 +1,7 @@
 from .type import Type
 from .base import *
-from .operands import *
-from typing import TypeVar, Generic, List, Any, Tuple
+from .operands import Operand, OperandMetadata, OperatorAdditionalInfo, FunctionAdditionalInfo, OperatorMetadata
+from typing import TypeVar, Generic, List, Any, Tuple, Union
 
 class ActionObserverArgs():
     def __init__(self, expression:str, data:Any, result:Any=None, error:Any=None ):
@@ -42,7 +42,7 @@ class IModelManager():
     @property
     def functions(self)-> List[Tuple[str, OperandMetadata]]:
         pass
-    def addEnum (self,name:str, values:List[Tuple[str, Any]] | Any):
+    def addEnum (self,name:str, values: Union[List[Tuple[str, Any]], Any]):
         pass
     def addConstant (self,key:str, value:Any):
         pass
@@ -106,7 +106,7 @@ class IExpressions():
     @property
     def functions(self)-> List[Tuple[str, OperandMetadata]]:
         pass
-    def addEnum (self,name:str, values:List[(str, Any)] | Any):
+    def addEnum (self,name:str, values:Union[List[Tuple[str, Any]], Any]):
         pass
     def addConstant (self,key:str, value:Any):
         pass

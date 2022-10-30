@@ -3,7 +3,7 @@ from lib.contract.operands import OperatorMetadata,OperatorAdditionalInfo, Funct
 from lib.contract.managers import IModelManager
 from enum import Enum
 import inspect
-from typing import List, Tuple
+from typing import List, Tuple, Any
 
 class ModelManager(IModelManager):
     def __init__(self):
@@ -14,7 +14,7 @@ class ModelManager(IModelManager):
         self._functions={}
           
     @property
-    def constants(self)->List[Tuple[str, any]]:
+    def constants(self)->List[Tuple[str, Any]]:
         return self._constants.items()
     
     @property
@@ -22,7 +22,7 @@ class ModelManager(IModelManager):
         return self._formats.items()
     
     @property
-    def enums(self)->List[Tuple[str,List[Tuple[str, any]]]]:
+    def enums(self)->List[Tuple[str,List[Tuple[str, Any]]]]:
         return self._enums.items()
                   
     @property
@@ -61,7 +61,7 @@ class ModelManager(IModelManager):
     def addFunctionAlias(self,alias,reference):
         self._functions[alias] = self._functions[reference]    
     
-    def addOperator(self,sing:str,source:any,additionalInfo:OperatorAdditionalInfo):
+    def addOperator(self,sing:str,source:Any,additionalInfo:OperatorAdditionalInfo):
         singInfo = self.__getSing(sing)
         metadata = {            
 			'priority': additionalInfo.priority,
@@ -100,13 +100,13 @@ class ModelManager(IModelManager):
             metadata['doc'] = additionalInfo.doc
         self._functions[singInfo.name] = metadata
     
-    def getConstantValue(self,name:str)->any:
+    def getConstantValue(self,name:str)->Any:
         return self._constants[name]     
     
-    def getEnumValue(self,name,option)->any: 
+    def getEnumValue(self,name,option)->Any: 
         return self.enums[name][option]
     
-    def getEnum(self,name)->List[Tuple[str,any]]: 
+    def getEnum(self,name)->List[Tuple[str,Any]]: 
         return self.enums[name]
     
     def getOperator(self,name:str,cardinality:int)->OperatorMetadata:
@@ -196,7 +196,7 @@ class ModelManager(IModelManager):
                     name = name.replace('...', '')
                 # Add Param 
                 params.append({'name': name
-                             , 'type': _type if _type != '' else 'any'
+                             , 'type': _type if _type != '' else 'Any'
                              , 'default': _default if _default != '' else None
                              , 'multiple': multiple 
                              
@@ -267,7 +267,7 @@ class ModelManager(IModelManager):
        
     def getType(self,annotation):
         _type = inspect.formatannotation(annotation)
-        if(_type == '<built-in function any>'):return 'any'
+        if(_type == '<built-in function Any>'):return 'Any'
         elif (_type == 'inspect._empty'):return None
         return _type
  

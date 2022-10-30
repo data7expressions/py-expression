@@ -1,8 +1,8 @@
+from typing import Any
 from lib.contract.base import *
 from lib.contract.operands import *
 from lib.contract.type import *
 from lib.contract.managers import *
-
 
 class TypeManager(ITypeManager):
     def __init__ (self, model: IModelManager):
@@ -12,13 +12,13 @@ class TypeManager(ITypeManager):
 	# // {
 	# // users:[{name:str,age:integer}],
 	# // tuple: [integer,str]
-	# // entries:[str,any]
+	# // entries:[str,Any]
 	# // }
 	# // Primitives: integer, decimal, str, boolean, datetime, date, time
 	# // array: [<<type>>]
 	# // object {key:<<type>>}
 	# // predicate:  c + b < a
-	# // indeterminate: any
+	# // indeterminate: Any
 
     def parameters (self, operand: Operand)-> List[Parameter]:
         parameters: List[Parameter] = []
@@ -36,7 +36,7 @@ class TypeManager(ITypeManager):
         self.solveType(operand)
         self.solveTemplate(operand)
         self.setNoneAsAny(operand)
-        return operand.returnType or Type.any
+        return operand.returnType or Type.Any
 	
 
     def solveType (self,operand: Operand): 
@@ -75,7 +75,7 @@ class TypeManager(ITypeManager):
 
     def setNoneAsAny (self, operand: Operand):
         if (operand.returnType == None):
-            operand.returnType = Type.any
+            operand.returnType = Type.Any
         for child in operand.children:
             self.setNoneAsAny(child)
 
@@ -155,7 +155,7 @@ class TypeManager(ITypeManager):
         if self.hadTemplate(metadata):
             self.solveTemplateOperator(operator, metadata)
 
-    def trySolveFromMetadata (self, type:str=None)->Type | None:
+    def trySolveFromMetadata (self, type:str=None)->Type:
 		# si de acuerdo a la metadata el tipo es primitivo, asigna el tipo
         if (type == None):
             return None		
@@ -200,7 +200,7 @@ class TypeManager(ITypeManager):
             obj.returnType = Type.obj(properties)
 
     def solveTemplateOperator (self, operator: Operand, metadata:OperatorMetadata):
-        templateType:Type|None
+        templateType:Type
 		# intenta resolver T por return
         if (operator.returnType):
             if metadata.returnType == 'T':
@@ -247,7 +247,7 @@ class TypeManager(ITypeManager):
                         child.returnType = Type.list(templateType)
                 i+=1
     
-    def getElementType (self, array: Operand)->Type | None:
+    def getElementType (self, array: Operand)->Type:
         return array.returnType.spec.items if array.returnType else None
 
     def setVariableType (self,name: str, type: Type, operand: Operand):
@@ -261,7 +261,7 @@ class TypeManager(ITypeManager):
     def isIndeterminateType (self, type:str=None)->bool:
         if (type == None):
             return True
-        return type in ['T', 'T[]', 'any', 'any[]']
+        return type in ['T', 'T[]', 'Any', 'Any[]']
 
     def hadTemplate (self, metadata: OperatorMetadata)->bool:
         return metadata.returnType == 'T' or metadata.returnType == 'T[]' or  next(p for p in metadata.params if p.type == 'T' or p.type == 'T[]') !=None

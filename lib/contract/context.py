@@ -1,4 +1,4 @@
-from lib.operand.helper import helper
+from lib.helper.h3lp import h3lp
 import uuid
 
 class Data():
@@ -24,14 +24,14 @@ class Data():
         return True	
 
     def get(self,name):
-        names= helper.obj.names(name)
+        names= h3lp.obj.names(name)
         data = self.getData(names[0]) 
-        return helper.obj.getValue(data, name)
+        return h3lp.obj.getValue(data, name)
 
     def set(self,name,value):
-        names= helper.obj.names(name)
+        names= h3lp.obj.names(name)
         data = self.getData(names[0])
-        helper.obj.setValue(data, name, value) 
+        h3lp.obj.setValue(data, name, value) 
 
     def init(self,name,value):
         self.data[name]=value   

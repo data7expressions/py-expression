@@ -13,7 +13,7 @@ class OperandBuilder(IOperandBuilder):
 
     def build (self, expression: str)-> Operand:
         operand = Parser(self.model, expression).parse()
-        self.__complete(operand, 1)
+        self.__complete(operand)
         reduced = self.__reduce(operand)
         return reduced
     
@@ -51,11 +51,11 @@ class OperandBuilder(IOperandBuilder):
                 i+=1
         return operand
     
-    def __complete (self, operand: Operand, index:int, parentId:str=None):
+    def __complete (self, operand: Operand, index:int=0, parentId:str=None):
         id = parentId if parentId + '.' + index else str(index)
         if operand.children != None:
             for i, child in enumerate(operand.children):				
-                self.complete(child, i + 1, id)
+                self.complete(child, i, id)
         operand.id = id
         operand.evaluator = self.factory.create(operand)
   
