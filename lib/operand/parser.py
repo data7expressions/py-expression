@@ -123,8 +123,7 @@ class Parser():
                     args=  self.getArgs(end=')')
                     operand= Operand(pos,value,OperandType.CallFunc,args) 
             elif value=='try' and self.current == '{':
-                operand = self.getTryCatchBlock(pos)             
-                
+                operand = self.getTryCatchBlock(pos)  
             elif value=='throw':   
                 operand = self.getThrow(pos)
             elif value=='return':   

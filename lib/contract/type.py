@@ -3,7 +3,6 @@ from typing import TypeVar, Generic, List, Union
 from lib.contract.base import Singleton
 import numpy as np
 import json
-
 class Kind(Enum):
     any = 'any'
     string = 'string'
@@ -133,15 +132,13 @@ class Type(metaclass=Singleton):
     def isList (type: Union['Type', str])-> bool:
         if isinstance(type,str):
             return type.startswith('[') and type.endswith(']')		
-        return type.kind == Kind.list
-	
+        return type.kind == Kind.list	
 
     @staticmethod
     def isObj (type: Union['Type', str])-> bool:
         if isinstance(type, str):
             return type.startswith('{') and type.endswith('}')		
-        return type.kind == Kind.obj
-	
+        return type.kind == Kind.obj	
 
     @staticmethod
     def toString (type: 'Type'=None)-> str:
@@ -156,20 +153,17 @@ class Type(metaclass=Singleton):
             return ','.join(properties)		
         if Type.isList(type):			
             return '['+Type.toString(type.spec.items)+']'		
-        return 'any'
-	
+        return 'any'	
 
     @staticmethod
     def serialize (type: 'Type'= None)->str:
         if type == None:
             return None		
-        return json.dumps(type)
-	
+        return json.dumps(type)	
 
     @staticmethod
     def deserialize (type: str=None)-> 'Type':
         if type == None or type.strip() == '':
             return None		
-        return json.load(type)
-	
+        return json.load(type)	
 	
