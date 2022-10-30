@@ -26,7 +26,7 @@ class TypeManager(ITypeManager):
             parameters.append({ 'name': operand.name, 'type': Type.tostr(operand.returnType) })		
             for child in operand.children:
                 childParameters = self.parameters(child)
-                newParameters = next(p for p in childParameters if  not p.name in map(lambda q: q.name, parameters))
+                newParameters = next(p for p in childParameters if  not p.name in list(map(lambda q: q.name, parameters)))
                 # newParameters =   childParameters.filter((p:Parameter) => !parameters.map((p:Parameter) => p.name).includes(p.name))
                 if len(newParameters) > 0:
                     parameters.extend(newParameters)    
@@ -107,8 +107,8 @@ class TypeManager(ITypeManager):
     def solveArrow (self, arrow: Operand):
         metadata = self.model.getFunction(arrow.name)
         array = arrow.children[0]
-        variable = arrow.children[1] if arrow.children.length > 1 else None
-        predicate =  arrow.children[2] if arrow.children.length > 2 else None
+        variable = arrow.children[1] if len(arrow.children) > 1 else None
+        predicate =  arrow.children[2] if len(arrow.children) > 2 else None
         self.solveArray(array)
         elementType = self.getElementType(array)
         if (elementType and array.returnType and variable):
@@ -163,7 +163,7 @@ class TypeManager(ITypeManager):
             return Type.to(type)
 		# si de acuerdo a la metadata el tipo es un array de primitivo, asigna el tipo, example: str[]
         if type.endswith('[]'):
-            elementType = type.substr(0, type.length - 2)
+            elementType = type.substr(0, len(type) - 2)
             if Type.isPrimitive(elementType):
                 return Type.list(Type.get(elementType))
         return None

@@ -1,6 +1,6 @@
 from .type import Type
 from .base import *
-from .operands import Operand, OperandMetadata, OperatorAdditionalInfo, FunctionAdditionalInfo, OperatorMetadata
+from .operands import Operand, OperandMetadata, OperatorDoc, OperatorMetadata
 from typing import TypeVar, Generic, List, Any, Tuple, Union
 
 class ActionObserverArgs():
@@ -48,9 +48,9 @@ class IModelManager():
         pass
     def addFormat (self,key:str, pattern:str):
         pass
-    def addOperator (self,sing:str, source:Any, additionalInfo: OperatorAdditionalInfo):
+    def addOperator(self,sing:str,source:Any,priority:int,doc:OperatorDoc=None):
         pass
-    def addFunction(self,sing:str, source:Any, additionalInfo: FunctionAdditionalInfo=None):
+    def addFunction(self,sing:str,source,deterministic:bool=True,doc:OperatorDoc=None):
         pass
     def addOperatorAlias (self,alias:str, reference:str):
         pass 
@@ -112,9 +112,9 @@ class IExpressions():
         pass
     def addFormat (self,key:str, pattern:str):
         pass
-    def addOperator (self,sing:str, source:Any, additionalInfo: OperatorAdditionalInfo):
+    def addOperator(self,sing:str,source:Any,priority:int,doc:OperatorDoc=None):
         pass
-    def addFunction(self,sing:str, source:Any, additionalInfo: FunctionAdditionalInfo=None):
+    def addFunction(self,sing:str,source,deterministic:bool=True,doc:OperatorDoc=None):
         pass
     def addOperatorAlias (self,alias:str, reference:str):
         pass 

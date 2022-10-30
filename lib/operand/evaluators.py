@@ -6,7 +6,7 @@ import os
 from typing import Any
 
 class ConstEvaluator(Evaluator):
-    def eval (self)-> Any:
+    def eval (self,context: Context)-> Any:
         if self.operand.returnType == None:
             return self.operand.name
         kind = self.operand.returnType.kind
@@ -24,7 +24,7 @@ class VarEvaluator(Evaluator):
         return context.data.set(self.operand.name)    
 
 class EnvEvaluator(Evaluator):
-    def eval (self)-> Any:
+    def eval (self,context: Context)-> Any:
         return os.environ(self.operand.name) 
 
 class TemplateEvaluator(Evaluator):

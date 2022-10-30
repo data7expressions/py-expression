@@ -1,5 +1,5 @@
 from lib.contract.base import Sing, Format, Parameter
-from lib.contract.operands import OperatorMetadata,OperatorAdditionalInfo, FunctionAdditionalInfo, PrototypeEvaluator 
+from lib.contract.operands import OperatorMetadata,OperatorDoc, FunctionInfo, PrototypeEvaluator 
 from lib.contract.managers import IModelManager
 from enum import Enum
 import inspect
@@ -61,43 +61,33 @@ class ModelManager(IModelManager):
     def addFunctionAlias(self,alias,reference):
         self._functions[alias] = self._functions[reference]    
     
-    def addOperator(self,sing:str,source:Any,additionalInfo:OperatorAdditionalInfo):
+    def addOperator(self,sing:str,source:Any,priority:int,doc:OperatorDoc=None):
         singInfo = self.__getSing(sing)
-        metadata = {            
-			'priority': additionalInfo.priority,
-			'deterministic': False,
-			'operands': len(singInfo.params),			
-			'params': singInfo.params,
-			'returnType': singInfo.returnType
-        }
-        if issubclass(source,PrototypeEvaluator):
-            metadata['custom'] = source
-        if type(source).__name__ == 'function':
-            metadata['func'] = source            
+        cardinality = len(singInfo.params)
+        custom=None
+        func=None
+        if issubclass(type(source),PrototypeEvaluator):
+            custom = source
+        elif type(source).__name__ == 'function':
+            func = source            
         else:
-            raise Exception('Operator ' + singInfo.name + 'source not supported')          
-        if 'doc' in additionalInfo:
-            metadata['doc'] = additionalInfo.doc
+            raise Exception('Operator ' + singInfo.name + 'source not supported') 
+        metadata = OperatorMetadata(singInfo.params,True,cardinality,singInfo.returnType,priority,func,custom, doc) 
         if singInfo.name not in self._operators.keys():
             self._operators[singInfo.name]= {}           
-        self._operators[singInfo.name][metadata.operands] = metadata
+        self._operators[singInfo.name][cardinality] = metadata
 
-    def addFunction(self,sing:str,source,additionalInfo:FunctionAdditionalInfo=None):
+    def addFunction(self,sing:str,source,deterministic:bool=True,doc:OperatorDoc=None):
         singInfo = self.__getSing(sing)
-        metadata = {            
-			'deterministic': additionalInfo['deterministic'] if additionalInfo and additionalInfo['deterministic'] else True,
-			'operands': len(singInfo.params),			
-			'params': singInfo.params,
-			'returnType': singInfo.returnType
-        }
-        if issubclass(source,PrototypeEvaluator):
-            metadata['custom'] = source
-        if type(source).__name__ == 'function':
-            metadata['func'] = source            
+        custom=None
+        func=None
+        if issubclass(type(source),PrototypeEvaluator):
+            custom = source
+        elif type(source).__name__ == 'function':
+            func = source            
         else:
-            raise Exception('Function ' + singInfo.name + 'source not supported')   
-        if 'doc' in additionalInfo:
-            metadata['doc'] = additionalInfo.doc
+            raise Exception('Function ' + singInfo.name + 'source not supported')  
+        metadata = OperatorMetadata(singInfo.params,deterministic,None,singInfo.returnType,None,func,custom, doc) 
         self._functions[singInfo.name] = metadata
     
     def getConstantValue(self,name:str)->Any:
@@ -236,7 +226,7 @@ class ModelManager(IModelManager):
         if hadReturn:
            _return = ''.join(chars) 
                    
-        return Sing(functionName,- params, _return if _return != '' else 'void', prefix == 'async')        
+        return Sing(functionName,params, _return if _return != '' else 'void', prefix == 'async')        
     
     def getMetadata(self,source):
         signature= inspect.signature(source)

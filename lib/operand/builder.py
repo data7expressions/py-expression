@@ -1,5 +1,5 @@
 from lib.contract.operands import *
-from lib.contract.context import Token
+from lib.contract.context import Token, Context, Data
 from lib.contract.managers import *
 from lib.operand.helper import helper
 from .factory import ConstBuilder
@@ -26,7 +26,7 @@ class OperandBuilder(IOperandBuilder):
         elif operand.type == OperandType.CallFunc:
 			#  Example: .[0].states.filter() where function name is states.filter
             names = operand.name.split('.')
-            funcName = names[names.length - 1]
+            funcName = names[len(names) - 1]
             funcMetadata = self.model.getFunction(funcName)
             if funcMetadata != None and funcMetadata.deterministic:
                 return self.__reduceOperand(operand)
@@ -39,7 +39,7 @@ class OperandBuilder(IOperandBuilder):
                 allConstants = False
                 break
         if allConstants:
-            value = operand.eval(Context())
+            value = operand.eval(Context(Data()))
             constant = ConstBuilder().build(operand.pos, value)
             constant.id = operand.id
             return constant
@@ -52,10 +52,10 @@ class OperandBuilder(IOperandBuilder):
         return operand
     
     def __complete (self, operand: Operand, index:int=0, parentId:str=None):
-        id = parentId if parentId + '.' + index else str(index)
+        id = parentId + '.' + str(index) if parentId != None else str(index)
         if operand.children != None:
             for i, child in enumerate(operand.children):				
-                self.complete(child, i, id)
+                self.__complete(child, i, id)
         operand.id = id
         operand.evaluator = self.factory.create(operand)
   

@@ -47,12 +47,12 @@ class OperatorDoc():
         self.description = description
         self.params = params           
 
-class OperatorAdditionalInfo():
+class OperatorInfo():
     def __init__(self, priority:int, doc:OperatorDoc=None):
         self.priority = priority
         self.doc = doc
            
-class FunctionAdditionalInfo():
+class FunctionInfo():
     def __init__(self, deterministic:bool=True, doc:OperatorDoc=None):
         self.deterministic = deterministic
         self.doc = doc  
@@ -62,7 +62,7 @@ class IEvaluator():
         pass
     
 class Operand():
-    def __init__(self,pos: Tuple[int, int], name:str, type:OperandType, id:str, children:list['Operand']=[], returnType: Type=None):
+    def __init__(self,pos: Tuple[int, int], name:str, type:OperandType, children:list['Operand']=[], returnType: Type=None):
         self.pos = pos
         self.name  = name
         self.type = type
@@ -98,7 +98,7 @@ class OperandMetadata():
         self.number:int = None
 
 class OperatorMetadata():
-    def __init__(self, params:List[Parameter], deterministic:bool, operands:int, returnType:Type, priority:int, function:Function=None, custom:PrototypeEvaluator= None):
+    def __init__(self, params:List[Parameter], deterministic:bool, operands:int, returnType:Type, priority:int=9, function:Function=None, custom:PrototypeEvaluator= None,doc:OperatorDoc=None):
         self.params = params        
         self.deterministic  = deterministic
         self.operands = operands
@@ -106,4 +106,5 @@ class OperatorMetadata():
         self.priority = priority
         self.function = function
         self.custom = custom
+        self.doc = doc
         

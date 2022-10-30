@@ -2,7 +2,6 @@ from lib.contract.base import *
 from lib.contract.operands import *
 from lib.contract.type import *
 from lib.contract.managers import *
-# from lib.operand.helper import helper
 from typing import List, Tuple, Any
 from .evaluators import *
 
@@ -17,8 +16,10 @@ class EvaluatorFactory(IEvaluatorFactory):
         self.model = model
 
     def createOperator (self, operand:Operand)->IEvaluator:
-        operatorMetadata = self.model.getOperator(operand.name, operand.children.length)
-        if operatorMetadata.custom != None:
+        operatorMetadata = self.model.getOperator(operand.name, len(operand.children))
+        if operatorMetadata == None:
+            raise Exception('Operator '+ operand.name +' undefined')	
+        elif operatorMetadata.custom != None:
             return operatorMetadata.custom.clone(operand)
         elif operatorMetadata.function != None:
             return CallFuncEvaluator(operand, operatorMetadata.function)
@@ -26,8 +27,10 @@ class EvaluatorFactory(IEvaluatorFactory):
             raise Exception('Operator '+ operand.name +' not implemented')	
 
     def createFunction (self, operand:Operand)->IEvaluator:
-        operatorMetadata = self.model.getOperator(operand.name, operand.children.length)
-        if operatorMetadata.custom != None:
+        operatorMetadata = self.model.getOperator(operand.name, len(operand.children))
+        if operatorMetadata == None:
+            raise Exception('Function '+ operand.name +' undefined')
+        elif operatorMetadata.custom != None:
             return operatorMetadata.custom.clone(operand)
         elif operatorMetadata.function != None:
             return CallFuncEvaluator(operand, operatorMetadata.function)

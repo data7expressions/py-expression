@@ -5,7 +5,7 @@ from lib.contract.context import *
 from lib.contract.managers import IExpressions, ActionObserver
 from lib.operand.cache import MemoryCache
 from lib.operand.model import ModelManager
-from lib.operand.helper import helper
+from lib.operand.coreLibrary import CoreLibrary
 from lib.operand.factory import EvaluatorFactory
 from lib.operand.builder import OperandBuilder
 from lib.operand.type import TypeManager
@@ -15,7 +15,8 @@ class Exp(IExpressions, metaclass=Singleton):
     def __init__(self):       
        self.cache = MemoryCache()
        self.model = ModelManager()
-       self.basic = OperandBuilder(self.model, EvaluatorFactory())
+       CoreLibrary(self.model).load()
+       self.basic = OperandBuilder(self.model, EvaluatorFactory(self.model))
        self.typeManager = TypeManager(self.model)
        self.observers: List[ActionObserver]=[]
     
@@ -48,11 +49,11 @@ class Exp(IExpressions, metaclass=Singleton):
     def addFormat (self,key:str, pattern:str):
         self.model.addFormat(key, pattern)
         
-    def addOperator (self,sing:str, source:Any, additionalInfo: OperatorAdditionalInfo):
-        self.model.addOperator(sing, source, additionalInfo)
+    def addOperator (self,sing:str,source:Any,priority:int,doc:OperatorDoc=None):
+        self.model.addOperator(sing, source, priority,doc)
         
-    def addFunction(self,sing:str, source:Any, additionalInfo: FunctionAdditionalInfo=None):
-        self.model.addFunction(sing, source, additionalInfo)
+    def addFunction(self,sing:str,source,deterministic:bool=True,doc:OperatorDoc=None):
+        self.model.addFunction(sing, source, deterministic,doc)
         
     def addOperatorAlias (self,alias:str, reference:str):
         self.model.addOperatorAlias(alias, reference)
@@ -90,7 +91,7 @@ class Exp(IExpressions, metaclass=Singleton):
  
     def __basicBuild (self, expression: str)->Operand:
         try:
-            key = helper.utils.hashCode(expression)
+            key = hash(expression)
             value = self.cache.get(key)
             if value == None:
                 operand = self.basic.build(expression)
@@ -102,7 +103,7 @@ class Exp(IExpressions, metaclass=Singleton):
             raise Exception('expression: '+expression+' error: '+str(error)) 
 		
     def __typed (self, expression: str)-> Operand:
-        key = helper.utils.hashCode(expression)
+        key = hash(expression)
         value = self.cache.get(key)
         if value == None:
             operand = self.basic.build(expression)
@@ -115,22 +116,3 @@ class Exp(IExpressions, metaclass=Singleton):
             return value
         else:
             return None
-
-    def addEnum(self,key,source):
-        self.model.addEnum(key,source)  
-
-    def build(self,expression:str)->Operand:
-        try:               
-            minified = helper.node.minify(expression) 
-            return self.__operand.build(minified)
-        except Exception as error:
-            raise Exception('expression: '+expression+' error: '+str(error))  
-
-    def run(self,expression:str,context:dict={},token:Token=Token())-> Any : 
-        try:           
-            operand = self.build(expression)
-            value= self.__operand.eval(operand,context,token)
-            return value.value
-        except Exception as error:
-            raise Exception('expression: '+expression+' error: '+str(error)) 
-                         

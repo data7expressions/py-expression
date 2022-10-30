@@ -31,7 +31,7 @@ class CoreLibrary():
        self.datetimeFunctions()
        self.ioFunctions()
        self.arrayFunctions()
-       self.signalFunctions()   
+       # self.signalFunctions()   
 
     def constants(self):
         self.model.addConstant('true', True)
@@ -52,51 +52,51 @@ class CoreLibrary():
         self.model.addFormat('time', '\[0-2]\d:[0-5]\d:[0-5]\d')
    
     def operators(self):
-        self.model.addOperator('+(a:T,b:T):T',self.Operators.addition,{'priority':4})
-        self.model.addOperator('-(a:number,b:number):number',self.Operators.subtraction,{'priority':4})
-        self.model.addOperator('-(a:number):number',self.Operators.negative,{'priority':8})
-        self.model.addOperator('*(a:number,b:number):number',self.Operators.multiplication,{'priority':5})
-        self.model.addOperator('/(a:number,b:number):number',self.Operators.division,{'priority':5})
-        self.model.addOperator('**(a:number,b:number):number',self.Operators.exponentiation,{'priority':6})
-        self.model.addOperator('//(a:number,b:number):number',self.Operators.floorDivision,{'priority':6})
-        self.model.addOperator('%(a:number,b:number):number',self.Operators.mod,{'priority':7})        
+        self.model.addOperator('+(a:T,b:T):T',self.Operators.addition,4)
+        self.model.addOperator('-(a:number,b:number):number',self.Operators.subtraction,4)
+        self.model.addOperator('-(a:number):number',self.Operators.negative,8)
+        self.model.addOperator('*(a:number,b:number):number',self.Operators.multiplication,5)
+        self.model.addOperator('/(a:number,b:number):number',self.Operators.division,5)
+        self.model.addOperator('**(a:number,b:number):number',self.Operators.exponentiation,6)
+        self.model.addOperator('//(a:number,b:number):number',self.Operators.floorDivision,6)
+        self.model.addOperator('%(a:number,b:number):number',self.Operators.mod,7)        
 
-        self.model.addOperator('&(a:number,b:number):number',self.Operators.bitAnd,{'priority':4})
-        self.model.addOperator('|(a:number,b:number):number',self.Operators.bitOr,{'priority':4})
-        self.model.addOperator('^(a:number,b:number):number',self.Operators.bitXor,{'priority':4})
-        self.model.addOperator('~(a:number):number',self.Operators.bitNot ,{'priority':4})
-        self.model.addOperator('<<(a:number,b:number):number',self.Operators.leftShift,{'priority':4})
-        self.model.addOperator('>>(a:number,b:number):number',self.Operators.rightShift,{'priority':4})
+        self.model.addOperator('&(a:number,b:number):number',self.Operators.bitAnd,4)
+        self.model.addOperator('|(a:number,b:number):number',self.Operators.bitOr,4)
+        self.model.addOperator('^(a:number,b:number):number',self.Operators.bitXor,4)
+        self.model.addOperator('~(a:number):number',self.Operators.bitNot ,4)
+        self.model.addOperator('<<(a:number,b:number):number',self.Operators.leftShift,4)
+        self.model.addOperator('>>(a:number,b:number):number',self.Operators.rightShift,4)
 
-        self.model.addOperator('==(a:T,b:T):boolean',self.Operators.equal,{'priority':3})
+        self.model.addOperator('==(a:T,b:T):boolean',self.Operators.equal,3)
         self.model.addOperatorAlias('==', '==')
-        self.model.addOperator('!=(a:T,b:T):boolean',self.Operators.notEqual,{'priority':3})
+        self.model.addOperator('!=(a:T,b:T):boolean',self.Operators.notEqual,3)
         self.model.addOperatorAlias('!=', '!=')
         self.model.addOperatorAlias('<>', '!=')
-        self.model.addOperator('>(a:T,b:T):boolean',self.Operators.greaterThan,{'priority':3})
-        self.model.addOperator('<(a:T,b:T):boolean',self.Operators.lessThan,{'priority':3})
-        self.model.addOperator('>=(a:T,b:T):boolean',self.Operators.greaterThanOrEqual,{'priority':3})
-        self.model.addOperator('<=(a:T,b:T):boolean',self.Operators.lessThanOrEqual,{'priority':3})
+        self.model.addOperator('>(a:T,b:T):boolean',self.Operators.greaterThan,3)
+        self.model.addOperator('<(a:T,b:T):boolean',self.Operators.lessThan,3)
+        self.model.addOperator('>=(a:T,b:T):boolean',self.Operators.greaterThanOrEqual,3)
+        self.model.addOperator('<=(a:T,b:T):boolean',self.Operators.lessThanOrEqual,3)
 
-        self.model.addOperator('and(a:T,b:T):boolean',And(),{'priority':2})
-        self.model.addOperator('or(a:T,b:T):boolean',Or(),{'priority':2})
-        self.model.addOperator('!(a:boolean):boolean',self.Operators._not,{'priority':4})
+        self.model.addOperator('and(a:T,b:T):boolean',And(),2)
+        self.model.addOperator('or(a:T,b:T):boolean',Or(),2)
+        self.model.addOperator('!(a:boolean):boolean',self.Operators._not,4)
 
-        self.model.addOperator('[](list:T[],index:integer):T',lambda a, b: a[b],{'priority':2})
+        self.model.addOperator('[](list:T[],index:integer):T',lambda a, b: a[b],2)
         
-        self.model.addOperator('=(a:T,b:T):T',self.Assignment,{'priority':1})
-        self.model.addOperator('+=(a:number,b:number):number',self.Assignment,{'priority':1,'chained':self.Operators.addition})
-        self.model.addOperator('-=(a:number,b:number):number',self.Assignment,{'priority':1,'chained':self.Operators.subtraction})
-        self.model.addOperator('*=(a:number,b:number):number',self.Assignment,{'priority':1,'chained':self.Operators.multiplication})
-        self.model.addOperator('/=(a:number,b:number):number',self.Assignment,{'priority':1,'chained':self.Operators.division})
-        self.model.addOperator('**=(a:number,b:number):number',self.Assignment,{'priority':1,'chained':self.Operators.exponentiation})
-        self.model.addOperator('//=(a:number,b:number):number',self.Assignment,{'priority':1,'chained':self.Operators.floorDivision})
-        self.model.addOperator('%=(a:number,b:number):number',self.Assignment,{'priority':1,'chained':self.Operators.mod})
-        self.model.addOperator('&=(a:number,b:number):number',self.Assignment,{'priority':1,'chained':self.Operators.bitAnd})
-        self.model.addOperator('|=(a:number,b:number):number',self.Assignment,{'priority':1,'chained':self.Operators.bitOr})
-        self.model.addOperator('^=(a:number,b:number):number',self.Assignment,{'priority':1,'chained':self.Operators.bitXor})
-        self.model.addOperator('<<=(a:number,b:number):number',self.Assignment,{'priority':1,'chained':self.Operators.leftShift})
-        self.model.addOperator('>>=(a:number,b:number):number',self.Assignment,{'priority':1,'chained':self.Operators.rightShift})        
+        self.model.addOperator('=(a:T,b:T):T',Assignment(),1)
+        self.model.addOperator('+=(a:number,b:number):number',AssignmentAddition(),1)
+        self.model.addOperator('-=(a:number,b:number):number',AssignmentSubtraction(),1)
+        self.model.addOperator('*=(a:number,b:number):number',AssignmentMultiplication(),1)
+        self.model.addOperator('/=(a:number,b:number):number',AssignmentDivision(),1)
+        self.model.addOperator('**=(a:number,b:number):number',AssignmentExponentiation(),1)
+        self.model.addOperator('//=(a:number,b:number):number',AssignmentFloorDivision(),1)
+        self.model.addOperator('%=(a:number,b:number):number',AssignmentMod(),1)
+        self.model.addOperator('&=(a:number,b:number):number',AssignmentBitAnd(),1)
+        self.model.addOperator('|=(a:number,b:number):number',AssignmentBitOr(),1)
+        self.model.addOperator('^=(a:number,b:number):number',AssignmentBitXor(),1)
+        self.model.addOperator('<<=(a:number,b:number):number',AssignmentLeftShift(),1)
+        self.model.addOperator('>>=(a:number,b:number):number',AssignmentRightShift(),1)        
 
     def generalFunctions(self):
         self.model.addFunction('async sleep(ms: number)',self.General.sleep)
@@ -395,8 +395,8 @@ class CoreLibrary():
         def assignment(a:any,b:any)->any: pass       
 
         @staticmethod
-        def item(list:list[any],index:int):
-            return list[index]   
+        def item(_list:list[any],index:int):
+            return _list[index]   
     class Numbers():
         
         def remainder(n1:float,n2:float) -> float:
@@ -814,7 +814,7 @@ class CoreLibrary():
             else:
                 return '*' 
         @staticmethod
-        def split(value:str,sep:str,maxSplit:int=None)->list[str]: 
+        def split(value:str,sep:str,maxSplit:int=None)->List[str]: 
             """
             Return a list of the words in the string, using sep as the delimiter string.
             sep
@@ -952,7 +952,7 @@ class CoreLibrary():
             """
             return value.rpartition(sep)
         @staticmethod
-        def rsplit(value:str,sep:str,maxSplit:int=None)->list[str]: 
+        def rsplit(value:str,sep:str,maxSplit:int=None)->List[str]: 
             """
             Return a list of the words in the string, using sep as the delimiter string.
             sep
@@ -966,7 +966,7 @@ class CoreLibrary():
             """
             return value.rsplit(sep,maxSplit)        
         @staticmethod
-        def splitlines(value:str,keepEnds:bool=None)->list[str]: 
+        def splitlines(value:str,keepEnds:bool=None)->List[str]: 
             """
             Return a list of the lines in the string, breaking at line boundaries.
             Line breaks are not included in the resulting list unless keepEnds is given and
@@ -1038,26 +1038,26 @@ class CoreLibrary():
     
     class Array():
         @staticmethod
-        def pop(list:List[any])->any:
-            return list.pop(1)
+        def pop(_list:List[any])->any:
+            return _list.pop(1)
         @staticmethod
-        def push(list:List[any],value:any)->any:
-            return list.append(value)  
+        def push(_list:List[any],value:any)->any:
+            return _list.append(value)  
         @staticmethod
         def length(source:any)->int:
             return len(source) 
         @staticmethod
-        def slice(list:List[any],start:int,to:int)->any:
-            return list[start:to]
+        def slice(_list:List[any],start:int,to:int)->any:
+            return _list[start:to]
         @staticmethod
-        def page(list:List[any],page:int,records:int)->any:
+        def page(_list:List[any],page:int,records:int)->any:
             _from = (page - 1) * records
             if _from < 0:
                 _from = 0			
             to = _from + records
-            if to > len(list):
-                to = len(list) - 1			
-            return list[_from: to]    
+            if to > len(_list):
+                to = len(_list) - 1			
+            return _list[_from: to]    
         
     class IO():
         # https://docs.python.org/3/library/os.path.html
@@ -1073,7 +1073,7 @@ class CoreLibrary():
             return getcwd()
 
         @staticmethod
-        def pathJoin(paths:list[str])->str:
+        def pathJoin(paths:List[str])->str:
             """
             Join one or more path components intelligently. 
             The return value is the concatenation of path and any members of *paths with exactly one directory separator following each non-empty part except the last, 
@@ -1256,8 +1256,8 @@ class Map(PrototypeEvaluator):
 			raise Exception('Operand undefined')
 
 		rows = []
-		list: List[any] = self.operand.children[0].eval(context)
-		if (list==None):
+		_list: List[any] = self.operand.children[0].eval(context)
+		if (_list==None):
 			raise Exception('Array '+ self.operand.children[0].name+' undefined')
 		if (self.operand.children[2].type == OperandType.Obj):
 			groupers:List[Operand] = []
@@ -1273,7 +1273,7 @@ class Map(PrototypeEvaluator):
       
 			if (len(aggregates) > 0):
 				#case with aggregate functions
-				keys = helper.operand.getKeys(self.operand.children[1], groupers, list, context)
+				keys = helper.operand.getKeys(self.operand.children[1], groupers, _list, context)
 				#once you got all the keys you have to calculate the aggregates fields
 				variable = self.operand.children[1]
 				for key in keys:
@@ -1295,7 +1295,7 @@ class Map(PrototypeEvaluator):
 
 		#simple case without aggregate functions
 		childContext = context.newContext()
-		for item in list:
+		for item in _list:
 			childContext.data.set(self.operand.children[1].name, item)
 			row = self.operand.children[2].eval(childContext)
 			rows.append(row)
@@ -1309,18 +1309,18 @@ class Distinct(PrototypeEvaluator):
         if (self.operand == None):
             raise Exception('Operand undefined')
         rows = []
-        list: List[any] = self.operand.children[0].eval(context)
-        if (list==None):
+        _list: List[any] = self.operand.children[0].eval(context)
+        if (_list==None):
             raise Exception('Array '+self.operand.children[0].name+' undefined')
         if (len(self.operand.children) == 1):
             #simple case
-            for item in list:
+            for item in _list:
                 if next(p for p in rows if p == item) == None:         
                     rows.append(item)
             return rows
         elif self.operand.children[2].type == OperandType.Obj:
             #case with aggregate functions
-            keys = helper.operand.getKeys(self.operand.children[1], self.operand.children[2].children, list, context.newContext())
+            keys = helper.operand.getKeys(self.operand.children[1], self.operand.children[2].children, _list, context.newContext())
             #build the list of results
             for key in keys:
                 row:any = {}
@@ -1332,7 +1332,7 @@ class Distinct(PrototypeEvaluator):
             raise Exception('Distinct not support Array result')
         #simple case without aggregate functions
         childContext = context.newContext()
-        for item in list:
+        for item in _list:
             childContext.data.set(self.operand.children[1].name, item)
             value = self.operand.children[2].eval(childContext)
             # if rows.find((p:any) => p == value) == None:
@@ -1347,14 +1347,14 @@ class Foreach(PrototypeEvaluator):
 	def eval (self, context: Context)-> any:
 		if (self.operand == None):
 			raise Exception('Operand undefined')
-		list: List[any] = self.operand.children[0].eval(context)
-		if (list==None):
+		_list: List[any] = self.operand.children[0].eval(context)
+		if (_list==None):
 			raise Exception('Array '+self.operand.children[0].name+' undefined')
 		childContext = context.newContext()
-		for item in list:
+		for item in _list:
 			childContext.data.set(self.operand.children[1].name, item)
 			self.operand.children[2].eval(childContext)
-		return list
+		return _list
 
 class Filter(PrototypeEvaluator):
 	def clone (operand:Operand)-> IEvaluator:
@@ -1364,11 +1364,11 @@ class Filter(PrototypeEvaluator):
 		if (self.operand == None):
 			raise Exception('Operand undefined')
 		rows = []
-		list: List[any] = self.operand.children[0].eval(context)
-		if (list==None):
+		_list: List[any] = self.operand.children[0].eval(context)
+		if (_list==None):
 			raise Exception('Array '+self.operand.children[0].name+' undefined')
 		childContext = context.newContext()
-		for item in list:
+		for item in _list:
 			childContext.data.set(self.operand.children[1].name, item)
 			if (self.operand.children[2].eval(childContext)):
 				rows.append(item)
@@ -1381,14 +1381,14 @@ class Reverse(PrototypeEvaluator):
     def eval (self, context: Context)-> any:
         if (self.operand == None):
             raise Exception('Operand undefined')
-        list: List[any] = self.operand.children[0].eval(context)
-        if (list==None):
+        _list: List[any] = self.operand.children[0].eval(context)
+        if (_list==None):
             raise Exception('Array '+self.operand.children[0].name+' undefined')
         if (len(self.operand.children) == 1):
-            return list.reverse()
+            return _list.reverse()
         values = []
         childContext = context.newContext()
-        for item in list:
+        for item in _list:
             childContext.data.set(self.operand.children[1].name, item)
             value = self.operand.children[2].eval(childContext)
             values.append({ 'value': value, 'p': item })		
@@ -1396,7 +1396,7 @@ class Reverse(PrototypeEvaluator):
         values = sorted(values, key=functools.cmp_to_key(lambda a,b : 1 if a.value > b.value else -1 if a.value < b.value else 0))
         values.reverse()
         # return values.map(p => p.p)
-        return map((lambda p: p.p), values)
+        return list(map((lambda p: p.p), values))
 
 class Sort(PrototypeEvaluator):
     def clone (operand:Operand)-> IEvaluator:
@@ -1406,20 +1406,19 @@ class Sort(PrototypeEvaluator):
         if (self.operand == None):
             raise Exception('Operand undefined')
         values = []
-        list: List[any] = self.operand.children[0].eval(context)
-        if (list==None):
+        _list: List[any] = self.operand.children[0].eval(context)
+        if (_list==None):
             raise Exception('Array '+self.operand.children[0].name+' undefined')
         if (len(self.operand.children) == 1):
-            return list.sort()
+            return _list.sort()
         childContext = context.newContext()
-        for item in list:
+        for item in _list:
             childContext.data.set(self.operand.children[1].name, item)
             value = self.operand.children[2].eval(childContext)
             values.append({ 'value': value, 'p': item })
         # values.sort((a, b) => a.value > b.value ? 1 : a.value < b.value ? -1 : 0)
         values = sorted(values, key=functools.cmp_to_key(lambda a,b : 1 if a.value > b.value else -1 if a.value < b.value else 0))
-        # return values.map(p => p.p)
-        return map((lambda p: p.p), values)
+        return list(map((lambda p: p.p), values))
 
 class Remove(PrototypeEvaluator):
 	def clone (operand:Operand)-> IEvaluator:
@@ -1429,11 +1428,11 @@ class Remove(PrototypeEvaluator):
 		if (self.operand == None):
 			raise Exception('Operand undefined')
 		rows = []
-		list: List[any] = self.operand.children[0].eval(context)
-		if (list==None):
+		_list: List[any] = self.operand.children[0].eval(context)
+		if (_list==None):
 			raise Exception('Array '+self.operand.children[0].name+' undefined')
 		childContext = context.newContext()
-		for item in list:
+		for item in _list:
 			childContext.data.set(self.operand.children[1].name, item)
 			if not self.operand.children[2].eval(childContext):
 				rows.append(item)
@@ -1447,12 +1446,12 @@ class First(PrototypeEvaluator):
 		if (self.operand == None):
 			raise Exception('Operand undefined')
 
-		list: List[any] = self.operand.children[0].eval(context)
-		if (list==None):
+		_list: List[any] = self.operand.children[0].eval(context)
+		if (_list==None):
 			raise Exception('Array '+self.operand.children[0].name+' undefined')
 		if (len(self.operand.children) == 1):
-			return list and list[0] if len(list) > 0 else None
-		return helper.operand.first(list, self.operand.children[1], self.operand.children[2], context.newContext())
+			return _list and _list[0] if len(_list) > 0 else None
+		return helper.operand.first(_list, self.operand.children[1], self.operand.children[2], context.newContext())
 
 class Last(PrototypeEvaluator):
 	def clone (operand:Operand)-> IEvaluator:
@@ -1461,12 +1460,12 @@ class Last(PrototypeEvaluator):
 	def eval (self, context: Context)-> any:
 		if (self.operand == None):
 			raise Exception('Operand undefined')
-		list: List[any] = self.operand.children[0].eval(context)
-		if (list==None):
+		_list: List[any] = self.operand.children[0].eval(context)
+		if (_list==None):
 			raise Exception('Array '+self.operand.children[0].name+' undefined')
 		if (len(self.operand.children) == 1):
-			return list and list[len(list) - 1]  if len(list) > 0 else None
-		return helper.operand.last(list, self.operand.children[1], self.operand.children[2], context.newContext())
+			return _list and _list[len(_list) - 1]  if len(_list) > 0 else None
+		return helper.operand.last(_list, self.operand.children[1], self.operand.children[2], context.newContext())
 
 class Count(PrototypeEvaluator):
 	def clone (operand:Operand)-> IEvaluator:
@@ -1475,12 +1474,12 @@ class Count(PrototypeEvaluator):
 	def eval (self, context: Context)-> any:
 		if (self.operand == None):
 			raise Exception('Operand undefined')
-		list: List[any] = self.operand.children[0].eval(context)
-		if (list==None):
+		_list: List[any] = self.operand.children[0].eval(context)
+		if (_list==None):
 			raise Exception('Array '+self.operand.children[0].name+' undefined')
 		if (len(self.operand.children) == 1):
-			return len(list)
-		return helper.operand.count(list, self.operand.children[1], self.operand.children[2], context.newContext())
+			return len(_list)
+		return helper.operand.count(_list, self.operand.children[1], self.operand.children[2], context.newContext())
 
 class Max(PrototypeEvaluator):
 	def clone (operand:Operand)-> IEvaluator:
@@ -1489,16 +1488,16 @@ class Max(PrototypeEvaluator):
 	def eval (self, context: Context)-> any:
 		if (self.operand == None):
 			raise Exception('Operand undefined')
-		list: List[any] = self.operand.children[0].eval(context)
-		if (list==None):
+		_list: List[any] = self.operand.children[0].eval(context)
+		if (_list==None):
 			raise Exception('Array '+self.operand.children[0].name+' undefined')
 		if (len(self.operand.children) == 1):
 			max:any
-			for item in list:
+			for item in _list:
 				if (max == None or (item != None and item > max)):
 					max = item
 			return max
-		return helper.operand.max(list, self.operand.children[1], self.operand.children[2], context.newContext())
+		return helper.operand.max(_list, self.operand.children[1], self.operand.children[2], context.newContext())
 
 class Min(PrototypeEvaluator):
 	def clone (operand:Operand)-> IEvaluator:
@@ -1507,16 +1506,16 @@ class Min(PrototypeEvaluator):
 	def eval (self, context: Context)-> any:
 		if (self.operand == None):
 			raise Exception('Operand undefined')
-		list: List[any] = self.operand.children[0].eval(context)
-		if (list==None):
+		_list: List[any] = self.operand.children[0].eval(context)
+		if (_list==None):
 			raise Exception('Array '+self.operand.children[0].name+' undefined')
 		if (len(self.operand.children) == 1):
 			min:any
-			for item in list:
+			for item in _list:
 				if (min == None or (item != None and item < min)):
 					min = item
 			return min
-		return helper.operand.min(list, self.operand.children[1], self.operand.children[2], context.newContext())
+		return helper.operand.min(_list, self.operand.children[1], self.operand.children[2], context.newContext())
 
 class Avg(PrototypeEvaluator):
 	def clone (operand:Operand)-> IEvaluator:
@@ -1525,16 +1524,16 @@ class Avg(PrototypeEvaluator):
 	def eval (self, context: Context)-> any:
 		if (self.operand == None):
 			raise Exception('Operand undefined')
-		list: List[any] = self.operand.children[0].eval(context)
-		if (list==None):
+		_list: List[any] = self.operand.children[0].eval(context)
+		if (_list==None):
 			raise Exception('Array '+self.operand.children[0].name+' undefined')
 		if (len(self.operand.children) == 1):
 			sum = 0
-			for item in list:
+			for item in _list:
 				if (item != None):
 					sum = sum + item
-			return sum / len(list)  if len(list) > 0 else 0
-		return helper.operand.avg(list, self.operand.children[1], self.operand.children[2], context.newContext())
+			return sum / len(_list)  if len(_list) > 0 else 0
+		return helper.operand.avg(_list, self.operand.children[1], self.operand.children[2], context.newContext())
 
 class Sum(PrototypeEvaluator):
 	def clone (operand:Operand)-> IEvaluator:
@@ -1543,16 +1542,16 @@ class Sum(PrototypeEvaluator):
 	def eval (self, context: Context)-> any:
 		if (self.operand == None):
 			raise Exception('Operand undefined')
-		list: List[any] = self.operand.children[0].eval(context)
-		if (list==None):
+		_list: List[any] = self.operand.children[0].eval(context)
+		if (_list==None):
 			raise Exception('Array '+self.operand.children[0].name+' undefined')
 		if (len(self.operand.children) == 1):
 			sum = 0
-			for item in list:
+			for item in _list:
 				if (item != None):
 					sum = sum + item
 			return sum
-		return helper.operand.sum(list, self.operand.children[1], self.operand.children[2], context.newContext())
+		return helper.operand.sum(_list, self.operand.children[1], self.operand.children[2], context.newContext())
 
 class Union(PrototypeEvaluator):
     def clone (operand:Operand)-> IEvaluator:
@@ -1584,7 +1583,7 @@ class Union(PrototypeEvaluator):
                 if next(p for p in result if p.key == key) == None:                    
                     result.append({ 'key': key, 'value': element })				
             # return result.map((p:any) => p.value)
-            return map(lambda p: p.value, result)
+            return list(map(lambda p: p.value, result))
         result = result.concat(a)
         for element in b:
             if (not result.includes(element)):
@@ -1610,8 +1609,7 @@ class Intersection(PrototypeEvaluator):
         if (helper.validator.isArray(a[0]) or helper.validator.isArray(b[0])):
             raise Exception('Cannot union arrays of arrays')
         elif type(a[0]) is dict:
-            # keys = a.map((p:any) => helper.operand.objectKey(p))
-            keys = map((lambda p: helper.operand.objectKey(p)), a )
+            keys = list(map((lambda p: helper.operand.objectKey(p)), a ))
             for element in b:
                 key = helper.operand.objectKey(element)
                 if (keys.includes(key)):
@@ -1644,8 +1642,7 @@ class Difference(PrototypeEvaluator):
         if (helper.validator.isArray(a[0]) or helper.validator.isArray(b[0])):
             raise Exception('Cannot union arrays of arrays')
         elif type(a[0]) is dict:
-            # keys = b.map((p:any) => helper.operand.objectKey(p))
-            keys = map((lambda p: helper.operand.objectKey(p)), b )
+            keys = list(map((lambda p: helper.operand.objectKey(p)), b ))
             for element in a:
                 key = helper.operand.objectKey(element)
                 if not keys.includes(key):
@@ -1678,10 +1675,8 @@ class SymmetricDifference(PrototypeEvaluator):
         if (helper.validator.isArray(a[0]) or helper.validator.isArray(b[0])):
             raise Exception('Cannot union arrays of arrays')
         elif type(a[0]) is dict:
-            # aKeys = a.map((p:any) => helper.operand.objectKey(p))
-            aKeys = map((lambda p: helper.operand.objectKey(p)), a )
-            # bKeys = b.map((p:any) => helper.operand.objectKey(p))
-            bKeys = map((lambda p: helper.operand.objectKey(p)), b )
+            aKeys = list(map((lambda p: helper.operand.objectKey(p)), a ))
+            bKeys = list(map((lambda p: helper.operand.objectKey(p)), b ))
             for element in a:
                 key = helper.operand.objectKey(element)
                 if (not bKeys.includes(key)):

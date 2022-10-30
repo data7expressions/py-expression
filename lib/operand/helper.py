@@ -1,6 +1,6 @@
 import re
 from typing import Any
-from lib.helper.h3lp import H3lp
+from lib.helper.h3lp import h3lp
 from lib.contract.base import *
 from lib.contract.operands import *
 from .factory import ConstBuilder
@@ -195,7 +195,7 @@ class OperandHelper():
             value = aggregate.eval(context)
             if value != None:
                 sum = sum + value
-        return sum / list.length if list > 0 else 0	
+        return sum / len(list) if list > 0 else 0	
 
     def sum (self,list: List[Any], variable: Operand, aggregate: Operand, context: Context)-> float:
         sum = 0
@@ -205,16 +205,22 @@ class OperandHelper():
             if value != None:
                 sum = sum + value
         return sum
-
       
-class ExpHelper(H3lp):
+class ExpHelper():
     def __init__(self):
-        super(H3lp,self).__init__() 
         self._operand = OperandHelper()
    
     @property
     def operand(self):
         return self._operand
+    
+    @property
+    def validator(self):
+        return h3lp.validator
+    
+    @property
+    def obj(self):
+        return h3lp.obj 
   
 
 helper = ExpHelper()

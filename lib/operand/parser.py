@@ -5,31 +5,29 @@ from lib.contract.base import *
 from lib.contract.operands import Operand, OperandType
 from lib.contract.type import Type
 from lib.contract.managers import IModelManager
-from lib.operand.helper import helper
+from lib.helper.h3lp import h3lp
 
 class Parser():
     def __init__(self,model:IModelManager,expression:str):
        self.model = model
        self.positions = self.normalize(expression)       
-       self.buffer = map(lambda p: p[0], self.positions)
+       self.buffer = list(map(lambda p: p[0], self.positions))
        self.length=len(self.buffer)
        self.index=0
        self.singleOperators = []
        self.doubleOperators = []
        self.tripleOperators = [] 
        self.assignmentOperators = []
-       for key in self.model.operators.keys():
+       for p in self.model.operators:
+            key = p[0]
             if len(key)==1: 
                 self.singleOperators.append(key)
             elif len(key)==2: 
                 self.doubleOperators.append(key)
+                if p[1].priority == 1:
+                    self.assignmentOperators.append(key) 
             elif len(key)==3: 
-                self.tripleOperators.append(key)
-
-            operator = self.model.operators[key]
-            if 2 in operator.keys():
-               if operator[2]['priority'] == 1: 
-                  self.assignmentOperators.append(key)         
+                self.tripleOperators.append(key)        
     
     def parse(self)->Operand:
         operands=[]
@@ -60,21 +58,21 @@ class Parser():
             nextOperator= self.getOperator()
             if operator is not None and operand1 is not None:
                 if nextOperator is None or nextOperator in _break:
-                    if nextOperator in _break:
+                    if nextOperator != None:
                         self.index+=1
-                    expression= Operand(self.pos(len(operator)), operator,'operator',[operand1,operand2])
+                    expression= Operand(self.pos(len(operator)), operator,OperandType.Operator,[operand1,operand2])
                     isBreak= True
                     break
                 elif self.model.priority(operator)>=self.model.priority(nextOperator):
-                    operand1=Operand(self.pos(len(operator)), operator,'operator',[operand1,operand2])
+                    operand1=Operand(self.pos(len(operator)), operator,OperandType.Operator,[operand1,operand2])
                     operator=nextOperator
                 else:
                     operand2 = self.getExpression(operand1=operand2,operator=nextOperator,_break=_break)
-                    expression= Operand(self.pos(len(operator)), operator,'operator',[operand1,operand2])
+                    expression= Operand(self.pos(len(operator)), operator,OperandType.Operator,[operand1,operand2])
                     isBreak= True
                     break
         if not isBreak and operand1 is not None and operand2 is not None:
-            expression=Operand(pos, operator,'operator',[operand1,operand2])
+            expression=Operand(pos, operator,OperandType.Operator,[operand1,operand2])
         return expression  
 
     def getOperand(self)-> Operand:        
@@ -138,7 +136,7 @@ class Parser():
             elif not self.end and self.current == '[':                
                 self.index+=1
                 operand = self.getIndexOperand(value) 
-            elif helper.validator.isIntegerFormat(value): 
+            elif h3lp.validator.isIntegerFormat(value): 
                 if isNegative:
                     value = int(value)* -1
                     isNegative= False 
@@ -148,7 +146,7 @@ class Parser():
                 else:
                     value =int(value)
                 operand = Operand(pos,value,OperandType.Const,[], Type.integer)
-            elif helper.validator.isDecimalFormat(value):
+            elif h3lp.validator.isDecimalFormat(value):
                 if isNegative:
                     value = float(value)* -1
                     isNegative= False
@@ -214,7 +212,7 @@ class Parser():
                 self.index+=1
                 if '.' in name:
                     # .xxx.xxx(p=> p.xxx)
-                    names = np.array(helper.obj.names(name))
+                    names = np.array(h3lp.obj.names(name))
                     propertyName = ''.join(names[0:len(names)-2])
                     functionName = names[len(names)-2,len(names)-1]
                     property = Operand(pos, propertyName, OperandType.Property, [operand])
@@ -249,10 +247,10 @@ class Parser():
         if self.end:return None
         op=None
         if self.index+2 < self.length:
-            triple = self.current+self.next+self.buffer[self.index+2]
+            triple = self.current+self.offset(1)+self.buffer[self.index+2]
             if triple in self.tripleOperators :op=triple
         if op is None and  self.index+1 < self.length:
-            double = self.current+self.next
+            double = self.current+self.offset(1)
             if double in self.doubleOperators  :op=double
         if not self.model.isOperator(self.current):
             return None        
@@ -318,12 +316,12 @@ class Parser():
     def getValue(self,increment:bool=True)->str:
         buff=[]
         if increment:
-            while not self.end and helper.validator.isAlphanumeric(self.current):
+            while not self.end and h3lp.validator.isAlphanumeric(self.current):
                 buff.append(self.current)
                 self.index+=1            
         else:
             index = self.index
-            while not self.end and helper.validator.isAlphanumeric(self.buffer[index]):
+            while not self.end and h3lp.validator.isAlphanumeric(self.buffer[index]):
                 buff.append(self.buffer[index])
                 index+=1        
         return ''.join(buff)
