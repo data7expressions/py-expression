@@ -19,68 +19,65 @@ def load(_path):
         except Exception as ex:
             print(ex) 
 
-
-
-
 class TestExpression(unittest.TestCase):
 
     def test_arithmetic(self):
-        self.assertEqual(exp.run('1+1'),1+1)
-        self.assertEqual(exp.run('3+2-1'),3+2-1) 
-        self.assertEqual(exp.run('3*4-1'),3*4-1)
-        self.assertEqual(exp.run('1+4*2'),1+4*2)
-        self.assertEqual(exp.run('4+4+2+50+600'),4+4+2+50+600)
-        self.assertEqual(exp.run('1-2-5'),1-2-5)
-        self.assertEqual(exp.run('(1+4)*2'),(1+4)*2)
-        self.assertEqual(exp.run('(2+3)*2'),(2+3)*2)
-        self.assertEqual(exp.run('2*(3+2)'),2*(3+2))
-        self.assertEqual(exp.run('2*(3+2)*(2+2)'),2*(3+2)*(2+2))
-        self.assertEqual(exp.run('1+2*3*4'),1+2*3*4)  
-        self.assertEqual(exp.run('2*3+4*5'),2*3+4*5)
-        self.assertEqual(exp.run('(1+(2**3)*4'),(1+(2**3)*4))
-        self.assertEqual(exp.run('1+2**3*4'),1+2**3*4) 
-        self.assertEqual(exp.run('1+2**(3*4)'),1+2**(3*4))
+        self.assertEqual(exp.eval('1+1'),1+1)
+        self.assertEqual(exp.eval('3+2-1'),3+2-1) 
+        self.assertEqual(exp.eval('3*4-1'),3*4-1)
+        self.assertEqual(exp.eval('1+4*2'),1+4*2)
+        self.assertEqual(exp.eval('4+4+2+50+600'),4+4+2+50+600)
+        self.assertEqual(exp.eval('1-2-5'),1-2-5)
+        self.assertEqual(exp.eval('(1+4)*2'),(1+4)*2)
+        self.assertEqual(exp.eval('(2+3)*2'),(2+3)*2)
+        self.assertEqual(exp.eval('2*(3+2)'),2*(3+2))
+        self.assertEqual(exp.eval('2*(3+2)*(2+2)'),2*(3+2)*(2+2))
+        self.assertEqual(exp.eval('1+2*3*4'),1+2*3*4)  
+        self.assertEqual(exp.eval('2*3+4*5'),2*3+4*5)
+        self.assertEqual(exp.eval('(1+(2**3)*4'),(1+(2**3)*4))
+        self.assertEqual(exp.eval('1+2**3*4'),1+2**3*4) 
+        self.assertEqual(exp.eval('1+2**(3*4)'),1+2**(3*4))
 
     def test_comparisons(self):         
-        self.assertEqual(exp.run('3>2'),3>2)
-        self.assertEqual(exp.run('3>2*2'),3>2*2)
-        self.assertEqual(exp.run('-3>2*2'),-3>2*22)
-        self.assertEqual(exp.run('4>=2*2'),4>=2*2)
-        self.assertEqual(exp.run('3<=2*2'),3<=2*2)
-        self.assertEqual(exp.run('3!=2*2'),3!=2*2)
-        self.assertEqual(exp.run('4!=2*2'),4!=2*2)
-        self.assertEqual(exp.run('-4!=2*2'),-4!=2*2)
-        self.assertEqual(exp.run('-4==-2*2'),-4==-2*2)
-        self.assertEqual(exp.run('-4==-(2*2)'),-4==-(2*2))
+        self.assertEqual(exp.eval('3>2'),3>2)
+        self.assertEqual(exp.eval('3>2*2'),3>2*2)
+        self.assertEqual(exp.eval('-3>2*2'),-3>2*22)
+        self.assertEqual(exp.eval('4>=2*2'),4>=2*2)
+        self.assertEqual(exp.eval('3<=2*2'),3<=2*2)
+        self.assertEqual(exp.eval('3!=2*2'),3!=2*2)
+        self.assertEqual(exp.eval('4!=2*2'),4!=2*2)
+        self.assertEqual(exp.eval('-4!=2*2'),-4!=2*2)
+        self.assertEqual(exp.eval('-4==-2*2'),-4==-2*2)
+        self.assertEqual(exp.eval('-4==-(2*2)'),-4==-(2*2))
 
     def test_variables(self):
-        self.assertEqual(exp.run('a>b',{"a":1,"b":2}),False)
-        self.assertEqual(exp.run('a+b',{"a":1,"b":2}),3)
-        self.assertEqual(exp.run('-a*b',{"a":1,"b":2}),-2)
-        self.assertEqual(exp.run('a*3==b+1',{"a":1,"b":2}),True)
-        self.assertEqual(exp.run('(a*b)+(2*a+2*b)',{"a":1,"b":2}),8)
-        self.assertEqual(exp.run('2**b+a',{"a":1,"b":2}),5) 
-        self.assertEqual(exp.run('c.b',{"a":"1","b":2,"c":{"a":4,"b":5}}),5)
+        self.assertEqual(exp.eval('a>b',{"a":1,"b":2}),False)
+        self.assertEqual(exp.eval('a+b',{"a":1,"b":2}),3)
+        self.assertEqual(exp.eval('-a*b',{"a":1,"b":2}),-2)
+        self.assertEqual(exp.eval('a*3==b+1',{"a":1,"b":2}),True)
+        self.assertEqual(exp.eval('(a*b)+(2*a+2*b)',{"a":1,"b":2}),8)
+        self.assertEqual(exp.eval('2**b+a',{"a":1,"b":2}),5) 
+        self.assertEqual(exp.eval('c.b',{"a":"1","b":2,"c":{"a":4,"b":5}}),5)
 
     def test_strings(self):
-        self.assertEqual(exp.run('"a"'),"a") 
-        self.assertEqual(exp.run('"a"<"b"'),"a"<"b") 
-        self.assertEqual(exp.run('"a ""b"" "<"b"'),"a ""b"" "<"b") 
+        self.assertEqual(exp.eval('"a"'),"a") 
+        self.assertEqual(exp.eval('"a"<"b"'),"a"<"b") 
+        self.assertEqual(exp.eval('"a ""b"" "<"b"'),"a ""b"" "<"b") 
 
     def test_assignments(self):
         context = {"a":"1","b":2,"c":{"a":4,"b":5}}
-        exp.run('a=8',context)
+        exp.eval('a=8',context)
         self.assertEqual(context['a'],8)
-        exp.run('c.a=1',context)
+        exp.eval('c.a=1',context)
         self.assertEqual(context['c']['a'],1)
 
     def test_functions(self):
-        self.assertEqual(exp.run('nvl(a,b)',{"a":None,"b":2}),2) 
-        self.assertEqual(exp.run('capitalize(a)',{"a":"aaa","b":2}),"Aaa")  
-        self.assertEqual(exp.run('capitalize("aaa")'),"Aaa") 
-        self.assertEqual(exp.run('strCount(a,"a")',{"a":"aaa"}),3)
-        self.assertEqual(exp.run('strCount(a,"b")',{"a":"aaa"}),0) 
-        self.assertEqual(exp.run('upper(a)',{"a":"aaa"}),"AAA") 
+        self.assertEqual(exp.eval('nvl(a,b)',{"a":None,"b":2}),2) 
+        self.assertEqual(exp.eval('capitalize(a)',{"a":"aaa","b":2}),"Aaa")  
+        self.assertEqual(exp.eval('capitalize("aaa")'),"Aaa") 
+        self.assertEqual(exp.eval('strCount(a,"a")',{"a":"aaa"}),3)
+        self.assertEqual(exp.eval('strCount(a,"b")',{"a":"aaa"}),0) 
+        self.assertEqual(exp.eval('upper(a)',{"a":"aaa"}),"AAA") 
 
     def test_enums(self):
        
@@ -91,33 +88,33 @@ class TestExpression(unittest.TestCase):
             GREEN = 2
             BLUE = 3 
         exp.addEnum('Color',Color)         
-        self.assertEqual(exp.run('ColorConversion.GRAY2BGR'),8)
-        self.assertEqual(exp.run('Color.GREEN'),2)  
+        self.assertEqual(exp.eval('ColorConversion.GRAY2BGR'),8)
+        self.assertEqual(exp.eval('Color.GREEN'),2)  
 
     def test_multiline(self):    
         text='a=4; '\
              'b=a+2; '\
             ' output=a*b; ' 
         context = {}
-        exp.run(text,context)
+        exp.eval(text,context)
         self.assertEqual(context['output'],24)
 
     def test_blockControl(self):        
         context = {}
-        exp.run(('output=1;if(1==2){output=2}else {output=3}'),context)
+        exp.eval(('output=1;if(1==2){output=2}else {output=3}'),context)
         self.assertEqual(context['output'],3)
 
-        exp.run('output=1;if(1==1){output=2;}else {output=3;}',context)
+        exp.eval('output=1;if(1==1){output=2;}else {output=3;}',context)
         self.assertEqual(context['output'],2)
 
-        exp.run(('if(1==2){'
+        exp.eval(('if(1==2){'
                    '    output=2'
                    '}else {'
                    '    output=3'
                    '}'),context)
         self.assertEqual(context['output'],3)
       
-        exp.run(('i=0;'
+        exp.eval(('i=0;'
                  'while(i<=6){'
                  '  output=i*2;'
                  '  i=i+1;'
@@ -129,83 +126,83 @@ class TestExpression(unittest.TestCase):
                'sleepSecs = 1;'
                'source=nvl(source,"data/source.jpg");')
         context = {}
-        exp.run(text,context)
+        exp.eval(text,context)
         self.assertEqual(context['rectangle']['x'],50)
 
     def test_arrowFunctions(self):            
         context = {"a":[1,2,3],"b":0}
-        exp.run('a.foreach(p=>b=b+p)',context)
+        exp.eval('a.foreach(p=>b=b+p)',context)
         self.assertEqual(context['b'],6) 
         context = {"a":[1,2,3,4,5],"b":0}
-        exp.run('a.filter(p=> p<5).foreach(p => b=b+p)',context)
+        exp.eval('a.filter(p=> p<5).foreach(p => b=b+p)',context)
         self.assertEqual(context['b'],10) 
         context = {"a":[1,2,3,4,5],"b":0}
-        self.assertEqual(exp.run('a.first(p => p%2==0)',context),2) 
+        self.assertEqual(exp.eval('a.first(p => p%2==0)',context),2) 
         context = {"a":[1,2,3,4,5],"b":0}
-        self.assertEqual(exp.run('a.last(p=> p%2==0)',context),4) 
+        self.assertEqual(exp.eval('a.last(p=> p%2==0)',context),4) 
         context = {"a":[1,2,3,4,5],"b":0}
-        self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).map(p=> p*2)',context),[4,6,8])
+        self.assertEqual(exp.eval('a.filter(p=> p>1 && p<5).map(p=> p*2)',context),[4,6,8])
         context = {"a":[1,2,3,4,5],"b":0}
-        self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).reverse()',context),[4,3,2])
+        self.assertEqual(exp.eval('a.filter(p=> p>1 && p<5).reverse()',context),[4,3,2])
         context = {"a":[1,2,3,4,5],"b":0}
-        self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).map(p=> p*2).reverse()',context),[8,6,4])
+        self.assertEqual(exp.eval('a.filter(p=> p>1 && p<5).map(p=> p*2).reverse()',context),[8,6,4])
 
-    def test_token(self): 
+    # def test_token(self): 
 
-        self.assertEqual(exp.run('2**b+a',{"a":1,"b":2},Token()),5) 
-        self.assertEqual(exp.run('c.b',{"a":"1","b":2,"c":{"a":4,"b":5}},Token()),5)
+    #     self.assertEqual(exp.eval('2**b+a',{"a":1,"b":2},Token()),5) 
+    #     self.assertEqual(exp.eval('c.b',{"a":"1","b":2,"c":{"a":4,"b":5}},Token()),5)
 
-        text='a=4; '\
-             'b=a+2; '\
-            ' output=a*b; ' 
-        context = {}
-        exp.run(text,context,Token())
-        self.assertEqual(context['output'],24)
+    #     text='a=4; '\
+    #          'b=a+2; '\
+    #         ' output=a*b; ' 
+    #     context = {}
+    #     exp.eval(text,context,Token())
+    #     self.assertEqual(context['output'],24)
 
-        context = {}
-        exp.run(('if(1==2){'
-                   '    output=2'
-                   '}else {'
-                   '    output=3'
-                   '}'),context,Token())
-        self.assertEqual(context['output'],3)
+    #     context = {}
+    #     exp.eval(('if(1==2){'
+    #                '    output=2'
+    #                '}else {'
+    #                '    output=3'
+    #                '}'),context,Token())
+    #     self.assertEqual(context['output'],3)
 
         
-        context = {"a":[1,2,3,4,5],"b":0}
-        self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).reverse()',context,Token()),[4,3,2])
-        context = {"a":[1,2,3,4,5],"b":0}
-        self.assertEqual(exp.run('a.filter(p=> p>1 && p<5).map(p=> p*2).reverse()',context,Token()),[8,6,4]) 
+    #     context = {"a":[1,2,3,4,5],"b":0}
+    #     self.assertEqual(exp.eval('a.filter(p=> p>1 && p<5).reverse()',context,Token()),[4,3,2])
+    #     context = {"a":[1,2,3,4,5],"b":0}
+    #     self.assertEqual(exp.eval('a.filter(p=> p>1 && p<5).map(p=> p*2).reverse()',context,Token()),[8,6,4]) 
 
-    def test_info(self):
-        # node = exp.parse('strCount("expression","e")>= a+1')
-        # # self.assertEqual(exp.vars(node),{'a': 'any'})
-        # self.assertEqual(exp.constants(node),{'expression': 'str', 'e': 'str', 1: 'int'})
-        # self.assertEqual(exp.operators(node),['>=','+'])
-        # self.assertEqual(exp.functions(node)['strCount']['signature'] ,'(self:str,x:str,start:int=None,end:int=None)->int' )  
+    # def test_info(self):
+    #     # node = exp.parse('strCount("expression","e")>= a+1')
+    #     # # self.assertEqual(exp.vars(node),{'a': 'any'})
+    #     # self.assertEqual(exp.constants(node),{'expression': 'str', 'e': 'str', 1: 'int'})
+    #     # self.assertEqual(exp.operators(node),['>=','+'])
+    #     # self.assertEqual(exp.functions(node)['strCount']['signature'] ,'(self:str,x:str,start:int=None,end:int=None)->int' )  
 
-        # node = exp.parse('a-1')
-        # self.assertEqual(exp.vars(node), {'a': 'float'})
-        # node = exp.parse('a && true')
-        # self.assertEqual(exp.vars(node), {'a': 'bool'})
-        # node = exp.parse('a > 1')
-        # self.assertEqual(exp.vars(node), {'a': 'int'})
-        # node = exp.parse('a > "a"')
-        # self.assertEqual(exp.vars(node), {'a': 'str'})
+    #     # node = exp.parse('a-1')
+    #     # self.assertEqual(exp.vars(node), {'a': 'float'})
+    #     # node = exp.parse('a && true')
+    #     # self.assertEqual(exp.vars(node), {'a': 'bool'})
+    #     # node = exp.parse('a > 1')
+    #     # self.assertEqual(exp.vars(node), {'a': 'int'})
+    #     # node = exp.parse('a > "a"')
+    #     # self.assertEqual(exp.vars(node), {'a': 'str'})
 
-        op = exp.build('strCount("expression","e")>= a+1')
-        self.assertEqual(exp.vars(op),{'a': 'any'})
-        self.assertEqual(exp.constants(op),{'expression': 'str', 'e': 'str', 1: 'int'})
-        self.assertEqual(exp.operators(op),['>=','+'])
-        self.assertEqual(exp.functions(op)['strCount']['signature'] ,'(self:str,x:str,start:int=None,end:int=None)->int' ) 
+    #     op = exp.build('strCount("expression","e")>= a+1')
+    #     self.assertEqual(exp.vars(op),{'a': 'any'})
+    #     self.assertEqual(exp.constants(op),{'expression': 'str', 'e': 'str', 1: 'int'})
+    #     self.assertEqual(exp.operators(op),['>=','+'])
+    #     self.assertEqual(exp.functions(op)['strCount']['signature'] ,'(self:str,x:str,start:int=None,end:int=None)->int' ) 
 
-        # op = exp.build('a-1')
-        # self.assertEqual(exp.vars(op), {'a': 'float'})
-        # op  = exp.build('a && true')
-        # self.assertEqual(exp.vars(op ), {'a': 'bool'})
-        # op  = exp.build('a > 1')
-        # self.assertEqual(exp.vars(op ), {'a': 'int'})
-        # op  = exp.build('a > "a"')
-        # self.assertEqual(exp.vars(op ), {'a': 'str'})
+    #     # op = exp.build('a-1')
+    #     # self.assertEqual(exp.vars(op), {'a': 'float'})
+    #     # op  = exp.build('a && true')
+    #     # self.assertEqual(exp.vars(op ), {'a': 'bool'})
+    #     # op  = exp.build('a > 1')
+    #     # self.assertEqual(exp.vars(op ), {'a': 'int'})
+    #     # op  = exp.build('a > "a"')
+    #     # self.assertEqual(exp.vars(op ), {'a': 'str'})
 
     # def test_serialize(self): 
     #     node =exp.parse(('i=0;'
@@ -221,32 +218,32 @@ class TestExpression(unittest.TestCase):
 
     #     operand= exp.deserialize(serialized,'Operand')
     #     context = {}
-    #     exp.run(operand,context)
+    #     exp.eval(operand,context)
     #     self.assertEqual(context['output'],12) 
 
-    def test_signals(self):
-        expression = load('test/signal-01.js')
-        token= Token()
-        context = {}
+    # def test_signals(self):
+    #     expression = load('test/signal-01.js')
+    #     token= Token()
+    #     context = {}
 
-        exp.run(expression,context,token)
-        token.clearSignals()     
-        self.assertEqual(context['i'],0)
+    #     exp.eval(expression,context,token)
+    #     token.clearSignals()     
+    #     self.assertEqual(context['i'],0)
 
-        token.addSignal('signal_1')        
-        exp.run(expression,context,token)
-        token.clearSignals()     
-        self.assertEqual(context['i'],1)
+    #     token.addSignal('signal_1')        
+    #     exp.eval(expression,context,token)
+    #     token.clearSignals()     
+    #     self.assertEqual(context['i'],1)
         
-        token.addSignal('wait:'+token.id)
-        exp.run(expression,context,token)
-        token.clearSignals()  
-        self.assertEqual(context['i'],2)
+    #     token.addSignal('wait:'+token.id)
+    #     exp.eval(expression,context,token)
+    #     token.clearSignals()  
+    #     self.assertEqual(context['i'],2)
         
-        token.addSignal('signal_2')
-        exp.run(expression,context,token)
-        token.clearSignals()     
-        self.assertEqual(context['i'],3)     
+    #     token.addSignal('signal_2')
+    #     exp.eval(expression,context,token)
+    #     token.clearSignals()     
+    #     self.assertEqual(context['i'],3)     
 
     # def test_parseBlockControl(self):
 

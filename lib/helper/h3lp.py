@@ -5,15 +5,20 @@ class ValidatorHelper():
     def __init__(self):        
         self._reInt = re.compile('[0-9]+$')
         self._reDecimal = re.compile('(\d+(\.\d*)?|\.\d+)([eE]\d+)?')
+        self._reAlphanumeric = re.compile('[a-zA-Z0-9_.]+$')
+        self._reAlpha = re.compile('[a-zA-Z]+$')
+        self._reDate = re.compile('^\d{4}-\d{2}-\d{2}$')
+        self._reDateTime = re.compile('\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)')
+        self._reTime = re.compile('\[0-2]\d:[0-5]\d:[0-5]\d')
         
     def isAlpha(self,value:str)->bool:
         if value == None:
             return False
-        return value.isalpha()      
+        return self._reAlpha.match(value)      
     def isAlphanumeric(self,value:str)->bool:
         if value == None:
             return False
-        return value.isalnum()    
+        return self._reAlphanumeric.match(value)  
     def between(value:any,start:any,to:any)->bool:
         return value >= start and value <= to
     def includes(self,source:any,value:any)->bool:
@@ -63,11 +68,11 @@ class ValidatorHelper():
     def isDecimalFormat(self,value:str)->bool:
         return self._reDecimal.match(value)
     def isDateFormat(self,value:str)->bool:
-        pass
+        return self._reDate.match(value) 
     def isDateTimeFormat(self,value:str)->bool:
-        pass
+        return self._reDateTime.match(value) 
     def isTimeFormat(self,value:str)->bool:
-        pass
+        return self._reTime.match(value) 
 
 class ObjectHelper():
     def __init__(self,validator:ValidatorHelper):

@@ -31,6 +31,7 @@ class CoreLibrary():
        self.datetimeFunctions()
        self.ioFunctions()
        self.arrayFunctions()
+       self.groupFunctions()
        # self.signalFunctions()   
 
     def constants(self):
@@ -78,8 +79,8 @@ class CoreLibrary():
         self.model.addOperator('>=(a:T,b:T):boolean',self.Operators.greaterThanOrEqual,3)
         self.model.addOperator('<=(a:T,b:T):boolean',self.Operators.lessThanOrEqual,3)
 
-        self.model.addOperator('and(a:T,b:T):boolean',And(),2)
-        self.model.addOperator('or(a:T,b:T):boolean',Or(),2)
+        self.model.addOperator('&&(a:T,b:T):boolean',And(),2)
+        self.model.addOperator('||(a:T,b:T):boolean',Or(),2)
         self.model.addOperator('!(a:boolean):boolean',self.Operators._not,4)
 
         self.model.addOperator('[](list:T[],index:integer):T',lambda a, b: a[b],2)
@@ -1083,7 +1084,7 @@ class CoreLibrary():
             return path.join(paths)    
     
 class And(PrototypeEvaluator):
-    def clone (operand:Operand)-> IEvaluator:
+    def clone (self,operand:Operand)-> IEvaluator:
         return And(operand)	
     
     def eval(self,context: Context)->bool:
@@ -1094,7 +1095,7 @@ class And(PrototypeEvaluator):
         return self.operand.children[1].eval(context)
 
 class Or(PrototypeEvaluator):
-    def clone (operand:Operand)-> IEvaluator:
+    def clone (self,operand:Operand)-> IEvaluator:
         return Or(operand)	
     
     def eval(self,context: Context)->bool:
@@ -1105,7 +1106,7 @@ class Or(PrototypeEvaluator):
         return self.operand.children[1].eval(context)
              
 class Assignment(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return Assignment(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1116,7 +1117,7 @@ class Assignment(PrototypeEvaluator):
 		return value
 
 class AssignmentAddition(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return AssignmentAddition(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1127,7 +1128,7 @@ class AssignmentAddition(PrototypeEvaluator):
 		return value
 
 class AssignmentSubtraction(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return AssignmentSubtraction(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1138,7 +1139,7 @@ class AssignmentSubtraction(PrototypeEvaluator):
 		return value
 
 class AssignmentMultiplication(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return AssignmentMultiplication(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1149,7 +1150,7 @@ class AssignmentMultiplication(PrototypeEvaluator):
 		return value
 
 class AssignmentDivision(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return AssignmentDivision(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1160,7 +1161,7 @@ class AssignmentDivision(PrototypeEvaluator):
 		return value
 
 class AssignmentExponentiation(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return AssignmentExponentiation(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1171,7 +1172,7 @@ class AssignmentExponentiation(PrototypeEvaluator):
 		return value
 
 class AssignmentFloorDivision(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return AssignmentFloorDivision(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1182,7 +1183,7 @@ class AssignmentFloorDivision(PrototypeEvaluator):
 		return value
 
 class AssignmentMod(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return AssignmentMod(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1193,7 +1194,7 @@ class AssignmentMod(PrototypeEvaluator):
 		return value
 
 class AssignmentBitAnd(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return AssignmentBitAnd(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1204,7 +1205,7 @@ class AssignmentBitAnd(PrototypeEvaluator):
 		return value
 
 class AssignmentBitOr(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return AssignmentBitOr(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1215,7 +1216,7 @@ class AssignmentBitOr(PrototypeEvaluator):
 		return value
 
 class AssignmentBitXor(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return AssignmentBitXor(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1226,7 +1227,7 @@ class AssignmentBitXor(PrototypeEvaluator):
 		return value
 
 class AssignmentLeftShift(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return AssignmentLeftShift(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1237,7 +1238,7 @@ class AssignmentLeftShift(PrototypeEvaluator):
 		return value
 
 class AssignmentRightShift(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return AssignmentRightShift(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1248,7 +1249,7 @@ class AssignmentRightShift(PrototypeEvaluator):
 		return value
 
 class Map(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return Map(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1302,7 +1303,7 @@ class Map(PrototypeEvaluator):
 		return rows
 
 class Distinct(PrototypeEvaluator):
-    def clone (operand:Operand)-> IEvaluator:
+    def clone (self,operand:Operand)-> IEvaluator:
         return Distinct(operand)
 
     def eval (self, context: Context)-> any:
@@ -1341,7 +1342,7 @@ class Distinct(PrototypeEvaluator):
         return rows
 
 class Foreach(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return Foreach(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1357,7 +1358,7 @@ class Foreach(PrototypeEvaluator):
 		return _list
 
 class Filter(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return Filter(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1375,7 +1376,7 @@ class Filter(PrototypeEvaluator):
 		return rows
 
 class Reverse(PrototypeEvaluator):
-    def clone (operand:Operand)-> IEvaluator:
+    def clone (self,operand:Operand)-> IEvaluator:
         return Reverse(operand)
 
     def eval (self, context: Context)-> any:
@@ -1399,7 +1400,7 @@ class Reverse(PrototypeEvaluator):
         return list(map((lambda p: p.p), values))
 
 class Sort(PrototypeEvaluator):
-    def clone (operand:Operand)-> IEvaluator:
+    def clone (self,operand:Operand)-> IEvaluator:
         return Sort(operand)
 
     def eval (self, context: Context)-> any:
@@ -1421,7 +1422,7 @@ class Sort(PrototypeEvaluator):
         return list(map((lambda p: p.p), values))
 
 class Remove(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return Remove(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1439,7 +1440,7 @@ class Remove(PrototypeEvaluator):
 		return rows
 
 class First(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return First(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1454,7 +1455,7 @@ class First(PrototypeEvaluator):
 		return helper.operand.first(_list, self.operand.children[1], self.operand.children[2], context.newContext())
 
 class Last(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return Last(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1468,7 +1469,7 @@ class Last(PrototypeEvaluator):
 		return helper.operand.last(_list, self.operand.children[1], self.operand.children[2], context.newContext())
 
 class Count(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return Count(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1482,7 +1483,7 @@ class Count(PrototypeEvaluator):
 		return helper.operand.count(_list, self.operand.children[1], self.operand.children[2], context.newContext())
 
 class Max(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return Max(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1500,7 +1501,7 @@ class Max(PrototypeEvaluator):
 		return helper.operand.max(_list, self.operand.children[1], self.operand.children[2], context.newContext())
 
 class Min(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return Min(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1518,7 +1519,7 @@ class Min(PrototypeEvaluator):
 		return helper.operand.min(_list, self.operand.children[1], self.operand.children[2], context.newContext())
 
 class Avg(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return Avg(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1536,7 +1537,7 @@ class Avg(PrototypeEvaluator):
 		return helper.operand.avg(_list, self.operand.children[1], self.operand.children[2], context.newContext())
 
 class Sum(PrototypeEvaluator):
-	def clone (operand:Operand)-> IEvaluator:
+	def clone (self,operand:Operand)-> IEvaluator:
 		return Sum(operand)
 
 	def eval (self, context: Context)-> any:
@@ -1554,7 +1555,7 @@ class Sum(PrototypeEvaluator):
 		return helper.operand.sum(_list, self.operand.children[1], self.operand.children[2], context.newContext())
 
 class Union(PrototypeEvaluator):
-    def clone (operand:Operand)-> IEvaluator:
+    def clone (self,operand:Operand)-> IEvaluator:
         return Union(operand)
 
     def eval (self, context: Context)-> any:
@@ -1591,7 +1592,7 @@ class Union(PrototypeEvaluator):
         return result
 
 class Intersection(PrototypeEvaluator):
-    def clone (operand:Operand)-> IEvaluator:
+    def clone (self,operand:Operand)-> IEvaluator:
         return Intersection(operand)
 
     def eval (self, context: Context)-> any:
@@ -1622,7 +1623,7 @@ class Intersection(PrototypeEvaluator):
             return result
 
 class Difference(PrototypeEvaluator):
-    def clone (operand:Operand)-> IEvaluator:
+    def clone (self,operand:Operand)-> IEvaluator:
         return Difference(operand)
 
     def eval (self, context: Context)-> any:
@@ -1655,7 +1656,7 @@ class Difference(PrototypeEvaluator):
             return result
 
 class SymmetricDifference(PrototypeEvaluator):
-    def clone (operand:Operand)-> IEvaluator:
+    def clone (self,operand:Operand)-> IEvaluator:
         return SymmetricDifference(operand)
 
     def eval (self, context: Context)-> any:

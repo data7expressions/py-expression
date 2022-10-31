@@ -116,3 +116,5 @@ class Exp(IExpressions, metaclass=Singleton):
             return value
         else:
             return None
+
+exp= Exp()

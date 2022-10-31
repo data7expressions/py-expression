@@ -47,7 +47,7 @@ class OperandBuilder(IOperandBuilder):
             i = 0
             while i < len(operand.children):
                 child = operand.children[i]
-                operand.children[i] = self.reduce(child)
+                operand.children[i] = self.__reduce(child)
                 i+=1
         return operand
     

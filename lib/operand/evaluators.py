@@ -21,7 +21,7 @@ class ConstEvaluator(Evaluator):
 
 class VarEvaluator(Evaluator):
     def eval (self,context: Context)-> Any:
-        return context.data.set(self.operand.name)    
+        return context.data.get(self.operand.name)    
 
 class EnvEvaluator(Evaluator):
     def eval (self,context: Context)-> Any:

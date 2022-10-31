@@ -49,7 +49,7 @@ class Parser():
                 operand1=  self.getOperand()
                 operator= self.getOperator()
                 if operator is None or self.current in _break:
-                    if self.current in _break:
+                    if self.current != None and self.current in _break:
                         self.index+=1
                     expression = operand1
                     isBreak= True
@@ -57,8 +57,8 @@ class Parser():
             operand2=  self.getOperand()
             nextOperator= self.getOperator()
             if operator is not None and operand1 is not None:
-                if nextOperator is None or nextOperator in _break:
-                    if nextOperator != None:
+                if nextOperator is None or self.current in _break:
+                    if self.current != None and self.current in _break:
                         self.index+=1
                     expression= Operand(self.pos(len(operator)), operator,OperandType.Operator,[operand1,operand2])
                     isBreak= True
@@ -118,7 +118,7 @@ class Parser():
                     name = names.pop()
                     variableName= '.'.join(names)
                     variable = Operand(pos,variableName,OperandType.Var)
-                    operand= self.getChildFunction(name,variable)
+                    operand= self.getChildFunc(name,variable)
                 else:
                     args=  self.getArgs(end=')')
                     operand= Operand(pos,value,OperandType.CallFunc,args) 
@@ -243,17 +243,21 @@ class Parser():
             return operand      
 
     def getOperator(self):
-        if self.end:return None
+        if self.end:
+            return None
         op=None
         if self.index+2 < self.length:
             triple = self.current+self.offset(1)+self.buffer[self.index+2]
-            if triple in self.tripleOperators :op=triple
+            if triple in self.tripleOperators :
+                op=triple
         if op is None and  self.index+1 < self.length:
             double = self.current+self.offset(1)
-            if double in self.doubleOperators  :op=double
-        if not self.model.isOperator(self.current):
-            return None        
-        if op is None:op=self.current 
+            if double in self.doubleOperators:
+                op=double
+        if op is None:
+            if not self.model.isOperator(self.current):
+                return None 
+            op=self.current
         self.index+=len(op)
         return op
     
@@ -268,16 +272,17 @@ class Parser():
         i=0
         while i < length:
             p =buffer[i]        
-            if isString and p == quotes: isString=False 
+            if isString and p == quotes: 
+                isString=False 
             elif not isString and (p == '\'' or p=='"' or p=='`' ):
                 isString=True
                 quotes=p
             if isString:
-                result.append(p)
+                result.append((p, line, col))
             elif  p == ' ' :
                 # solo debería dejar los espacios cuando es entre caracteres alfanuméricos. 
                 # por ejemplo en el caso de "} if" no debería quedar un espacio 
-                if i+1 < length and self.validator.isAlphanumeric(buffer[i-1]) and self.validator.isAlphanumeric(buffer[i+1]):
+                if i+1 < length and h3lp.validator.isAlphanumeric(buffer[i-1]) and h3lp.validator.isAlphanumeric(buffer[i+1]):
                     result.append((p, line, col))                
             elif (p == '\n'):
                line+= 1
@@ -296,14 +301,17 @@ class Parser():
     
     @property
     def current(self)->str:
-        return self.buffer[self.index]    
+        return self.buffer[self.index] if self.index < self.length else None    
     
     def offset(self, offset=0)->str:
-        return self.buffer[self.index + offset]
+        return self.buffer[self.index + offset] if self.index + offset < self.length else None
 
     def pos (self, offset=0)-> Tuple[int, int]:
-        position = self.positions[self.index - offset]
-        return (position[1], position[2])
+        if self.index + offset < self.length and self.index + offset > -1:
+            position = self.positions[self.index - offset]
+            return (position[1], position[2])
+        else:
+            return None
 
     def nextIs(self,key)->bool:
         arr = list(key)        
@@ -538,7 +546,7 @@ class Parser():
         argsOperand =Operand(argsPos,'args',OperandType.Args,args) 
         return Operand(pos,name,'function',[argsOperand,block]) 
 
-    def getChildFunction(self,name,parent)->Operand:
+    def getChildFunc(self,name,parent)->Operand:
         isArrow = False
         pos = self.pos()
         variableName = self.getValue(False)

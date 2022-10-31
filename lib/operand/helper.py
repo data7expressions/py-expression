@@ -161,7 +161,7 @@ class OperandHelper():
         return None
 
     def last (self,list: List[Any], variable: Operand, aggregate: Operand, context: Context)-> Any:
-        i = len(list)
+        i = len(list) - 1
         while i >= 0:
             item = list[i]
             context.data.set(variable.name, item)

@@ -99,13 +99,20 @@ class ModelManager(IModelManager):
     def getEnum(self,name)->List[Tuple[str,Any]]: 
         return self.enums[name]
     
-    def getOperator(self,name:str,cardinality:int)->OperatorMetadata:
+    def getOperator(self,name:str,operands:int)->OperatorMetadata:
         try:            
             if name in self._operators:
-                operator = self._operators[name]
-                if cardinality in operator:
-                    return operator[cardinality]
-            return None        
+                operators = self._operators[name]
+                if operands in operators:
+                    return operators[operands]
+                elif len(operators) == 1:
+                    return operators[list(operators.keys())[0]]
+                elif 2 in operators:
+                    return operators[2]
+                else:
+                   raise Exception('it is necessary to determine the number of operands for the operator '+name) 
+            else:
+               raise Exception('Operator: '+name+' not found') 
         except:
             raise Exception('error with operator: '+name)     
 
@@ -122,21 +129,23 @@ class ModelManager(IModelManager):
     
     def isEnum(self,name:str)->bool:      
         names = name.split('.')
-        return names[0] in self.enums.keys()
+        return names[0] in self._enums.keys()
     
     def isOperator (self, name:str, operands:int=None)->bool:
+        if not name in self._operators:
+            return None
         operators = self._operators[name]
         if operands != None:
-            return operators and operators[operands] != None
+            return operators and operands in operators
         return operators != None
     
     def isFunction (self,name:str)->bool:
         return self._functions[name] != None	
     
-    def priority(self,name:str,cardinality:int)->int:
+    def priority(self,name:str,cardinality:int=None)->int:
         try:
             metadata = self.getOperator(name,cardinality)
-            return metadata["priority"] if metadata is not None else -1
+            return metadata.priority if metadata is not None else -1
         except Exception as error:
             raise Exception('priority: '+name+' error: '+str(error))   
     

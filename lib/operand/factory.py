@@ -27,7 +27,7 @@ class EvaluatorFactory(IEvaluatorFactory):
             raise Exception('Operator '+ operand.name +' not implemented')	
 
     def createFunction (self, operand:Operand)->IEvaluator:
-        operatorMetadata = self.model.getOperator(operand.name, len(operand.children))
+        operatorMetadata = self.model.getFunction(operand.name)
         if operatorMetadata == None:
             raise Exception('Function '+ operand.name +' undefined')
         elif operatorMetadata.custom != None:
