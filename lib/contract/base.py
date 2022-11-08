@@ -49,4 +49,8 @@ class Format():
       self.regExp = regExp
   
 
+class Position():
+    def __init__(self, ln:int, col:int):
+      self.ln = ln
+      self.col = col
 

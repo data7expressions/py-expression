@@ -3,6 +3,7 @@ from inspect import Parameter
 from pyclbr import Function
 from .context import Context
 from .type import Type
+from .base import Position
 from typing import TypeVar, Generic, List, Tuple
 
 class OperandType(Enum):
@@ -62,7 +63,7 @@ class IEvaluator():
         pass
     
 class Operand():
-    def __init__(self,pos: Tuple[int, int], name:str, type:OperandType, children:list['Operand']=[], returnType: Type=None):
+    def __init__(self,pos: Position, name:str, type:OperandType, children:list['Operand']=[], returnType: Type=None):
         self.pos = pos
         self.name  = name
         self.type = type

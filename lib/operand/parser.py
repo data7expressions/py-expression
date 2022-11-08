@@ -37,7 +37,7 @@ class Parser():
             operands.append(operand)
         if len(operands)==1 :
             return operands[0]
-        return Operand((0,0),'block', OperandType.Block,operands)
+        return Operand(Position(0,0),'block', OperandType.Block,operands)
 
     def getExpression(self,operand1=None,operator=None,_break='')->Operand:
         expression = None
@@ -196,12 +196,12 @@ class Parser():
         if operand is None:
             raise Exception('Operand undefined')        
         operand = self.solveChain(operand, pos)
-        if isNegative:operand= Operand((pos[0],pos[1]-1),'-',OperandType.Operator,[operand])
-        if isNot:operand=Operand((pos[0],pos[1]-1),'!',OperandType.Operator,[operand])
-        if isBitNot:operand=Operand((pos[0],pos[1]-1),'~',OperandType.Operator,[operand])  
+        if isNegative:operand= Operand(Position(pos.ln,pos.col-1),'-',OperandType.Operator,[operand])
+        if isNot:operand=Operand(Position(pos.ln,pos.col-1),'!',OperandType.Operator,[operand])
+        if isBitNot:operand=Operand(Position(pos.ln,pos.col-1),'~',OperandType.Operator,[operand])  
         return operand
 
-    def solveChain(self,operand, pos:Tuple[int,int])->Operand:
+    def solveChain(self,operand, pos:Position)->Operand:
         if self.end:
             return operand        
         if self.current == '.':
@@ -306,10 +306,10 @@ class Parser():
     def offset(self, offset=0)->str:
         return self.buffer[self.index + offset] if self.index + offset < self.length else None
 
-    def pos (self, offset=0)-> Tuple[int, int]:
+    def pos (self, offset=0)-> Position:
         if self.index + offset < self.length and self.index + offset > -1:
             position = self.positions[self.index - offset]
-            return (position[1], position[2])
+            return Position(position[1], position[2])
         else:
             return None
 
@@ -362,7 +362,7 @@ class Parser():
             if self.offset(-1)==end: break
         return args
 
-    def getObject(self,pos:Tuple[int,int])->Operand:
+    def getObject(self,pos:Position)->Operand:
         attributes= []
         while True:
             name=None
@@ -404,11 +404,11 @@ class Parser():
         else:
             return self.getExpression(_break=';')
 
-    def getReturn(self,pos:Tuple[int,int])-> Operand: 
+    def getReturn(self,pos:Position)-> Operand: 
         value= self.getExpression(_break=';')
         return Operand(pos,'return',OperandType.Return,[value])  
 
-    def getTryCatchBlock(self,pos:Tuple[int,int])->Operand:
+    def getTryCatchBlock(self,pos:Position)->Operand:
         children = []              
         tryBlock = self.getControlBlock()
         children.append(tryBlock)
@@ -428,11 +428,11 @@ class Parser():
         if self.current == ';':self.index+=1
         return Operand(pos,'try',OperandType.Try,children)    
 
-    def getThrow(self,pos:Tuple[int,int])->Operand: 
+    def getThrow(self,pos:Position)->Operand: 
         exception= self.getExpression(_break=';')
         return Operand(pos,'throw',OperandType.Throw,[exception])            
 
-    def getIfBlock(self,pos:Tuple[int,int])->Operand:
+    def getIfBlock(self,pos:Position)->Operand:
         children = []
         condition= self.getExpression(_break=')')
         children.append(condition)
@@ -451,7 +451,7 @@ class Parser():
             children.append(elseBlock)
         return Operand(pos,'if',OperandType.If,children)   
         
-    def getSwitchBlock(self,pos:Tuple[int,int])->Operand:
+    def getSwitchBlock(self,pos:Position)->Operand:
         children = []
         value= self.getExpression(_break=')')
         children.append(value)        
@@ -504,7 +504,7 @@ class Parser():
         if self.current == '}': self.index+=1   
         return Operand(pos,'switch',OperandType.Switch,children)     
 
-    def getWhileBlock(self,pos:Tuple[int,int])->Operand:
+    def getWhileBlock(self,pos:Position)->Operand:
         condition= self.getExpression(_break=')')
         if  self.current == '{':
             self.index+=1  
@@ -513,7 +513,7 @@ class Parser():
             block= self.getExpression(_break=';')
         return Operand(pos,'while',OperandType.While,[condition,block])
 
-    def getForBlock(self,pos:Tuple[int,int])->Operand:
+    def getForBlock(self,pos:Position)->Operand:
         first= self.getExpression(_break=';')
         if self.previous==';':
             condition= self.getExpression(_break=';')
@@ -537,7 +537,7 @@ class Parser():
             return Operand(pos,'forIn',OperandType.ForIn,[first,list,block])       
         raise Exception('expression for error') 
         
-    def getFunctionBlock(self, pos:Tuple[int,int])->Operand:
+    def getFunctionBlock(self, pos:Position)->Operand:
         name=  self.getValue()
         if self.current == '(': self.index+=1
         argsPos = self.pos()
@@ -583,12 +583,12 @@ class Parser():
             args.insert(0,parent)
             return  Operand(pos,name,OperandType.ChildFunc,args)
    
-    def getIndexOperand(self,name, pos:Tuple[int,int])->Operand:
+    def getIndexOperand(self,name, pos:Position)->Operand:
         idx= self.getExpression(_break=']')
         operand= Operand(pos,name,OperandType.Var)
         return Operand(pos,'[]', OperandType.Operator,[operand,idx]) 
 
-    def getEnum(self,value, pos:Tuple[int,int])->Operand:
+    def getEnum(self,value, pos:Position)->Operand:
         if '.' in value and self.model.isEnum(value):
             names = value.split('.')
             enumName = names[0]

@@ -1,12 +1,9 @@
 import unittest
 from lib.contract.base import *
 # from lib.core import Token
-from lib.expression import Exp
+from lib.expression import exp
 from enum import Enum
 from os import path
-
-exp = Exp()
-
 
 def load(_path):
     dir_path = path.dirname(path.realpath(__file__))
