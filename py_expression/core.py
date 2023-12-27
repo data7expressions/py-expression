@@ -15,14 +15,14 @@ class Context():
     def newContext(self):        
         return Context({},self)
 
-    def getConext(self,variable):
+    def getContext(self,variable):
         if variable in self.data or self._parent is None: return self.data
-        _context =self._parent.getConext(variable)
+        _context =self._parent.getContext(variable)
         return _context  if _context is not None else self.data
 
     def get(self,name):
         names=name.split('.')
-        value = self.getConext(names[0]) 
+        value = self.getContext(names[0]) 
         for n in names:
             if n not in value: return None
             value=value[n]
@@ -31,7 +31,7 @@ class Context():
     def set(self,name,value):
         names=name.split('.')        
         level = len(names)-1
-        list = self.getConext(names[0]) 
+        list = self.getContext(names[0]) 
         for i,e in enumerate(names):
             if i == level:
                 list[e]=value
@@ -52,7 +52,7 @@ class Contextable():
     def context(self,value):
         self._context=value
 
-class Managerable():
+class Manageable():
     def __init__(self):
       self._mgr  = None
 
@@ -63,12 +63,12 @@ class Managerable():
     def mgr(self,value):
         self._mgr=value 
 
-class Singleton(type):
-    _instances = {}
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
+# class Singleton(type):
+#     _instances = {}
+#     def __call__(cls, *args, **kwargs):
+#         if cls not in cls._instances:
+#             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+#         return cls._instances[cls]
 
 class ExpressionError(Exception):pass
 
@@ -163,7 +163,7 @@ class Operand():
                 self.operands[0].debug(token,level+1)   
         else:
             idx = token.path[level]
-            # si es el anteultimo nodo 
+            # si es el ante ultimo nodo 
             if len(token.path) -1 == level:           
                 if len(self.operands) > idx+1:
                    token.path[level] = idx+1
@@ -249,7 +249,7 @@ class Object(Operand):
             dic[p.name]=p.value
         return dic
 
-class ArrayForeach(Operand,Contextable,Managerable):
+class ArrayForeach(Operand,Contextable,Manageable):
     def __init__(self,name,operands=[]):
         Operand.__init__(self,name,operands)
 
@@ -262,7 +262,7 @@ class ArrayForeach(Operand,Contextable,Managerable):
         for p in variable.value:
             childContext.init(self.name,p)
             body.value
-class ArrayMap(Operand,Contextable,Managerable):
+class ArrayMap(Operand,Contextable,Manageable):
     def __init__(self,name,operands=[]):
         Operand.__init__(self,name,operands)
 
@@ -277,7 +277,7 @@ class ArrayMap(Operand,Contextable,Managerable):
             childContext.init(self.name,p)
             result.append(body.value)
         return result
-class ArrayFirst(Operand,Contextable,Managerable):
+class ArrayFirst(Operand,Contextable,Manageable):
     def __init__(self,name,operands=[]):
         Operand.__init__(self,name,operands)
 
@@ -291,7 +291,7 @@ class ArrayFirst(Operand,Contextable,Managerable):
             childContext.init(self.name,p)
             if body.value : return p
         return None
-class ArrayLast(Operand,Contextable,Managerable):
+class ArrayLast(Operand,Contextable,Manageable):
     def __init__(self,name,operands=[]):
         Operand.__init__(self,name,operands)
 
@@ -307,7 +307,7 @@ class ArrayLast(Operand,Contextable,Managerable):
             childContext.init(self.name,p)
             if body.value : return p
         return None 
-class ArrayFilter(Operand,Contextable,Managerable):
+class ArrayFilter(Operand,Contextable,Manageable):
     def __init__(self,name,operands=[]):
         Operand.__init__(self,name,operands)
 
@@ -322,7 +322,7 @@ class ArrayFilter(Operand,Contextable,Managerable):
             childContext.init(self.name,p)
             if body.value: result.append(p)
         return result        
-class ArrayReverse(Operand,Contextable,Managerable):
+class ArrayReverse(Operand,Contextable,Manageable):
     def __init__(self,name,operands=[]):
         Operand.__init__(self,name,operands)
 
@@ -345,7 +345,7 @@ class ArrayReverse(Operand,Contextable,Managerable):
             result.sort((lambda p: p["ord"]))
             result.reverse()    
             return map(lambda p: p['p'],result)
-class ArraySort(Operand,Contextable,Managerable):
+class ArraySort(Operand,Contextable,Manageable):
     def __init__(self,name,operands=[]):
         Operand.__init__(self,name,operands)
 
@@ -367,18 +367,18 @@ class ArraySort(Operand,Contextable,Managerable):
                 result.append({"ord":method.value,"p":p})
             result.sort((lambda p: p["ord"]))
             return map(lambda p: p['p'],result)
-class ArrayPush(Operand,Contextable,Managerable):
+class ArrayPush(Operand,Contextable,Manageable):
     def __init__(self,name,operands=[]):
         Operand.__init__(self,name,operands)
 
     @property
     def value(self):        
         variable= self._operands[0]
-        elemnent= self._operands[1]
+        element= self._operands[1]
         value = variable.value
-        value.append(elemnent)
+        value.append(element)
         return value
-class ArrayPop(Operand,Contextable,Managerable):
+class ArrayPop(Operand,Contextable,Manageable):
     def __init__(self,name,operands=[]):
         Operand.__init__(self,name,operands)
 
@@ -391,7 +391,7 @@ class ArrayPop(Operand,Contextable,Managerable):
         else:
             index = len(self._operands) -1        
         return variable.value.pop(index)
-class ArrayRemove(Operand,Contextable,Managerable):
+class ArrayRemove(Operand,Contextable,Manageable):
     def __init__(self,name,operands=[]):
         Operand.__init__(self,name,operands)
 
@@ -401,7 +401,7 @@ class ArrayRemove(Operand,Contextable,Managerable):
         element= self._operands[1]
         variable.value.remove(element.value)    
 
-class Function(Operand,Managerable):
+class Function(Operand,Manageable):
     def __init__(self,name,operands=[]):
       Operand.__init__(self,name,operands)
 
@@ -584,67 +584,67 @@ class Not(Operator):
     def value(self):
         return not self._operands[0].value
 
-class Assigment(Operator):
+class Assignment(Operator):
     @property
     def value(self):
         self._operands[0].value = self._operands[1].value
         return self._operands[0].value
-class AssigmentAddition(Operator):
+class AssignmentAddition(Operator):
     @property
     def value(self):
         self._operands[0].value += self._operands[1].value
         return self._operands[0].value
-class AssigmentSubtraction (Operator):
+class AssignmentSubtraction (Operator):
     @property
     def value(self):
         self._operands[0].value -= self._operands[1].value
         return self._operands[0].value  
-class AssigmentMultiplication(Operator):
+class AssignmentMultiplication(Operator):
     @property
     def value(self):
         self._operands[0].value *= self._operands[1].value
         return self._operands[0].value 
-class AssigmentDivision (Operator):
+class AssignmentDivision (Operator):
     @property
     def value(self):
         self._operands[0].value /= self._operands[1].value
         return self._operands[0].value  
-class AssigmentExponentiation(Operator):
+class AssignmentExponentiation(Operator):
     @property
     def value(self):
         self._operands[0].value **= self._operands[1].value
         return self._operands[0].value 
-class AssigmentFloorDivision (Operator):
+class AssignmentFloorDivision (Operator):
     @property
     def value(self):
         self._operands[0].value //= self._operands[1].value
         return self._operands[0].value   
-class AssigmentMod (Operator):
+class AssignmentMod (Operator):
     @property
     def value(self):
         self._operands[0].value %= self._operands[1].value
         return self._operands[0].value 
-class AssigmentBitAnd(Operator):
+class AssignmentBitAnd(Operator):
     @property
     def value(self):
         self._operands[0].value &= self._operands[1].value
         return self._operands[0].value 
-class AssigmentBitOr(Operator):
+class AssignmentBitOr(Operator):
     @property
     def value(self):
         self._operands[0].value |= self._operands[1].value
         return self._operands[0].value
-class AssigmentBitXor(Operator):
+class AssignmentBitXor(Operator):
     @property
     def value(self):
         self._operands[0].value ^= self._operands[1].value
         return self._operands[0].value
-class AssigmentLeftShift(Operator):
+class AssignmentLeftShift(Operator):
     @property
     def value(self):
         self._operands[0].value <<= self._operands[1].value
         return self._operands[0].value
-class AssigmentRightShift(Operator):
+class AssignmentRightShift(Operator):
     @property
     def value(self):
         self._operands[0].value >>= self._operands[1].value
@@ -698,19 +698,19 @@ class Exp(metaclass=Singleton):
         self.addOperator('||','logical',Or,2)
         self.addOperator('!','logical',Not)
 
-        self.addOperator('=','assignment',Assigment,1)
-        self.addOperator('+=','assignment',AssigmentAddition,1)
-        self.addOperator('-=','assignment',AssigmentSubtraction,1)
-        self.addOperator('*=','assignment',AssigmentMultiplication,1)
-        self.addOperator('/=','assignment',AssigmentDivision,1)
-        self.addOperator('**=','assignment',AssigmentExponentiation,1)
-        self.addOperator('//=','assignment',AssigmentFloorDivision,1)
-        self.addOperator('%=','assignment',AssigmentMod,1)
-        self.addOperator('&=','assignment',AssigmentBitAnd,1)
-        self.addOperator('|=','assignment',AssigmentBitOr,1)
-        self.addOperator('^=','assignment',AssigmentBitXor,1)
-        self.addOperator('<<=','assignment',AssigmentLeftShift,1)
-        self.addOperator('>>=','assignment',AssigmentRightShift,1)        
+        self.addOperator('=','assignment',Assignment,1)
+        self.addOperator('+=','assignment',AssignmentAddition,1)
+        self.addOperator('-=','assignment',AssignmentSubtraction,1)
+        self.addOperator('*=','assignment',AssignmentMultiplication,1)
+        self.addOperator('/=','assignment',AssignmentDivision,1)
+        self.addOperator('**=','assignment',AssignmentExponentiation,1)
+        self.addOperator('//=','assignment',AssignmentFloorDivision,1)
+        self.addOperator('%=','assignment',AssignmentMod,1)
+        self.addOperator('&=','assignment',AssignmentBitAnd,1)
+        self.addOperator('|=','assignment',AssignmentBitOr,1)
+        self.addOperator('^=','assignment',AssignmentBitXor,1)
+        self.addOperator('<<=','assignment',AssignmentLeftShift,1)
+        self.addOperator('>>=','assignment',AssignmentRightShift,1)        
 
     def generalFunctions(self): 
         self.addFunction('nvl',lambda a,b: a if a!=None and a!="" else b )
@@ -942,11 +942,11 @@ class Exp(metaclass=Singleton):
         
     def setContext(self,operand:Operand,context:Context):
         if issubclass(operand.__class__,Contextable):operand.context = context 
-        if issubclass(operand.__class__,Managerable):operand.mgr = self
+        if issubclass(operand.__class__,Manageable):operand.mgr = self
         if len(operand.operands)>0 :       
             for p in operand.operands:
                 if issubclass(p.__class__,Contextable):p.context = context
-                if issubclass(p.__class__,Managerable):p.mgr = self 
+                if issubclass(p.__class__,Manageable):p.mgr = self 
                 if len(p.operands)>0:
                     self.setContext(p,context)
 
@@ -1266,16 +1266,16 @@ class Parser():
             block= self.getExpression(_break=';') 
 
         nextValue=self.getValue(increment=False)
-        elseblock=None
+        elseBlock=None
         if nextValue=='else':
             self.index+=len(nextValue)
             if  self.current == '{':
                 self.index+=1  
-                elseblock= self.getBlock()
+                elseBlock= self.getBlock()
             else:
-                elseblock= self.getExpression(_break=';') 
+                elseBlock= self.getExpression(_break=';') 
 
-        return If('if',[condition,block,elseblock]) 
+        return If('if',[condition,block,elseBlock]) 
 
     def getWhileBlock(self):
         condition= self.getExpression(_break=')')

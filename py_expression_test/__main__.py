@@ -49,7 +49,7 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(exp.solve('"a"<"b"'),"a"<"b") 
         self.assertEqual(exp.solve('"a ""b"" "<"b"'),"a ""b"" "<"b") 
 
-    def test_assigments(self):
+    def test_assignments(self):
         context = {"a":"1","b":2,"c":{"a":4,"b":5}}
         exp.solve('a=8',context)
         self.assertEqual(context['a'],8)
@@ -91,7 +91,7 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(op.operators(),{'>=': 'comparison', '+': 'arithmetic'})
         self.assertEqual(op.functions(),{'.count': {'isChild': True}} )    
 
-    def test_multine(self):    
+    def test_multiline(self):    
         text='a=4; '\
              'b=a+2; '\
             ' output=a*b; ' 
@@ -156,7 +156,7 @@ class TestExpression(unittest.TestCase):
                  '  i=i+1;'
                  '}'))
         serialized = exp.serialize(operand)
-        self.assertEqual(serialized,{'n': 'block', 't': 'Block', 'c': [{'n': '=', 't': 'Assigment', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 0, 't': 'Constant'}]}, {'n': 'while', 't': 'While', 'c': [{'n': '<=', 't': 'LessThanOrEqual', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 6, 't': 'Constant'}]}, {'n': 'block', 't': 'Block', 'c': [{'n': '=', 't': 'Assigment', 'c': [{'n': 'output', 't': 'Variable'}, {'n': '*', 't': 'Multiplication', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 2, 't': 'Constant'}]}]}, {'n': '=', 't': 'Assigment', 'c': [{'n': 'i', 't': 'Variable'}, {'n': '+', 't': 'Addition', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 1, 't': 'Constant'}]}]}]}]}]})
+        self.assertEqual(serialized,{'n': 'block', 't': 'Block', 'c': [{'n': '=', 't': 'Assignment', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 0, 't': 'Constant'}]}, {'n': 'while', 't': 'While', 'c': [{'n': '<=', 't': 'LessThanOrEqual', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 6, 't': 'Constant'}]}, {'n': 'block', 't': 'Block', 'c': [{'n': '=', 't': 'Assignment', 'c': [{'n': 'output', 't': 'Variable'}, {'n': '*', 't': 'Multiplication', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 2, 't': 'Constant'}]}]}, {'n': '=', 't': 'Assignment', 'c': [{'n': 'i', 't': 'Variable'}, {'n': '+', 't': 'Addition', 'c': [{'n': 'i', 't': 'Variable'}, {'n': 1, 't': 'Constant'}]}]}]}]}]})
         operand2= exp.deserialize(serialized)
         context = {}
         exp.eval(operand2,context)
