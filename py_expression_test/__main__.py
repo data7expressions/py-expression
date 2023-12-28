@@ -1,14 +1,17 @@
+"""Test expression"""
 import unittest
-from py_expression.core import Exp,Token
 from enum import Enum
+from py_expression.core import Exp
 
 exp = Exp()
 
 class TestExpression(unittest.TestCase):
+    """Test expression"""
 
     def test_arithmetic(self):
+        """Test arithmetic expressions"""
         self.assertEqual(exp.solve('1+1'),1+1)
-        self.assertEqual(exp.solve('3+2-1'),3+2-1) 
+        self.assertEqual(exp.solve('3+2-1'),3+2-1)
         self.assertEqual(exp.solve('3*4-1'),3*4-1)
         self.assertEqual(exp.solve('1+4*2'),1+4*2)
         self.assertEqual(exp.solve('4+4+2+50+600'),4+4+2+50+600)
@@ -17,13 +20,14 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(exp.solve('(2+3)*2'),(2+3)*2)
         self.assertEqual(exp.solve('2*(3+2)'),2*(3+2))
         self.assertEqual(exp.solve('2*(3+2)*(2+2)'),2*(3+2)*(2+2))
-        self.assertEqual(exp.solve('1+2*3*4'),1+2*3*4)  
+        self.assertEqual(exp.solve('1+2*3*4'),1+2*3*4)
         self.assertEqual(exp.solve('2*3+4*5'),2*3+4*5)
         self.assertEqual(exp.solve('(1+(2**3)*4'),(1+(2**3)*4))
-        self.assertEqual(exp.solve('1+2**3*4'),1+2**3*4) 
+        self.assertEqual(exp.solve('1+2**3*4'),1+2**3*4)
         self.assertEqual(exp.solve('1+2**(3*4)'),1+2**(3*4))
 
-    def test_comparisons(self):         
+    def test_comparisons(self):
+        """Test comparison expressions"""  
         self.assertEqual(exp.solve('3>2'),3>2)
         self.assertEqual(exp.solve('3>2*2'),3>2*2)
         self.assertEqual(exp.solve('-3>2*2'),-3>2*22)
@@ -36,20 +40,23 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(exp.solve('-4==-(2*2)'),-4==-(2*2))
 
     def test_variables(self):
+        """Test variables"""
         self.assertEqual(exp.solve('a>b',{"a":1,"b":2}),False)
         self.assertEqual(exp.solve('a+b',{"a":1,"b":2}),3)
         self.assertEqual(exp.solve('-a*b',{"a":1,"b":2}),-2)
         self.assertEqual(exp.solve('a*3==b+1',{"a":1,"b":2}),True)
         self.assertEqual(exp.solve('(a*b)+(2*a+2*b)',{"a":1,"b":2}),8)
-        self.assertEqual(exp.solve('2**b+a',{"a":1,"b":2}),5) 
+        self.assertEqual(exp.solve('2**b+a',{"a":1,"b":2}),5)
         self.assertEqual(exp.solve('c.b',{"a":"1","b":2,"c":{"a":4,"b":5}}),5)
 
     def test_strings(self):
-        self.assertEqual(exp.solve('"a"'),"a") 
-        self.assertEqual(exp.solve('"a"<"b"'),"a"<"b") 
-        self.assertEqual(exp.solve('"a ""b"" "<"b"'),"a ""b"" "<"b") 
+        """Test strings"""
+        self.assertEqual(exp.solve('"a"'),"a")
+        self.assertEqual(exp.solve('"a"<"b"'),"a"<"b")
+        self.assertEqual(exp.solve('"a ""b"" "<"b"'),"a ""b"" "<"b")
 
     def test_assignments(self):
+        """Test assignments"""
         context = {"a":"1","b":2,"c":{"a":4,"b":5}}
         exp.solve('a=8',context)
         self.assertEqual(context['a'],8)
@@ -57,14 +64,16 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(context['c']['a'],1)
 
     def test_functions(self):
-        self.assertEqual(exp.solve('nvl(a,b)',{"a":None,"b":2}),2) 
-        self.assertEqual(exp.solve('a.capitalize()',{"a":"aaa","b":2}),"Aaa")  
-        self.assertEqual(exp.solve('"aaa".capitalize()'),"Aaa") 
+        """Test functions"""
+        self.assertEqual(exp.solve('nvl(a,b)',{"a":None,"b":2}),2)
+        self.assertEqual(exp.solve('a.capitalize()',{"a":"aaa","b":2}),"Aaa")
+        self.assertEqual(exp.solve('"aaa".capitalize()'),"Aaa")
         self.assertEqual(exp.solve('a.count("a")',{"a":"aaa"}),3)
-        self.assertEqual(exp.solve('a.count("b")',{"a":"aaa"}),0) 
-        self.assertEqual(exp.solve('a.upper()',{"a":"aaa"}),"AAA") 
+        self.assertEqual(exp.solve('a.count("b")',{"a":"aaa"}),0)
+        self.assertEqual(exp.solve('a.upper()',{"a":"aaa"}),"AAA")
 
     def test_enums(self):
+        """Test enums"""
         exp.addEnum('ColorConversion',{"BGR2GRAY":6
                                   ,"BGR2HSV":40
                                   ,"BGR2RGB":4
@@ -77,21 +86,24 @@ class TestExpression(unittest.TestCase):
         self.assertEqual(exp.solve('ColorConversion.GRAY2BGR'),8)
 
         class Color(Enum):
+            """Color enum"""
             RED = 1
             GREEN = 2
-            BLUE = 3        
+            BLUE = 3
 
         exp.addEnum('Color',Color)
-        self.assertEqual(exp.solve('Color.GREEN'),2)  
+        self.assertEqual(exp.solve('Color.GREEN'),2)
 
     def test_info(self):
+        """Test info"""
         op = exp.parse('"expression".count("e")>= a+1')
         self.assertEqual(op.vars(),{'a': 'any'})
         self.assertEqual(op.constants(),{'expression': 'str', 'e': 'str', 1: 'int'})
         self.assertEqual(op.operators(),{'>=': 'comparison', '+': 'arithmetic'})
-        self.assertEqual(op.functions(),{'.count': {'isChild': True}} )    
+        self.assertEqual(op.functions(),{'.count': {'isChild': True}} )
 
-    def test_multiline(self):    
+    def test_multiline(self):
+        """Test multiline"""  
         text='a=4; '\
              'b=a+2; '\
             ' output=a*b; ' 
@@ -100,7 +112,8 @@ class TestExpression(unittest.TestCase):
         expression.eval(context)
         self.assertEqual(context['output'],24)
 
-    def test_blockControl(self):        
+    def test_block_control(self):
+        """Test block control"""      
         context = {}
         exp.solve(('output=1;if(1==2){output=2}else {output=3}'),context)
         self.assertEqual(context['output'],3)
@@ -114,42 +127,43 @@ class TestExpression(unittest.TestCase):
                    '    output=3'
                    '}'),context)
         self.assertEqual(context['output'],3)
-      
         exp.solve(('i=0;'
                  'while(i<=6){'
                  '  output=i*2;'
                  '  i=i+1;'
                  '}'),context)
-        self.assertEqual(context['output'],12)   
+        self.assertEqual(context['output'],12)
 
-    def test_initializeLines(self):            
+    def test_initialize_lines(self):
+        """Test initialize lines"""           
         text = ('rectangle = {"x":50,"y":50,"width":80,"height":60}; '
                'sleepSecs = 1;'
                'source=nvl(source,"data/source.jpg");')
         expression = exp.parse(text)
         context = {}
-        result= expression.eval(context)
+        expression.eval(context)
         self.assertEqual(context['rectangle']['x'],50)
 
-    def test_lambdaFunctions(self):            
+    def test_lambda_functions(self):
+        """Test lambda functions"""           
         context = {"a":[1,2,3],"b":0}
         exp.solve('a.foreach(p:b=b+p)',context)
-        self.assertEqual(context['b'],6) 
+        self.assertEqual(context['b'],6)
         context = {"a":[1,2,3,4,5],"b":0}
         exp.solve('a.filter(p: p<5).foreach(p: b=b+p)',context)
-        self.assertEqual(context['b'],10) 
+        self.assertEqual(context['b'],10)
         context = {"a":[1,2,3,4,5],"b":0}
-        self.assertEqual(exp.solve('a.first(p: p%2==0)',context),2) 
+        self.assertEqual(exp.solve('a.first(p: p%2==0)',context),2)
         context = {"a":[1,2,3,4,5],"b":0}
-        self.assertEqual(exp.solve('a.last(p: p%2==0)',context),4) 
+        self.assertEqual(exp.solve('a.last(p: p%2==0)',context),4)
         context = {"a":[1,2,3,4,5],"b":0}
         self.assertEqual(exp.solve('a.filter(p: p>1 && p<5).map(p: p*2)',context),[4,6,8])
         context = {"a":[1,2,3,4,5],"b":0}
         self.assertEqual(exp.solve('a.filter(p: p>1 && p<5).reverse()',context),[4,3,2])
         # context = {"a":[1,2,3,4,5],"b":0}
         # self.assertEqual(exp.solve('a.filter(p: p>1 && p<5).map(p: p*2).reverse()',context),[8,6,4])
-
-    def test_serialize(self): 
+    def test_serialize(self):
+        """Test serialize"""
         operand =exp.parse(('i=0;'
                  'while(i<=6){'
                  '  output=i*2;'
@@ -160,7 +174,7 @@ class TestExpression(unittest.TestCase):
         operand2= exp.deserialize(serialized)
         context = {}
         exp.eval(operand2,context)
-        self.assertEqual(context['output'],12) 
+        self.assertEqual(context['output'],12)
 
 # context = {"a":"1","b":2,"c":{"a":4,"b":5}}
 # exp.solve('a=8',context)
@@ -222,4 +236,3 @@ unittest.main()
 # op = exp.parse('"expression".count("e")>= a+1')
 # print(op.functions())
 # unittest.main()
-

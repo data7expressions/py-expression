@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from setuptools import setup
 # from distutils.core import setup
-with open('README.md') as f:
-    long_description = f.read()
+with open('README.md', encoding='utf-8') as f:
+  long_description = f.read()
 
 setup(
   name = 'py-expression',
@@ -16,5 +16,5 @@ setup(
   keywords = ['parser', 'expression'],
   classifiers = [],
   author = 'Flavio Lionel Rita',
-  author_email = 'flaviolrita@proton.me'  
+  author_email = 'flaviolrita@proton.me'
 )

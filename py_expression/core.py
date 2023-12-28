@@ -5,6 +5,8 @@ from datetime import date,datetime,time,timedelta
 # import pytz
 from os import path,getcwd
 from enum import Enum
+
+from py_expression.base import Singleton
 # from .base import *
 
 class Context():
